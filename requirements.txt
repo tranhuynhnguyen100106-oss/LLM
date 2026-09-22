@@ -1,0 +1,8 @@
+streamlit>=1.64,<2
+openai>=1.100,<3
+pypdf>=5.0,<7
+pydantic>=2.0,<3
+python-docx>=1.1,<2
+openpyxl>=3.1,<4
+reportlab>=4.2,<5
+socksio>=1.0,<2
