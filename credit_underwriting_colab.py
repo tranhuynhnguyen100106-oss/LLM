@@ -258,9 +258,14 @@ def trang_tai_vi_tri(text: str, index: int) -> int:
     return max(1, len(re.findall(r"--- TRANG \d+ ---", text[: max(index, 0)])))
 
 
+def mau_bi_danh(alias: str) -> str:
+    """Tạo regex cho nhãn, cho phép PDF ngắt dòng tại vị trí khoảng trắng."""
+    return r"\s+".join(re.escape(part) for part in alias.split())
+
+
 def tim_van_ban(text: str, aliases: list[str]) -> dict[str, Any] | None:
     for alias in aliases:
-        match = re.search(rf"{re.escape(alias)}\s*[:\-–]?\s*([^\n\r|]{{2,100}})", text, re.IGNORECASE)
+        match = re.search(rf"{mau_bi_danh(alias)}\s*[:\-–]?\s*([^\n\r|]{{2,100}})", text, re.IGNORECASE)
         if match:
             value = re.sub(r"\s{2,}.*", "", match.group(1).strip())
             return {
@@ -274,7 +279,11 @@ def tim_van_ban(text: str, aliases: list[str]) -> dict[str, Any] | None:
 
 def tim_so_tien(text: str, aliases: list[str]) -> dict[str, Any] | None:
     for alias in aliases:
-        pattern = rf"{re.escape(alias)}\s*[:\-–]?\s*(?:VND|VNĐ|₫|đ)?[ \t]*([0-9][0-9., \t]{{1,}})"
+        # Không nhận phần đầu của ngày/tháng (ví dụ ``08/2026``) làm số tiền.
+        # Trường hợp này thường xuất hiện khi PDF có bảng: tiêu đề cột nằm ở
+        # một dòng, còn kỳ lương nằm ngay dòng kế tiếp. Negative lookahead buộc
+        # regex bỏ lần xuất hiện đó và tiếp tục tìm nhãn + giá trị hợp lệ sau.
+        pattern = rf"{mau_bi_danh(alias)}\s*[:\-–]?\s*(?:VND|VNĐ|₫|đ)?[ \t]*([0-9][0-9., \t]{{1,}})(?![/0-9])"
         match = re.search(pattern, text, re.IGNORECASE)
         if match:
             number = doc_so(match.group(1))
@@ -292,7 +301,7 @@ def tim_so_tien(text: str, aliases: list[str]) -> dict[str, Any] | None:
 def tim_ty_le(text: str, aliases: list[str]) -> dict[str, Any] | None:
     for alias in aliases:
         match = re.search(
-            rf"{re.escape(alias)}\s*[:\-–]?\s*([0-9]+(?:[.,][0-9]+)?)\s*%?",
+            rf"{mau_bi_danh(alias)}\s*[:\-–]?\s*([0-9]+(?:[.,][0-9]+)?)\s*%?",
             text,
             re.IGNORECASE,
         )
@@ -1985,6 +1994,17 @@ def chay_tu_kiem_tra() -> None:
     assert all(r.bang_chung for r in mismatch.canh_bao if r.loai == "INCOME_MISMATCH")
     assert "API" not in json.dumps(cau_hinh_mac_dinh(), ensure_ascii=False)
     assert nhap_cau_hinh_json(b'{"mau_chu_dao":"#112233"}')["mau_chu_dao"] == "#112233"
+    salary_after_period = tim_so_tien(
+        "Kỳ lương\nLương thực nhận\n08/2026\n"
+        "Lương thực nhận\n28.000.000 VND",
+        ["Lương thực nhận"],
+    )
+    assert salary_after_period and salary_after_period["number"] == 28_000_000
+    wrapped_payment = tim_so_tien(
+        "Trả nợ khoản vay mới hàng\ntháng\n7.200.000 VND",
+        ["Trả nợ khoản vay mới hàng tháng"],
+    )
+    assert wrapped_payment and wrapped_payment["number"] == 7_200_000
     docx_data = tao_bao_cao_word(mismatch)
     xlsx_data = tao_bao_cao_excel(mismatch)
     pdf_data = tao_bao_cao_pdf(mismatch)
