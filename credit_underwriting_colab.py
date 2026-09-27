@@ -1626,7 +1626,7 @@ STREAMLIT_CSS = """
     box-shadow: 0 11px 30px rgba(36,78,120,.08); transition: transform .2s ease, box-shadow .2s ease;
   }
   div[data-testid="stMetric"]:hover { transform: translateY(-2px); box-shadow: 0 14px 36px rgba(36,78,120,.13), 0 0 18px rgba(24,198,217,.10); }
-  div[data-testid="stFileUploaderDropzone"] {
+  [data-testid="stFileUploaderDropzone"] {
     min-height: 116px; color: var(--credit-text) !important;
     background: var(--credit-surface-solid) !important;
     border: 1.5px dashed var(--credit-primary) !important; border-radius: var(--credit-radius) !important;
