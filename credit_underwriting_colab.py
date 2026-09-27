@@ -1627,12 +1627,36 @@ STREAMLIT_CSS = """
   }
   div[data-testid="stMetric"]:hover { transform: translateY(-2px); box-shadow: 0 14px 36px rgba(36,78,120,.13), 0 0 18px rgba(24,198,217,.10); }
   div[data-testid="stFileUploaderDropzone"] {
-    min-height: 116px; background: var(--credit-surface);
-    border: 1.5px dashed var(--credit-primary); border-radius: var(--credit-radius);
+    min-height: 116px; color: var(--credit-text) !important;
+    background: var(--credit-surface-solid) !important;
+    border: 1.5px dashed var(--credit-primary) !important; border-radius: var(--credit-radius) !important;
   }
-  .stTextInput input, .stNumberInput input, .stTextArea textarea, div[data-baseweb="select"] > div {
+  [data-testid="stFileUploaderDropzone"] [data-testid="stBaseButton-secondary"] {
+    color: var(--credit-text) !important; background: var(--credit-surface) !important;
+    border: 1px solid var(--credit-border) !important; border-radius: 13px !important;
+  }
+  [data-testid="stFileUploaderDropzone"] [data-testid="stMarkdownContainer"] p,
+  [data-testid="stFileUploaderDropzone"] [data-testid="stIconMaterial"] {
+    color: var(--credit-text) !important;
+  }
+  .stTextInput input, .stNumberInput input, .stTextArea textarea {
     color: var(--credit-text) !important; border-radius: 14px !important; border-color: var(--credit-border) !important;
     background: var(--credit-surface-solid) !important;
+  }
+  [data-testid="stSelectbox"] [role="group"] {
+    color: var(--credit-text) !important; background: var(--credit-surface-solid) !important;
+    border: 1px solid var(--credit-border) !important; border-radius: 14px !important;
+    box-shadow: none !important;
+  }
+  [data-testid="stSelectbox"] input[role="combobox"],
+  [data-testid="stSelectbox"] button[aria-label="Open"] {
+    color: var(--credit-text) !important; background: transparent !important;
+    -webkit-text-fill-color: var(--credit-text) !important;
+  }
+  [role="listbox"] { color: var(--credit-text) !important; background: var(--credit-surface-solid) !important; }
+  [role="option"] { color: var(--credit-text) !important; background: var(--credit-surface-solid) !important; }
+  [role="option"][aria-selected="true"], [role="option"]:hover {
+    background: rgba(91,95,239,.16) !important;
   }
   .stTextInput input:focus, .stNumberInput input:focus, .stTextArea textarea:focus {
     border-color: ACCENT_COLOR !important; box-shadow: 0 0 0 3px rgba(24,198,217,.14) !important;
