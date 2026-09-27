@@ -6,9 +6,9 @@ CreditLens là AI Credit Underwriting Copilot hỗ trợ đọc hồ sơ PDF, ch
 
 ## Tính năng của bản này
 
-- Giao diện tiếng Việt, nền sáng, màu gradient và hiệu ứng neon nhẹ.
-- Upload đơn đề nghị vay, chứng từ thu nhập, sao kê và tài liệu nghĩa vụ nợ.
-- Trích xuất có cấu trúc và confidence score.
+- Giao diện tiếng Việt với 5 chế độ: Theo hệ thống, Sáng, Tối, Ấm áp và Hiện đại; màu gradient và hiệu ứng neon nhẹ.
+- Upload từng tệp hoặc chọn trực tiếp một thư mục gồm 3–4 PDF của cùng một khách hàng: đơn đề nghị vay, chứng từ thu nhập, sao kê và tài liệu nghĩa vụ nợ tùy chọn.
+- Trích xuất có cấu trúc; độ tin cậy được chuyển thành nhãn “Tin cậy cao”, “Cần đối chiếu”, “Cần xác minh” hoặc “Thiếu dữ liệu” và phân biệt bằng màu.
 - Python tính DTI, DSR, thu nhập khả dụng, hệ số đệm số dư và biến động thu nhập.
 - Phát hiện chênh lệch thu nhập, doanh nghiệp, chức danh, thời gian làm việc và nghĩa vụ nợ.
 - Evidence traceability đến tài liệu, trang, trường và giá trị.
@@ -64,7 +64,7 @@ Mở Tóm tắt thẩm định, chọn một định dạng rồi tải:
 
 - Word: báo cáo trình bày theo mục, có bảng chỉ số, cảnh báo, bằng chứng và dữ kiện trích xuất.
 - Excel: nhiều sheet, giữ kiểu số và phần trăm để tiếp tục phân tích.
-- PDF: báo cáo Unicode tiếng Việt có header, footer và số trang.
+- PDF: báo cáo Unicode tiếng Việt nhúng Noto Sans/DejaVu Sans, có header, footer và số trang.
 
 Báo cáo được tạo trong RAM. Ứng dụng không lưu tệp báo cáo vào thư mục máy chủ.
 
