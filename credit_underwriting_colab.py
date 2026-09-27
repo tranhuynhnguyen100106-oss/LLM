@@ -1636,7 +1636,9 @@ STREAMLIT_CSS = """
     border: 1px solid var(--credit-border) !important; border-radius: 13px !important;
   }
   [data-testid="stFileUploaderDropzone"] [data-testid="stMarkdownContainer"] p,
-  [data-testid="stFileUploaderDropzone"] [data-testid="stIconMaterial"] {
+  [data-testid="stFileUploaderDropzone"] [data-testid="stIconMaterial"],
+  [data-testid="stFileUploaderDropzone"] small,
+  [data-testid="stFileUploaderDropzone"] > div {
     color: var(--credit-text) !important;
   }
   .stTextInput input, .stNumberInput input, .stTextArea textarea {
