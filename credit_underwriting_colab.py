@@ -2108,7 +2108,6 @@ def trang_trich_xuat(st, result: KetQuaThamDinh | None, docs: dict[str, TaiLieu]
         display = gia_tri_truong_hien_thi(field)
         rows.append(
             {
-                "Mã trường": field.ma_truong,
                 "Trường dữ liệu": field.nhan,
                 "Giá trị": display,
                 "Nguồn": field.tai_lieu_nguon,
