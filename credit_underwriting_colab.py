@@ -48,6 +48,7 @@ def cai_dat_thu_vien() -> None:
         "docx": "python-docx>=1.1,<2",
         "openpyxl": "openpyxl>=3.1,<4",
         "reportlab": "reportlab>=4.2,<5",
+        "jinja2": "Jinja2>=3.1,<4",
         "socksio": "socksio>=1.0,<2",
     }
     thieu = [yeu_cau for ten, yeu_cau in goi.items() if importlib.util.find_spec(ten) is None]
@@ -330,12 +331,40 @@ TU_KHOA_PHAN_LOAI = {
 }
 
 
+def goi_y_loai_tu_ten_tep(filename: str) -> str | None:
+    """Nhận diện loại tài liệu từ tên tệp, dùng cho chế độ tải cả thư mục."""
+    normalized = chuan_hoa_chuoi(Path(filename).stem)
+    hints = {
+        "debt": ("nghiavuno", "thongtinnghiavu", "debt", "obligation"),
+        "statement": ("saokenganhang", "bankstatement", "accountstatement", "statement"),
+        "income": (
+            "chungtuthunhap",
+            "xacnhanvieclam",
+            "xacnhancongtac",
+            "xacnhanthunhap",
+            "hopdonglaodong",
+            "phieuluong",
+            "payslip",
+            "salary",
+            "income",
+        ),
+        "application": ("dondenghivay", "hosovay", "loanapplication", "applicationform"),
+    }
+    for doc_type, aliases in hints.items():
+        if any(alias in normalized for alias in aliases):
+            return doc_type
+    return None
+
+
 def phan_loai_tai_lieu(filename: str, text: str) -> tuple[str, float]:
     input_text = f"{filename} {text[:1800]}".lower()
     scores = {key: sum(keyword in input_text for keyword in keywords) for key, keywords in TU_KHOA_PHAN_LOAI.items()}
+    filename_hint = goi_y_loai_tu_ten_tep(filename)
+    if filename_hint:
+        scores[filename_hint] += 4
     best = max(scores, key=scores.get)
     score = scores[best]
-    return (best, min(0.98, 0.68 + score * 0.10)) if score else ("unknown", 0.35)
+    return (best, min(0.98, 0.68 + score * 0.06)) if score else ("unknown", 0.35)
 
 
 def doc_pdf(path_value: str | Path, loai_ky_vong: str) -> TaiLieu:
@@ -997,8 +1026,11 @@ def tao_bao_cao_word(result: KetQuaThamDinh, ai_summary: str = "") -> bytes:
         doc.add_paragraph("Không có bằng chứng rủi ro được tạo.")
 
     doc.add_heading("7 Dữ kiện đã trích xuất", level=1)
-    extracted_rows = [[f.nhan, gia_tri_truong_hien_thi(f), f.tai_lieu_nguon, f.trang or "-", f"{f.do_tin_cay:.0%}"] for f in result.truong_trich_xuat]
-    add_table(["Trường", "Giá trị", "Nguồn", "Trang", "Tin cậy"], extracted_rows, [48, 46, 47, 15, 20])
+    extracted_rows = [
+        [f.nhan, gia_tri_truong_hien_thi(f), f.tai_lieu_nguon, f.trang or "-", nhan_luu_y_tin_cay(f.do_tin_cay, missing=f.gia_tri is None)]
+        for f in result.truong_trich_xuat
+    ]
+    add_table(["Trường", "Giá trị", "Nguồn", "Trang", "Lưu ý"], extracted_rows, [46, 44, 45, 15, 26])
 
     if ai_summary.strip():
         doc.add_heading("8 Diễn giải bổ sung bằng AI", level=1)
@@ -1136,19 +1168,34 @@ def tao_bao_cao_excel(result: KetQuaThamDinh, ai_summary: str = "") -> bytes:
 
     ws = wb.create_sheet("Trich xuat")
     title(ws, "DỮ KIỆN ĐÃ TRÍCH XUẤT", 7)
-    header(ws, 3, ["Mã trường", "Trường dữ liệu", "Giá trị", "Tài liệu nguồn", "Trang", "Độ tin cậy", "Trích đoạn bằng chứng"])
+    header(ws, 3, ["Mã trường", "Trường dữ liệu", "Giá trị", "Tài liệu nguồn", "Trang", "Lưu ý", "Trích đoạn bằng chứng"])
     for row_index, field in enumerate(result.truong_trich_xuat, start=4):
         raw_value: Any = field.gia_tri
-        values = [field.ma_truong, field.nhan, raw_value, field.tai_lieu_nguon, field.trang, field.do_tin_cay, field.bang_chung.trich_doan if field.bang_chung else ""]
+        note = nhan_luu_y_tin_cay(field.do_tin_cay, missing=field.gia_tri is None)
+        values = [field.ma_truong, field.nhan, raw_value, field.tai_lieu_nguon, field.trang, note, field.bang_chung.trich_doan if field.bang_chung else ""]
         for col_index, value in enumerate(values, start=1):
             ws.cell(row_index, col_index, value)
-        ws.cell(row_index, 6).number_format = "0%"
         if isinstance(raw_value, (int, float)) and field.ma_truong not in {"tham_nien_lam_viec_thang", "thoi_han_vay_thang", "bien_dong_thu_nhap"}:
             ws.cell(row_index, 3).number_format = "#,##0\" VND\""
         elif field.ma_truong == "bien_dong_thu_nhap" and isinstance(raw_value, (int, float)):
             ws.cell(row_index, 3).number_format = "0.0%"
     body_style(ws, 4, 3 + len(result.truong_trich_xuat), 7)
-    set_widths(ws, [28, 42, 24, 42, 10, 16, 72])
+    for row_index in range(4, 4 + len(result.truong_trich_xuat)):
+        note_cell = ws.cell(row_index, 6)
+        note_text = str(note_cell.value or "")
+        if note_text.startswith("Tin cậy cao"):
+            note_cell.fill = PatternFill("solid", fgColor="DCFCE7")
+            note_cell.font = Font(name="Aptos", size=10, bold=True, color="15803D")
+        elif note_text.startswith("Cần đối chiếu"):
+            note_cell.fill = PatternFill("solid", fgColor="FEF3C7")
+            note_cell.font = Font(name="Aptos", size=10, bold=True, color="A75605")
+        elif "xác minh" in note_text.lower() or "không đọc được" in note_text.lower():
+            note_cell.fill = PatternFill("solid", fgColor="FEE2E2")
+            note_cell.font = Font(name="Aptos", size=10, bold=True, color="B91C1C")
+        else:
+            note_cell.fill = PatternFill("solid", fgColor="E2E8F0")
+            note_cell.font = Font(name="Aptos", size=10, bold=True, color="596579")
+    set_widths(ws, [28, 42, 24, 42, 10, 24, 72])
     ws.freeze_panes = "A4"
     ws.auto_filter.ref = f"A3:G{3 + len(result.truong_trich_xuat)}"
 
@@ -1190,10 +1237,23 @@ def tao_bao_cao_excel(result: KetQuaThamDinh, ai_summary: str = "") -> bytes:
 
 
 def _tim_font_pdf() -> tuple[str, str] | None:
+    """Tìm cặp font TrueType có đủ ký tự tiếng Việt.
+
+    Streamlit Community Cloud có thể đặt font ở các thư mục khác nhau tùy image
+    hệ điều hành. Danh sách ưu tiên Noto Sans và DejaVu Sans; Liberation Sans là
+    phương án dự phòng. ``packages.txt`` cài cả Noto và DejaVu để PDF không phụ
+    thuộc font mặc định (Helvetica không hỗ trợ đầy đủ Unicode tiếng Việt).
+    """
+    custom_dir = os.environ.get("CREDITLENS_FONT_DIR", "").strip()
     candidates = [
+        (str(Path(custom_dir) / "NotoSans-Regular.ttf"), str(Path(custom_dir) / "NotoSans-Bold.ttf")) if custom_dir else ("", ""),
+        ("/usr/share/fonts/truetype/noto/NotoSans-Regular.ttf", "/usr/share/fonts/truetype/noto/NotoSans-Bold.ttf"),
+        ("/usr/share/fonts/opentype/noto/NotoSans-Regular.ttf", "/usr/share/fonts/opentype/noto/NotoSans-Bold.ttf"),
         ("/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf", "/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf"),
         ("/usr/share/fonts/dejavu/DejaVuSans.ttf", "/usr/share/fonts/dejavu/DejaVuSans-Bold.ttf"),
         ("/usr/local/share/fonts/DejaVuSans.ttf", "/usr/local/share/fonts/DejaVuSans-Bold.ttf"),
+        ("/usr/share/fonts/truetype/liberation2/LiberationSans-Regular.ttf", "/usr/share/fonts/truetype/liberation2/LiberationSans-Bold.ttf"),
+        ("/usr/share/fonts/truetype/liberation/LiberationSans-Regular.ttf", "/usr/share/fonts/truetype/liberation/LiberationSans-Bold.ttf"),
         ("C:/Windows/Fonts/arial.ttf", "C:/Windows/Fonts/arialbd.ttf"),
         ("/Library/Fonts/Arial Unicode.ttf", "/Library/Fonts/Arial Bold.ttf"),
     ]
@@ -1212,7 +1272,7 @@ def tao_bao_cao_pdf(result: KetQuaThamDinh, ai_summary: str = "") -> bytes:
     from reportlab.lib.units import mm
     from reportlab.pdfbase import pdfmetrics
     from reportlab.pdfbase.ttfonts import TTFont
-    from reportlab.platypus import LongTable, Paragraph, SimpleDocTemplate, Spacer, Table, TableStyle
+    from reportlab.platypus import KeepTogether, LongTable, Paragraph, SimpleDocTemplate, Spacer, Table, TableStyle
 
     fonts = _tim_font_pdf()
     if fonts is None:
@@ -1239,7 +1299,8 @@ def tao_bao_cao_pdf(result: KetQuaThamDinh, ai_summary: str = "") -> bytes:
 
     def clean(value: Any) -> str:
         text = str(value if value is not None else "-")
-        text = text.replace("—", "-").replace("–", "-").replace("×", "x").replace("−", "-")
+        # Giữ nguyên dấu tiếng Việt và các ký hiệu tài chính; font Noto/DejaVu
+        # đã được nhúng trực tiếp vào PDF.
         return html.escape(text)
 
     def para(value: Any, style=body_style) -> Paragraph:
@@ -1286,10 +1347,32 @@ def tao_bao_cao_pdf(result: KetQuaThamDinh, ai_summary: str = "") -> bytes:
     ]
     if result.canh_bao:
         for risk in result.canh_bao:
-            story.append(para(f"{risk.ma_rui_ro} - {NHAN_RUI_RO.get(risk.loai, risk.loai)} - {NHAN_MUC_DO[risk.muc_do]}", ParagraphStyle("RiskTitle", parent=body_style, fontName="CreditLensSans-Bold", textColor=navy, spaceBefore=4)))
-            story.append(para(risk.giai_thich))
+            risk_block: list[Any] = [
+                para(
+                    f"{risk.ma_rui_ro} - {NHAN_RUI_RO.get(risk.loai, risk.loai)} - {NHAN_MUC_DO[risk.muc_do]}",
+                    ParagraphStyle(
+                        f"RiskTitle-{risk.ma_rui_ro}",
+                        parent=body_style,
+                        fontName="CreditLensSans-Bold",
+                        textColor=navy,
+                        spaceBefore=4,
+                    ),
+                ),
+                para(risk.giai_thich),
+            ]
             for evidence in risk.bang_chung:
-                story.append(para(f"Bằng chứng: {evidence.tai_lieu}, trang {evidence.trang or 'không xác định'}, {evidence.truong_du_lieu} = {evidence.gia_tri}", small_style))
+                risk_block.append(
+                    para(
+                        f"Bằng chứng: {evidence.tai_lieu}, trang {evidence.trang or 'không xác định'}, "
+                        f"{evidence.truong_du_lieu} = {evidence.gia_tri}",
+                        small_style,
+                    )
+                )
+            # Giữ tiêu đề, giải thích và ít nhất một bằng chứng cùng trang.
+            # Các bằng chứng còn lại được phép ngắt trang để tránh tạo một trang
+            # cuối gần như trống khi khối cảnh báo dài.
+            story.append(KeepTogether(risk_block[:3]))
+            story.extend(risk_block[3:])
     else:
         story.append(para("Không phát hiện mâu thuẫn trọng yếu theo các quy tắc minh họa hiện tại."))
 
@@ -1302,9 +1385,9 @@ def tao_bao_cao_pdf(result: KetQuaThamDinh, ai_summary: str = "") -> bytes:
     story += [
         Paragraph("6 Dữ kiện đã trích xuất", heading_style),
         table(
-            ["Trường", "Giá trị", "Nguồn", "Trang", "Tin cậy"],
-            [[f.nhan, gia_tri_truong_hien_thi(f), f.tai_lieu_nguon, f.trang or "-", f"{f.do_tin_cay:.0%}"] for f in result.truong_trich_xuat],
-            [48, 47, 48, 16, 23],
+            ["Trường", "Giá trị", "Nguồn", "Trang", "Lưu ý"],
+            [[f.nhan, gia_tri_truong_hien_thi(f), f.tai_lieu_nguon, f.trang or "-", nhan_luu_y_tin_cay(f.do_tin_cay, missing=f.gia_tri is None)] for f in result.truong_trich_xuat],
+            [46, 45, 46, 15, 30],
         ),
     ]
     if ai_summary.strip():
@@ -1312,10 +1395,17 @@ def tao_bao_cao_pdf(result: KetQuaThamDinh, ai_summary: str = "") -> bytes:
         for line in _xoa_markdown(ai_summary).splitlines():
             if line.strip():
                 story.append(para(line.strip()))
-    story += [
-        Paragraph("Trạng thái xem xét của con người", heading_style),
-        para(f"{NHAN_TRANG_THAI[result.trang_thai]}. Chuyên viên tín dụng phải xác minh dữ kiện, xử lý mâu thuẫn và chịu trách nhiệm về quyết định cuối cùng."),
-    ]
+    story.append(
+        KeepTogether(
+            [
+                Paragraph("Trạng thái xem xét của con người", heading_style),
+                para(
+                    f"{NHAN_TRANG_THAI[result.trang_thai]}. Chuyên viên tín dụng phải xác minh dữ kiện, "
+                    "xử lý mâu thuẫn và chịu trách nhiệm về quyết định cuối cùng."
+                ),
+            ]
+        )
+    )
 
     def decorate(canvas, doc) -> None:
         canvas.saveState()
@@ -1402,9 +1492,46 @@ DEFAULT_SETTINGS = {
     "ten_ung_dung": "CreditLens — Trợ lý thẩm định tín dụng",
     "mau_chu_dao": "#5B5FEF",
     "mau_nhan": "#18C6D9",
+    "che_do_giao_dien": "Theo hệ thống",
     "model": "gpt-5-mini",
     "system_prompt": DEFAULT_SYSTEM_PROMPT,
     "nguong": dict(NGUONG),
+}
+
+CHE_DO_GIAO_DIEN = ("Theo hệ thống", "Sáng", "Tối", "Ấm áp", "Hiện đại")
+
+THEME_PALETTES = {
+    "Theo hệ thống": {
+        "page": "#F5F8FC", "page_alt": "#ECF3FA", "surface": "rgba(255,255,255,.94)",
+        "surface_solid": "#FFFFFF", "text": "#17263A", "muted": "#607086",
+        "border": "rgba(80,105,135,.22)", "sidebar_top": "#FFFFFF", "sidebar_bottom": "#EDF5FC",
+    },
+    "Sáng": {
+        "page": "#F7FAFD", "page_alt": "#EDF4FB", "surface": "rgba(255,255,255,.97)",
+        "surface_solid": "#FFFFFF", "text": "#14263A", "muted": "#607086",
+        "border": "rgba(65,92,123,.20)", "sidebar_top": "#FFFFFF", "sidebar_bottom": "#F1F6FB",
+    },
+    "Tối": {
+        "page": "#0E131B", "page_alt": "#161D27", "surface": "rgba(22,29,39,.96)",
+        "surface_solid": "#171E28", "text": "#E7EEF8", "muted": "#9AA8BA",
+        "border": "rgba(148,163,184,.22)", "sidebar_top": "#111821", "sidebar_bottom": "#171F2A",
+    },
+    "Ấm áp": {
+        "page": "#FFF8EF", "page_alt": "#F8ECDD", "surface": "rgba(255,253,248,.96)",
+        "surface_solid": "#FFFDF8", "text": "#3B2C26", "muted": "#79675E",
+        "border": "rgba(154,105,72,.23)", "sidebar_top": "#FFFDF8", "sidebar_bottom": "#F9ECDD",
+    },
+    "Hiện đại": {
+        "page": "#F4F7FF", "page_alt": "#EAF2FF", "surface": "rgba(255,255,255,.88)",
+        "surface_solid": "#FFFFFF", "text": "#15273B", "muted": "#60748A",
+        "border": "rgba(91,95,239,.20)", "sidebar_top": "#FFFFFF", "sidebar_bottom": "#ECF5FF",
+    },
+}
+
+THEME_ACCENTS = {
+    "Sáng": ("#315ACB", "#0E9F9A"),
+    "Tối": ("#7C83FF", "#22D3C5"),
+    "Ấm áp": ("#B85F3D", "#D99A32"),
 }
 
 PAGES = [
@@ -1422,24 +1549,39 @@ STREAMLIT_CSS = """
   :root {
     --credit-primary: PRIMARY_COLOR;
     --credit-accent: ACCENT_COLOR;
-    --credit-navy: #102A43;
-    --credit-ink: #19324A;
-    --credit-border: rgba(93, 119, 146, .22);
+    --credit-page: PAGE_COLOR;
+    --credit-page-alt: PAGE_ALT_COLOR;
+    --credit-surface: SURFACE_COLOR;
+    --credit-surface-solid: SURFACE_SOLID_COLOR;
+    --credit-text: TEXT_COLOR;
+    --credit-muted: MUTED_COLOR;
+    --credit-border: BORDER_COLOR;
+    --credit-sidebar-top: SIDEBAR_TOP_COLOR;
+    --credit-sidebar-bottom: SIDEBAR_BOTTOM_COLOR;
+    --credit-radius: 18px;
   }
-  .stApp {
-    color: var(--credit-ink);
+  html, body, .stApp, [class*="css"] {
+    font-family: Inter, "Segoe UI", Roboto, Helvetica, Arial, sans-serif !important;
+  }
+  .stApp, [data-testid="stAppViewContainer"] {
+    color: var(--credit-text);
     background:
       radial-gradient(circle at 8% 4%, rgba(24, 198, 217, .13), transparent 25rem),
       radial-gradient(circle at 91% 7%, rgba(91, 95, 239, .13), transparent 26rem),
-      linear-gradient(180deg, #fbfdff 0%, #f3f8ff 52%, #f8fbff 100%);
+      linear-gradient(180deg, var(--credit-page) 0%, var(--credit-page-alt) 100%);
   }
-  .block-container { max-width: 1440px; padding-top: 1.25rem; padding-bottom: 4rem; }
+  .stApp h1, .stApp h2, .stApp h3, .stApp h4, .stApp p, .stApp label,
+  .stApp [data-testid="stCaptionContainer"], .stApp [data-testid="stMarkdownContainer"] {
+    color: var(--credit-text);
+  }
+  .block-container { max-width: 1420px; padding-top: 1.25rem; padding-bottom: 4rem; }
   [data-testid="stSidebar"] {
-    background: linear-gradient(180deg, rgba(255,255,255,.98), rgba(239,248,255,.98));
-    border-right: 1px solid rgba(91,95,239,.16);
+    background: linear-gradient(180deg, var(--credit-sidebar-top), var(--credit-sidebar-bottom));
+    border-right: 1px solid var(--credit-border);
   }
+  [data-testid="stSidebar"] * { color: var(--credit-text); }
   [data-testid="stSidebar"] .stRadio label {
-    border-radius: 12px; padding: 5px 8px; transition: all .2s ease;
+    border-radius: 12px; padding: 6px 9px; transition: all .2s ease;
   }
   [data-testid="stSidebar"] .stRadio label:hover {
     background: rgba(91,95,239,.08); transform: translateX(2px);
@@ -1465,12 +1607,12 @@ STREAMLIT_CSS = """
     font-size: .78rem; font-weight: 700; backdrop-filter: blur(6px);
   }
   .credit-notice, .credit-privacy, .status-card, .evidence-card {
-    background: rgba(255,255,255,.88); border: 1px solid var(--credit-border);
-    border-radius: 16px; padding: 15px 17px; margin: 10px 0 18px;
+    background: var(--credit-surface); color: var(--credit-text); border: 1px solid var(--credit-border);
+    border-radius: var(--credit-radius); padding: 15px 17px; margin: 10px 0 18px;
     box-shadow: 0 10px 28px rgba(35,79,120,.07); backdrop-filter: blur(9px);
   }
-  .credit-notice { border-left: 5px solid #FFB020; background: linear-gradient(100deg, #FFF9E8, rgba(255,255,255,.94)); }
-  .credit-privacy { border-left: 5px solid ACCENT_COLOR; background: linear-gradient(100deg, #E9FBFD, rgba(255,255,255,.94)); }
+  .credit-notice { border-left: 5px solid #FFB020; }
+  .credit-privacy { border-left: 5px solid ACCENT_COLOR; }
   .status-card { border-left: 5px solid PRIMARY_COLOR; }
   .public-pill {
     display: inline-flex; align-items: center; gap: 7px; padding: 7px 11px; border-radius: 999px;
@@ -1479,24 +1621,25 @@ STREAMLIT_CSS = """
   }
   .public-dot { width: 8px; height: 8px; border-radius: 50%; background: #00B884; box-shadow: 0 0 10px #00B884; }
   div[data-testid="stMetric"] {
-    background: linear-gradient(145deg, rgba(255,255,255,.98), rgba(244,250,255,.94));
-    border: 1px solid var(--credit-border); border-radius: 18px; padding: 15px 17px;
+    background: var(--credit-surface);
+    border: 1px solid var(--credit-border); border-radius: var(--credit-radius); padding: 15px 17px;
     box-shadow: 0 11px 30px rgba(36,78,120,.08); transition: transform .2s ease, box-shadow .2s ease;
   }
   div[data-testid="stMetric"]:hover { transform: translateY(-2px); box-shadow: 0 14px 36px rgba(36,78,120,.13), 0 0 18px rgba(24,198,217,.10); }
   div[data-testid="stFileUploaderDropzone"] {
-    background: linear-gradient(145deg, rgba(255,255,255,.96), rgba(237,248,255,.94));
-    border: 1.5px dashed rgba(91,95,239,.38); border-radius: 16px;
+    min-height: 116px; background: var(--credit-surface);
+    border: 1.5px dashed var(--credit-primary); border-radius: var(--credit-radius);
   }
   .stTextInput input, .stNumberInput input, .stTextArea textarea, div[data-baseweb="select"] > div {
-    border-radius: 12px !important; border-color: rgba(91,95,239,.22) !important;
-    background: rgba(255,255,255,.96) !important;
+    color: var(--credit-text) !important; border-radius: 14px !important; border-color: var(--credit-border) !important;
+    background: var(--credit-surface-solid) !important;
   }
   .stTextInput input:focus, .stNumberInput input:focus, .stTextArea textarea:focus {
     border-color: ACCENT_COLOR !important; box-shadow: 0 0 0 3px rgba(24,198,217,.14) !important;
   }
   .stButton > button, .stDownloadButton > button {
-    border-radius: 13px !important; border: 1px solid rgba(91,95,239,.20) !important;
+    min-height: 44px; color: var(--credit-text) !important; background: var(--credit-surface-solid) !important;
+    border-radius: 14px !important; border: 1px solid var(--credit-border) !important;
     font-weight: 750 !important; transition: all .2s ease !important;
   }
   .stButton > button:hover, .stDownloadButton > button:hover {
@@ -1508,11 +1651,91 @@ STREAMLIT_CSS = """
     background: linear-gradient(110deg, PRIMARY_COLOR, ACCENT_COLOR) !important;
     box-shadow: 0 10px 25px rgba(91,95,239,.25), 0 0 16px rgba(24,198,217,.16) !important;
   }
-  [data-testid="stExpander"] { background: rgba(255,255,255,.84); border: 1px solid var(--credit-border); border-radius: 15px; overflow: hidden; }
-  [data-testid="stDataFrame"] { border: 1px solid var(--credit-border); border-radius: 15px; overflow: hidden; box-shadow: 0 8px 25px rgba(36,78,120,.06); }
+  [data-testid="stExpander"] { background: var(--credit-surface); border: 1px solid var(--credit-border); border-radius: var(--credit-radius); overflow: hidden; }
+  [data-testid="stDataFrame"] { background: var(--credit-surface-solid); border: 1px solid var(--credit-border); border-radius: var(--credit-radius); overflow: hidden; box-shadow: 0 8px 25px rgba(36,78,120,.06); }
+  [data-testid="stVerticalBlockBorderWrapper"] {
+    background: var(--credit-surface); border-color: var(--credit-border) !important;
+    border-radius: var(--credit-radius) !important; box-shadow: 0 8px 24px rgba(36,78,120,.06);
+  }
+  .credit-upload-panel {
+    background: var(--credit-surface); border: 1px solid var(--credit-border); border-radius: var(--credit-radius);
+    padding: 16px 18px 5px; margin: 8px 0 16px; box-shadow: 0 8px 24px rgba(36,78,120,.06);
+  }
+  .credit-metric-grid {
+    display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 18px; margin: 8px 0 20px;
+  }
+  .credit-metric-card {
+    min-height: 238px; display: flex; flex-direction: column; box-sizing: border-box;
+    background: var(--credit-surface); border: 1px solid var(--credit-border); border-radius: var(--credit-radius);
+    padding: 20px; box-shadow: 0 11px 30px rgba(36,78,120,.08); transition: transform .2s ease, box-shadow .2s ease;
+  }
+  .credit-metric-card:hover { transform: translateY(-2px); box-shadow: 0 15px 38px rgba(36,78,120,.13); }
+  .metric-name { color: var(--credit-muted); font-size: .9rem; font-weight: 750; margin-bottom: 8px; }
+  .metric-value { color: var(--credit-text); font-size: clamp(1.8rem, 3vw, 2.5rem); line-height: 1.08; margin-bottom: 12px; }
+  .metric-badge { width: fit-content; border-radius: 999px; padding: 5px 10px; font-size: .78rem; font-weight: 800; }
+  .metric-ok { color: #15803D; background: rgba(34,197,94,.14); }
+  .metric-warn { color: #B45309; background: rgba(245,158,11,.17); }
+  .metric-missing { color: #64748B; background: rgba(148,163,184,.18); }
+  .metric-formula { color: var(--credit-muted); font-size: .78rem; line-height: 1.45; margin-top: auto; padding-top: 16px; font-weight: 650; }
+  .metric-note { color: var(--credit-muted); font-size: .78rem; line-height: 1.45; margin-top: 7px; }
+  .confidence-legend {
+    display: flex; flex-wrap: wrap; gap: 8px; margin: 8px 0 14px; color: var(--credit-muted); font-size: .78rem;
+  }
+  .confidence-legend span { border: 1px solid var(--credit-border); border-radius: 999px; padding: 5px 9px; background: var(--credit-surface); }
+  .legend-high { border-left: 4px solid #22C55E !important; }
+  .legend-review { border-left: 4px solid #F59E0B !important; }
+  .legend-check { border-left: 4px solid #EF4444 !important; }
+  .legend-missing { border-left: 4px solid #94A3B8 !important; }
   hr { border-color: rgba(91,95,239,.13) !important; }
+  @media (max-width: 950px) { .credit-metric-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+  @media (max-width: 640px) { .credit-metric-grid { grid-template-columns: 1fr; } .credit-metric-card { min-height: 218px; } }
+  SYSTEM_THEME_MEDIA
 </style>
 """
+
+
+def tao_css_giao_dien(settings: dict[str, Any]) -> str:
+    mode = settings.get("che_do_giao_dien", "Theo hệ thống")
+    if mode not in CHE_DO_GIAO_DIEN:
+        mode = "Theo hệ thống"
+    palette = THEME_PALETTES[mode]
+    primary = lam_sach_mau(settings.get("mau_chu_dao", "#5B5FEF"))
+    accent = lam_sach_mau(settings.get("mau_nhan", "#18C6D9"), "#18C6D9")
+    if mode in THEME_ACCENTS:
+        primary, accent = THEME_ACCENTS[mode]
+
+    system_media = ""
+    if mode == "Theo hệ thống":
+        dark = THEME_PALETTES["Tối"]
+        system_media = """@media (prefers-color-scheme: dark) {
+          :root {
+            --credit-page: DARK_PAGE; --credit-page-alt: DARK_PAGE_ALT;
+            --credit-surface: DARK_SURFACE; --credit-surface-solid: DARK_SURFACE_SOLID;
+            --credit-text: DARK_TEXT; --credit-muted: DARK_MUTED; --credit-border: DARK_BORDER;
+            --credit-sidebar-top: DARK_SIDEBAR_TOP; --credit-sidebar-bottom: DARK_SIDEBAR_BOTTOM;
+          }
+        }"""
+        for key in sorted(dark, key=len, reverse=True):
+            system_media = system_media.replace(f"DARK_{key.upper()}", dark[key])
+
+    replacements = {
+        "PRIMARY_COLOR": primary,
+        "ACCENT_COLOR": accent,
+        "PAGE_COLOR": palette["page"],
+        "PAGE_ALT_COLOR": palette["page_alt"],
+        "SURFACE_COLOR": palette["surface"],
+        "SURFACE_SOLID_COLOR": palette["surface_solid"],
+        "TEXT_COLOR": palette["text"],
+        "MUTED_COLOR": palette["muted"],
+        "BORDER_COLOR": palette["border"],
+        "SIDEBAR_TOP_COLOR": palette["sidebar_top"],
+        "SIDEBAR_BOTTOM_COLOR": palette["sidebar_bottom"],
+        "SYSTEM_THEME_MEDIA": system_media,
+    }
+    css = STREAMLIT_CSS
+    for token, value in replacements.items():
+        css = css.replace(token, value)
+    return css
 
 
 def cau_hinh_mac_dinh() -> dict[str, Any]:
@@ -1545,6 +1768,62 @@ def xu_ly_tai_lieu_tai_len(ma_ho_so: str, uploads: dict[str, Any]) -> tuple[KetQ
                 errors.append(str(exc))
     if not docs:
         raise ValueError("Không có tài liệu PDF hợp lệ để phân tích.")
+    return phan_tich_tai_lieu(lam_sach_ma_ho_so(ma_ho_so), docs), docs, errors
+
+
+def xu_ly_thu_muc_tai_lieu(
+    ma_ho_so: str,
+    uploaded_files: list[Any],
+) -> tuple[KetQuaThamDinh, dict[str, TaiLieu], list[str]]:
+    """Đọc một thư mục gồm 3–4 PDF và tự phân loại từng tài liệu.
+
+    Tên tệp chỉ dùng làm gợi ý; nội dung vẫn được kiểm tra, phân loại và hiển thị
+    để chuyên viên đối chiếu. Tệp trùng loại hoặc chưa nhận diện không được gán
+    âm thầm sang một schema khác.
+    """
+    files = [item for item in (uploaded_files or []) if item is not None]
+    if not 3 <= len(files) <= 4:
+        raise ValueError("Thư mục của một hồ sơ phải chứa 3 hoặc 4 tệp PDF (đơn vay, thu nhập, sao kê và nghĩa vụ nợ tùy chọn).")
+
+    docs: dict[str, TaiLieu] = {}
+    errors: list[str] = []
+    with tempfile.TemporaryDirectory(prefix="creditlens_folder_") as temp_dir:
+        for index, uploaded in enumerate(files, start=1):
+            original_name = Path(uploaded.name).name
+            safe_name = re.sub(r"[^A-Za-z0-9_.-]", "_", original_name)
+            path = Path(temp_dir) / f"{index:02d}_{safe_name}"
+            path.write_bytes(uploaded.getvalue())
+            hinted_type = goi_y_loai_tu_ten_tep(uploaded.name)
+            try:
+                document = doc_pdf(path, hinted_type or "application")
+            except ValueError as exc:
+                errors.append(str(exc))
+                continue
+
+            assigned_type = hinted_type or document.loai_nhan_dien
+            if assigned_type not in {"application", "income", "statement", "debt"}:
+                errors.append(f"{original_name}: chưa xác định được loại tài liệu; vui lòng đổi tên rõ nghĩa hoặc tải từng tệp.")
+                continue
+            if assigned_type in docs:
+                errors.append(
+                    f"{original_name}: trùng loại {NHAN_LOAI_TAI_LIEU[assigned_type]} với {docs[assigned_type].ten_tep}; "
+                    "tệp này chưa được dùng."
+                )
+                continue
+
+            document.loai_ky_vong = assigned_type
+            document.ten_tep = original_name
+            docs[assigned_type] = document
+
+    if not docs:
+        raise ValueError("Không có tài liệu PDF hợp lệ trong thư mục để phân tích.")
+    required_missing = [
+        NHAN_LOAI_TAI_LIEU[key]
+        for key in ("application", "income", "statement")
+        if key not in docs
+    ]
+    if required_missing:
+        errors.append("Chưa nhận diện được tài liệu bắt buộc: " + ", ".join(required_missing) + ".")
     return phan_tich_tai_lieu(lam_sach_ma_ho_so(ma_ho_so), docs), docs, errors
 
 
@@ -1592,10 +1871,7 @@ def tao_dien_giai_bang_ai(result: KetQuaThamDinh, api_key: str, model: str, syst
 
 
 def hien_thi_header(st, settings: dict[str, Any]) -> None:
-    primary = lam_sach_mau(settings["mau_chu_dao"])
-    accent = lam_sach_mau(settings.get("mau_nhan", "#18C6D9"), "#18C6D9")
-    css = STREAMLIT_CSS.replace("PRIMARY_COLOR", primary).replace("ACCENT_COLOR", accent)
-    st.markdown(css, unsafe_allow_html=True)
+    st.markdown(tao_css_giao_dien(settings), unsafe_allow_html=True)
     title = html.escape(str(settings["ten_ung_dung"])[:90])
     st.markdown(
         f"<div class='credit-hero'><div class='credit-kicker'>AI CREDIT UNDERWRITING COPILOT</div>"
@@ -1623,6 +1899,83 @@ def hien_thi_trang_thai(st, result: KetQuaThamDinh | None) -> None:
     )
 
 
+def nhan_luu_y_tin_cay(
+    confidence: float,
+    *,
+    missing: bool = False,
+    unreadable: bool = False,
+    type_mismatch: bool = False,
+) -> str:
+    """Đổi điểm confidence thành chỉ dẫn hành động dễ hiểu."""
+    if unreadable:
+        return "Không đọc được — cần xử lý"
+    if missing:
+        return "Thiếu dữ liệu"
+    if type_mismatch:
+        return "Sai lệch loại — cần xác minh"
+    if confidence >= 0.90:
+        return "Tin cậy cao"
+    if confidence >= NGUONG["do_tin_cay_thap"]:
+        return "Cần đối chiếu"
+    return "Cần xác minh"
+
+
+def kieu_o_luu_y(value: Any) -> str:
+    text = str(value)
+    base = "font-weight:700; border-radius:8px;"
+    if text.startswith("Tin cậy cao"):
+        return base + "background-color:rgba(34,197,94,.16);color:#15803D;"
+    if text.startswith("Cần đối chiếu"):
+        return base + "background-color:rgba(245,158,11,.18);color:#A75605;"
+    if "cần xác minh" in text.lower() or "không đọc được" in text.lower():
+        return base + "background-color:rgba(239,68,68,.16);color:#B91C1C;"
+    return base + "background-color:rgba(148,163,184,.18);color:#596579;"
+
+
+def hien_thi_bang_luu_y(st, rows: list[dict[str, Any]], *, height: int | None = None) -> None:
+    import pandas as pd
+
+    frame = pd.DataFrame(rows)
+    styled = frame.style.map(kieu_o_luu_y, subset=["Lưu ý"]) if "Lưu ý" in frame.columns else frame.style
+    kwargs: dict[str, Any] = {"width": "stretch", "hide_index": True}
+    if height is not None:
+        kwargs["height"] = height
+    st.dataframe(styled, **kwargs)
+
+
+def hien_thi_chu_giai_tin_cay(st) -> None:
+    st.markdown(
+        "<div class='confidence-legend' aria-label='Chú giải mức tin cậy'>"
+        "<span class='legend-high'>Xanh · Tin cậy cao</span>"
+        "<span class='legend-review'>Vàng · Cần đối chiếu</span>"
+        "<span class='legend-check'>Đỏ · Cần xác minh</span>"
+        "<span class='legend-missing'>Xám · Thiếu dữ liệu</span>"
+        "</div>",
+        unsafe_allow_html=True,
+    )
+
+
+def hien_thi_luoi_chi_so(st, metrics: list[ChiSoTinDung]) -> None:
+    cards: list[str] = []
+    for metric in metrics:
+        if metric.trang_thai == "Trong ngưỡng minh họa":
+            badge_class, prefix = "metric-ok", "✓"
+        elif metric.trang_thai == "Cần chú ý":
+            badge_class, prefix = "metric-warn", "!"
+        else:
+            badge_class, prefix = "metric-missing", "·"
+        cards.append(
+            "<article class='credit-metric-card'>"
+            f"<div class='metric-name'>{html.escape(metric.ten)}</div>"
+            f"<div class='metric-value'>{html.escape(metric.hien_thi)}</div>"
+            f"<div class='metric-badge {badge_class}'>{prefix} {html.escape(metric.trang_thai)}</div>"
+            f"<div class='metric-formula'>{html.escape(metric.cong_thuc)}</div>"
+            f"<div class='metric-note'>{html.escape(metric.ghi_chu)}</div>"
+            "</article>"
+        )
+    st.markdown("<div class='credit-metric-grid'>" + "".join(cards) + "</div>", unsafe_allow_html=True)
+
+
 def trang_ho_so(st) -> None:
     st.header("Tạo hồ sơ thẩm định mới")
     st.markdown(
@@ -1631,21 +1984,51 @@ def trang_ho_so(st) -> None:
         unsafe_allow_html=True,
     )
     case_id = st.text_input("Mã hồ sơ", value=f"CASE-{datetime.now():%Y%m%d}-01", max_chars=80)
-    cols = st.columns(4)
-    application = cols[0].file_uploader("Đơn đề nghị vay vốn", type=["pdf"], key="application_pdf")
-    income = cols[1].file_uploader("Chứng từ thu nhập", type=["pdf"], key="income_pdf")
-    statement = cols[2].file_uploader("Sao kê ngân hàng", type=["pdf"], key="statement_pdf")
-    debt = cols[3].file_uploader("Nghĩa vụ nợ · tùy chọn", type=["pdf"], key="debt_pdf")
+    upload_mode = st.radio(
+        "Cách tải hồ sơ",
+        ["Tải từng tài liệu", "Tải một thư mục"],
+        horizontal=True,
+        key="credit_upload_mode",
+        help="Chế độ thư mục dành cho 3–4 PDF của cùng một khách hàng, không phải nhiều khách hàng.",
+    )
+    application = income = statement = debt = None
+    folder_files: list[Any] = []
+    with st.container(border=True):
+        if upload_mode == "Tải từng tài liệu":
+            st.caption("Tải riêng từng tài liệu. Ba tài liệu đầu là bắt buộc để hồ sơ đầy đủ.")
+            cols = st.columns(4)
+            application = cols[0].file_uploader("Đơn đề nghị vay vốn", type=["pdf"], key="application_pdf")
+            income = cols[1].file_uploader("Chứng từ thu nhập", type=["pdf"], key="income_pdf")
+            statement = cols[2].file_uploader("Sao kê ngân hàng", type=["pdf"], key="statement_pdf")
+            debt = cols[3].file_uploader("Nghĩa vụ nợ · tùy chọn", type=["pdf"], key="debt_pdf")
+        else:
+            st.caption(
+                "Chọn một thư mục chứa 3–4 PDF của cùng hồ sơ. Hệ thống tự phân loại đơn vay, chứng từ thu nhập, "
+                "sao kê và nghĩa vụ nợ dựa trên tên tệp + nội dung."
+            )
+            folder_files = st.file_uploader(
+                "Thư mục hồ sơ PDF",
+                type=["pdf"],
+                accept_multiple_files="directory",
+                key="credit_folder_pdfs",
+                help="Khuyến nghị đặt tên rõ nghĩa, ví dụ 01_Don_de_nghi_vay.pdf, 02_Chung_tu_thu_nhap.pdf.",
+            ) or []
+            if folder_files:
+                st.caption(f"Đã chọn {len(folder_files)} tệp PDF. Chỉ dữ liệu trong phiên hiện tại được sử dụng.")
     if st.button("Chạy quy trình thẩm định", type="primary", width="stretch"):
-        if not any([application, income, statement, debt]):
+        no_files = not folder_files if upload_mode == "Tải một thư mục" else not any([application, income, statement, debt])
+        if no_files:
             st.error("Hãy tải lên ít nhất một PDF hoặc chọn hồ sơ minh họa.")
         else:
             try:
                 with st.spinner("Đang kiểm tra, đọc, trích xuất và tính toán…"):
-                    result, docs, errors = xu_ly_tai_lieu_tai_len(
-                        case_id,
-                        {"application": application, "income": income, "statement": statement, "debt": debt},
-                    )
+                    if upload_mode == "Tải một thư mục":
+                        result, docs, errors = xu_ly_thu_muc_tai_lieu(case_id, folder_files)
+                    else:
+                        result, docs, errors = xu_ly_tai_lieu_tai_len(
+                            case_id,
+                            {"application": application, "income": income, "statement": statement, "debt": debt},
+                        )
                 st.session_state.result = result
                 st.session_state.docs = docs
                 st.session_state.ai_summary = ""
@@ -1672,29 +2055,42 @@ def trang_trich_xuat(st, result: KetQuaThamDinh | None, docs: dict[str, TaiLieu]
     if result is None:
         st.warning("Chưa có hồ sơ để hiển thị.")
         return
+    hien_thi_chu_giai_tin_cay(st)
     if docs:
         st.subheader("Danh mục tài liệu")
-        st.dataframe(
-            [
+        document_rows = []
+        for doc in docs.values():
+            mismatch = doc.loai_nhan_dien not in {"unknown", doc.loai_ky_vong}
+            document_rows.append(
                 {
                     "Tài liệu": doc.ten_tep,
                     "Loại dự kiến": NHAN_LOAI_TAI_LIEU[doc.loai_ky_vong],
                     "Loại nhận diện": NHAN_LOAI_TAI_LIEU.get(doc.loai_nhan_dien, "Chưa xác định"),
                     "Số trang": doc.so_trang,
                     "Trạng thái": doc.trang_thai,
-                    "Độ tin cậy": f"{doc.do_tin_cay * 100:.0f}%",
+                    "Lưu ý": nhan_luu_y_tin_cay(
+                        doc.do_tin_cay,
+                        unreadable=doc.trang_thai == "Không đọc được",
+                        type_mismatch=mismatch,
+                    ),
                 }
-                for doc in docs.values()
-            ],
-            width="stretch",
-            hide_index=True,
-        )
+            )
+        hien_thi_bang_luu_y(st, document_rows)
     st.subheader("Dữ kiện đã chuẩn hóa")
     rows = []
     for field in result.truong_trich_xuat:
         display = gia_tri_truong_hien_thi(field)
-        rows.append({"Mã trường": field.ma_truong, "Trường dữ liệu": field.nhan, "Giá trị": display, "Nguồn": field.tai_lieu_nguon, "Trang": field.trang or "—", "Độ tin cậy": f"{field.do_tin_cay * 100:.0f}%"})
-    st.dataframe(rows, width="stretch", hide_index=True)
+        rows.append(
+            {
+                "Mã trường": field.ma_truong,
+                "Trường dữ liệu": field.nhan,
+                "Giá trị": display,
+                "Nguồn": field.tai_lieu_nguon,
+                "Trang": field.trang or "—",
+                "Lưu ý": nhan_luu_y_tin_cay(field.do_tin_cay, missing=field.gia_tri is None),
+            }
+        )
+    hien_thi_bang_luu_y(st, rows, height=485)
     low = [field.nhan for field in result.truong_trich_xuat if field.gia_tri is not None and field.do_tin_cay < NGUONG["do_tin_cay_thap"]]
     if low:
         st.warning("Các trường cần con người xác nhận: " + ", ".join(low))
@@ -1705,12 +2101,7 @@ def trang_phan_tich(st, result: KetQuaThamDinh | None) -> None:
     if result is None:
         st.warning("Chưa có hồ sơ để phân tích.")
         return
-    cols = st.columns(3)
-    for index, metric in enumerate(result.chi_so):
-        with cols[index % 3]:
-            st.metric(metric.ten, metric.hien_thi, metric.trang_thai)
-            st.caption(metric.cong_thuc)
-            st.caption(metric.ghi_chu)
+    hien_thi_luoi_chi_so(st, result.chi_so)
     st.info(
         f"Ngưỡng minh họa: chênh lệch thu nhập > {phan_tram(NGUONG['chenh_lech_thu_nhap'])}; "
         f"DTI > {phan_tram(NGUONG['dti_canh_bao'])}; DSR > {phan_tram(NGUONG['dsr_canh_bao'])}; "
@@ -1751,6 +2142,10 @@ def trang_tom_tat(st, result: KetQuaThamDinh | None, settings: dict[str, Any]) -
     st.divider()
     st.subheader("Xuất báo cáo hồ sơ")
     st.caption("Chuyên viên chọn một trong ba định dạng. Báo cáo được tạo trong bộ nhớ và không lưu lâu dài trên máy chủ.")
+    if _tim_font_pdf():
+        st.success("PDF Unicode tiếng Việt đã sẵn sàng (font được nhúng vào tệp).", icon="✅")
+    else:
+        st.error("Máy chủ chưa tìm thấy font Unicode. PDF tạm thời chưa thể tạo; Word và Excel vẫn hoạt động.")
     selected_format = st.radio(
         "Định dạng báo cáo",
         list(DINH_DANG_BAO_CAO),
@@ -1832,6 +2227,8 @@ def nhap_cau_hinh_json(raw: bytes) -> dict[str, Any]:
         output["mau_chu_dao"] = lam_sach_mau(candidate["mau_chu_dao"])
     if isinstance(candidate.get("mau_nhan"), str):
         output["mau_nhan"] = lam_sach_mau(candidate["mau_nhan"], "#18C6D9")
+    if candidate.get("che_do_giao_dien") in CHE_DO_GIAO_DIEN:
+        output["che_do_giao_dien"] = candidate["che_do_giao_dien"]
     if isinstance(candidate.get("model"), str) and re.fullmatch(r"[A-Za-z0-9._:-]{2,120}", candidate["model"]):
         output["model"] = candidate["model"]
     if isinstance(candidate.get("system_prompt"), str):
@@ -1853,10 +2250,14 @@ def trang_cai_dat(st, settings: dict[str, Any]) -> None:
         st.success("Đã xóa API Key khỏi phiên.")
 
     st.subheader("Giao diện")
+    st.info(
+        f"Chế độ hiện tại: **{settings.get('che_do_giao_dien', 'Theo hệ thống')}**. "
+        "Bạn có thể đổi nhanh giữa Theo hệ thống, Sáng, Tối, Ấm áp và Hiện đại ngay trên thanh bên."
+    )
     new_title = st.text_input("Tên ứng dụng", value=settings["ten_ung_dung"], max_chars=90)
     color_col1, color_col2 = st.columns(2)
-    new_color = color_col1.color_picker("Màu chủ đạo", value=lam_sach_mau(settings["mau_chu_dao"]))
-    new_accent = color_col2.color_picker("Màu neon nhấn", value=lam_sach_mau(settings.get("mau_nhan", "#18C6D9"), "#18C6D9"))
+    new_color = color_col1.color_picker("Màu chủ đạo · chế độ Hiện đại", value=lam_sach_mau(settings["mau_chu_dao"]))
+    new_accent = color_col2.color_picker("Màu nhấn · chế độ Hiện đại", value=lam_sach_mau(settings.get("mau_nhan", "#18C6D9"), "#18C6D9"))
     st.subheader("LLM")
     new_model = st.text_input("Tên model OpenAI", value=settings["model"], max_chars=120)
     new_prompt = st.text_area("System prompt", value=settings["system_prompt"], height=260, max_chars=8000)
@@ -1882,6 +2283,7 @@ def trang_cai_dat(st, settings: dict[str, Any]) -> None:
                 "ten_ung_dung": new_title.strip() or DEFAULT_SETTINGS["ten_ung_dung"],
                 "mau_chu_dao": lam_sach_mau(new_color),
                 "mau_nhan": lam_sach_mau(new_accent, "#18C6D9"),
+                "che_do_giao_dien": settings.get("che_do_giao_dien", "Theo hệ thống"),
                 "model": new_model.strip(),
                 "system_prompt": new_prompt.strip(),
                 "nguong": {
@@ -1942,15 +2344,25 @@ def chay_ung_dung_streamlit() -> None:
         st.session_state.api_key_session = ""
 
     settings = st.session_state.settings
-    NGUONG.update(settings["nguong"])
-    hien_thi_header(st, settings)
-
     st.sidebar.markdown("## CreditLens")
     st.sidebar.markdown(
         "<div class='public-pill'><span class='public-dot'></span> SẴN SÀNG TRIỂN KHAI CÔNG KHAI</div>",
         unsafe_allow_html=True,
     )
     st.sidebar.caption("Khi deploy trên cloud, ứng dụng hoạt động độc lập với máy cá nhân.")
+    current_theme = settings.get("che_do_giao_dien", "Theo hệ thống")
+    if current_theme not in CHE_DO_GIAO_DIEN:
+        current_theme = "Theo hệ thống"
+    chosen_theme = st.sidebar.selectbox(
+        "Chế độ giao diện",
+        CHE_DO_GIAO_DIEN,
+        index=CHE_DO_GIAO_DIEN.index(current_theme),
+        key="theme_mode_selector",
+    )
+    settings["che_do_giao_dien"] = chosen_theme
+    NGUONG.update(settings["nguong"])
+    hien_thi_header(st, settings)
+
     page = st.sidebar.radio("Điều hướng", PAGES)
     st.sidebar.divider()
     if st.sidebar.button("Xóa hồ sơ khỏi phiên", width="stretch"):
@@ -2005,13 +2417,27 @@ def chay_tu_kiem_tra() -> None:
         ["Trả nợ khoản vay mới hàng tháng"],
     )
     assert wrapped_payment and wrapped_payment["number"] == 7_200_000
+    assert goi_y_loai_tu_ten_tep("04_Thong_tin_nghia_vu_no.pdf") == "debt"
+    assert goi_y_loai_tu_ten_tep("03_Sao_ke_ngan_hang_6_thang.pdf") == "statement"
+    assert nhan_luu_y_tin_cay(0.95) == "Tin cậy cao"
+    assert nhan_luu_y_tin_cay(0.80) == "Cần đối chiếu"
+    assert nhan_luu_y_tin_cay(0.60) == "Cần xác minh"
+    assert nhan_luu_y_tin_cay(0.0, missing=True) == "Thiếu dữ liệu"
+    for mode in CHE_DO_GIAO_DIEN:
+        theme_settings = cau_hinh_mac_dinh()
+        theme_settings["che_do_giao_dien"] = mode
+        css = tao_css_giao_dien(theme_settings)
+        assert "PRIMARY_COLOR" not in css and "SYSTEM_THEME_MEDIA" not in css
+        assert "font-family: Inter" in css
     docx_data = tao_bao_cao_word(mismatch)
     xlsx_data = tao_bao_cao_excel(mismatch)
     pdf_data = tao_bao_cao_pdf(mismatch)
     assert docx_data[:2] == b"PK" and len(docx_data) > 5_000
     assert xlsx_data[:2] == b"PK" and len(xlsx_data) > 5_000
     assert pdf_data[:5] == b"%PDF-" and len(pdf_data) > 5_000
-    print("✅ Tự kiểm tra thành công: quy tắc tín dụng, dữ liệu thiếu, mẫu số bằng 0, bằng chứng, cấu hình và ba định dạng báo cáo.")
+    pdf_text = "\n".join((page.extract_text() or "") for page in PdfReader(io.BytesIO(pdf_data)).pages)
+    assert "THẨM ĐỊNH TÍN DỤNG" in pdf_text and "Nguyễn Minh Anh" in pdf_text
+    print("✅ Tự kiểm tra thành công: quy tắc, 5 giao diện, nhãn lưu ý, Unicode tiếng Việt và ba định dạng báo cáo.")
 
 
 if __name__ == "__main__":
