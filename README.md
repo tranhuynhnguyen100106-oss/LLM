@@ -12,7 +12,8 @@ CreditLens là AI Credit Underwriting Copilot hỗ trợ đọc hồ sơ PDF, ch
 - Python tính DTI, DSR, thu nhập khả dụng, hệ số đệm số dư và biến động thu nhập.
 - Phát hiện chênh lệch thu nhập, doanh nghiệp, chức danh, thời gian làm việc và nghĩa vụ nợ.
 - Evidence traceability đến tài liệu, trang, trường và giá trị.
-- Nhập OpenAI API Key riêng cho từng phiên. Key không được ghi vào source hoặc báo cáo.
+- Kết nối OpenAI/GPT, Google Gemini, Anthropic Claude hoặc DeepSeek bằng API Key riêng cho từng phiên.
+- Nhận diện provider an toàn từ tiền tố khi có thể, xác thực key và tải trực tiếp danh sách model mà key được quyền sử dụng; người dùng chọn model từ danh sách, không nhập phiên bản thủ công.
 - Chuyên viên chọn xuất báo cáo `.docx`, `.xlsx` hoặc `.pdf`.
 - Có `render.yaml` để triển khai trên dịch vụ web hỗ trợ Blueprint và `packages.txt` để cài font PDF tiếng Việt.
 
@@ -52,9 +53,20 @@ streamlit run app.py --server.address 0.0.0.0 --server.port $PORT --server.headl
 
 Không có nền tảng miễn phí nào nên được xem là cam kết uptime 24/7. Để đáp ứng đúng nghĩa “không ngưng hoạt động”, cần gói trả phí không spin-down hoặc VPS.
 
-## API Key trên web công khai
+## API Key và lựa chọn chatbot trên web công khai
 
-Mỗi người dùng nhập key của họ tại mục Cài đặt AI. Key chỉ nằm trong `st.session_state` của phiên và có nút xóa. Không đặt một OpenAI API Key chung vào source public vì người lạ có thể gây phát sinh chi phí.
+Mỗi người dùng mở **Cài đặt AI**, chọn **Tự động nhận diện an toàn** hoặc một nhà cung cấp cụ thể, rồi dán key của họ. Ứng dụng hỗ trợ:
+
+- OpenAI · GPT
+- Google · Gemini
+- Anthropic · Claude
+- DeepSeek
+
+Với tiền tố đặc trưng như `sk-proj-`, `sk-ant-` hoặc `AIza`, ứng dụng có thể nhận diện nhà cung cấp. Tiền tố `sk-` có thể thuộc nhiều nhà cung cấp nên ứng dụng yêu cầu người dùng chọn đúng hãng thay vì gửi thử khóa sang nhiều nơi. Sau khi xác thực, danh sách model được lấy từ API chính thức và hiển thị trong selectbox.
+
+Một API key có thể truy cập nhiều model; vì vậy key không thể tự cho biết một “phiên bản duy nhất”. CreditLens tự chọn model đầu tiên khả dụng và cho người dùng đổi model từ danh sách đã xác minh, không còn ô nhập tên model thủ công.
+
+Key chỉ nằm trong `st.session_state` của phiên và có nút xóa. Key không được đưa vào JSON cấu hình, source, báo cáo hoặc log. Không đặt một API Key chung vào source public vì người lạ có thể gây phát sinh chi phí.
 
 Nếu chỉ demo riêng cho giảng viên, có thể dùng secret của nền tảng nhưng phải thêm giới hạn truy cập và hạn mức chi phí. Không commit `.streamlit/secrets.toml`.
 
