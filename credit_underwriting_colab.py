@@ -8,7 +8,8 @@ Chạy từ Jupyter Notebook trên máy tính:
 
 Để có URL ổn định, đưa project lên GitHub rồi triển khai trên Streamlit Community
 Cloud hoặc một dịch vụ web luôn hoạt động. Ứng dụng có giao diện sáng/neon,
-ô nhập OpenAI API Key theo phiên và xuất báo cáo Word, Excel, PDF trong bộ nhớ.
+ô nhập API Key theo phiên cho OpenAI, Gemini, Claude hoặc DeepSeek và xuất báo cáo
+Word, Excel, PDF trong bộ nhớ.
 Khóa và nội dung tài liệu không được ghi vào tệp hay log.
 
 Lưu ý:
@@ -21,6 +22,7 @@ Lưu ý:
 from __future__ import annotations
 
 import importlib.util
+import hashlib
 import html
 import io
 import json
@@ -49,6 +51,7 @@ def cai_dat_thu_vien() -> None:
         "openpyxl": "openpyxl>=3.1,<4",
         "reportlab": "reportlab>=4.2,<5",
         "jinja2": "Jinja2>=3.1,<4",
+        "httpx": "httpx>=0.27,<1",
         "socksio": "socksio>=1.0,<2",
     }
     thieu = [yeu_cau for ten, yeu_cau in goi.items() if importlib.util.find_spec(ten) is None]
@@ -1488,11 +1491,39 @@ Mọi nhận định rủi ro phải chỉ ra bằng chứng hỗ trợ. Nếu c
 lãi suất hoặc ngưỡng pháp lý. Không phê duyệt, từ chối hoặc khuyến nghị quyết định
 tín dụng. Kết thúc bằng trạng thái cần con người xem xét. Viết bằng tiếng Việt."""
 
+NHA_CUNG_CAP_LLM = {
+    "openai": {
+        "nhan": "OpenAI · GPT",
+        "mo_ta": "GPT và các model suy luận được cấp cho OpenAI API Key",
+        "placeholder": "sk-proj-… hoặc sk-…",
+    },
+    "gemini": {
+        "nhan": "Google · Gemini",
+        "mo_ta": "Các model Gemini hỗ trợ generateContent",
+        "placeholder": "AIza…",
+    },
+    "anthropic": {
+        "nhan": "Anthropic · Claude",
+        "mo_ta": "Các model Claude được Anthropic API Key cho phép",
+        "placeholder": "sk-ant-…",
+    },
+    "deepseek": {
+        "nhan": "DeepSeek",
+        "mo_ta": "Các model chat/reasoner được DeepSeek API Key cho phép",
+        "placeholder": "sk-…",
+    },
+}
+
+TU_DONG_NHAN_DIEN = "Tự động nhận diện an toàn"
+LUA_CHON_NHA_CUNG_CAP = [TU_DONG_NHAN_DIEN] + [item["nhan"] for item in NHA_CUNG_CAP_LLM.values()]
+MA_NHA_CUNG_CAP_THEO_NHAN = {item["nhan"]: key for key, item in NHA_CUNG_CAP_LLM.items()}
+
 DEFAULT_SETTINGS = {
     "ten_ung_dung": "CreditLens — Trợ lý thẩm định tín dụng",
     "mau_chu_dao": "#5B5FEF",
     "mau_nhan": "#18C6D9",
     "che_do_giao_dien": "Theo hệ thống",
+    "llm_provider": "openai",
     "model": "gpt-5-mini",
     "system_prompt": DEFAULT_SYSTEM_PROMPT,
     "nguong": dict(NGUONG),
@@ -1858,31 +1889,248 @@ def du_lieu_gui_llm(result: KetQuaThamDinh) -> str:
     return json.dumps(payload, ensure_ascii=False, indent=2)
 
 
-def tao_dien_giai_bang_ai(result: KetQuaThamDinh, api_key: str, model: str, system_prompt: str) -> str:
-    if not api_key or len(api_key.strip()) < 12:
-        raise ValueError("API Key chưa được nhập hoặc không hợp lệ.")
-    if not re.fullmatch(r"[A-Za-z0-9._:-]{2,120}", model or ""):
-        raise ValueError("Tên model không hợp lệ.")
-    try:
-        from openai import OpenAI
+def nhan_dien_nha_cung_cap_tu_khoa(api_key: str) -> str | None:
+    """Nhận diện provider chỉ khi tiền tố đủ đặc trưng; không gửi thử khóa sang nhiều hãng."""
+    key = (api_key or "").strip()
+    if key.startswith("sk-ant-"):
+        return "anthropic"
+    if key.startswith("AIza"):
+        return "gemini"
+    if key.startswith(("sk-proj-", "sk-svcacct-")):
+        return "openai"
+    # OpenAI legacy và DeepSeek có thể cùng dùng tiền tố sk-. Không đoán để tránh
+    # truyền một khóa bí mật đến nhầm nhà cung cấp.
+    return None
 
-        client = OpenAI(api_key=api_key.strip())
-        response = client.responses.create(
-            model=model.strip(),
-            instructions=system_prompt[:8000],
-            input=(
-                "Hãy soạn Credit Review Summary theo đúng 10 mục: tổng quan khách hàng, "
-                "đề nghị vay, thông tin tài chính đã xác minh, chỉ số, kiểm tra nhất quán, "
-                "cảnh báo, thông tin thiếu, câu hỏi xác minh, bằng chứng và trạng thái xem xét.\n\n"
-                + du_lieu_gui_llm(result)
-            ),
-            max_output_tokens=1800,
-            store=False,
+
+def nha_cung_cap_hieu_luc(lua_chon: str, api_key: str) -> str | None:
+    if lua_chon == TU_DONG_NHAN_DIEN:
+        return nhan_dien_nha_cung_cap_tu_khoa(api_key)
+    return MA_NHA_CUNG_CAP_THEO_NHAN.get(lua_chon)
+
+
+def _model_hop_le(provider: str, model_id: str) -> bool:
+    model = model_id.lower()
+    if not re.fullmatch(r"[A-Za-z0-9._:-]{2,160}", model_id):
+        return False
+    if provider == "openai":
+        excluded = (
+            "embedding", "whisper", "tts", "dall-e", "image", "moderation",
+            "transcribe", "audio", "realtime", "sora", "babbage", "davinci",
         )
-        output = (response.output_text or "").strip()
+        return model.startswith(("gpt-", "chatgpt-", "o1", "o3", "o4", "o5", "ft:gpt-")) and not any(
+            token in model for token in excluded
+        )
+    if provider == "gemini":
+        return model.startswith("gemini-") and "embedding" not in model
+    if provider == "anthropic":
+        return model.startswith("claude-")
+    if provider == "deepseek":
+        return model.startswith("deepseek-")
+    return False
+
+
+def trich_danh_sach_model(provider: str, payload: dict[str, Any]) -> list[str]:
+    """Chuẩn hóa response /models của bốn nhà cung cấp về list model ID."""
+    if not isinstance(payload, dict):
+        return []
+    raw_models: list[str] = []
+    if provider == "gemini":
+        for item in payload.get("models", []):
+            if not isinstance(item, dict):
+                continue
+            methods = item.get("supportedGenerationMethods") or []
+            if "generateContent" not in methods:
+                continue
+            raw_models.append(str(item.get("name", "")).removeprefix("models/"))
+    else:
+        for item in payload.get("data", []):
+            if isinstance(item, dict):
+                raw_models.append(str(item.get("id", "")))
+
+    result: list[str] = []
+    seen: set[str] = set()
+    for model_id in raw_models:
+        model_id = model_id.strip()
+        if model_id not in seen and _model_hop_le(provider, model_id):
+            seen.add(model_id)
+            result.append(model_id)
+    return result[:120]
+
+
+def _loi_api_theo_status(provider: str, status_code: int) -> RuntimeError:
+    label = NHA_CUNG_CAP_LLM[provider]["nhan"]
+    if status_code in {401, 403}:
+        message = "API Key không hợp lệ hoặc chưa có quyền truy cập model."
+    elif status_code == 429:
+        message = "API đang giới hạn tần suất hoặc tài khoản đã hết hạn mức."
+    elif status_code >= 500:
+        message = "Dịch vụ nhà cung cấp đang tạm thời không sẵn sàng."
+    else:
+        message = f"API trả về mã lỗi HTTP {status_code}."
+    return RuntimeError(f"{label}: {message}")
+
+
+def lay_danh_sach_model(provider: str, api_key: str) -> list[str]:
+    """Xác thực khóa và tải các model text-generation mà chính khóa nhìn thấy."""
+    if provider not in NHA_CUNG_CAP_LLM:
+        raise ValueError("Nhà cung cấp LLM không được hỗ trợ.")
+    key = (api_key or "").strip()
+    if len(key) < 12:
+        raise ValueError("API Key chưa được nhập hoặc quá ngắn.")
+    try:
+        import httpx
+
+        headers: dict[str, str] = {"Accept": "application/json"}
+        params: dict[str, Any] = {}
+        if provider == "openai":
+            url = "https://api.openai.com/v1/models"
+            headers["Authorization"] = f"Bearer {key}"
+        elif provider == "gemini":
+            url = "https://generativelanguage.googleapis.com/v1beta/models"
+            headers["x-goog-api-key"] = key
+            params["pageSize"] = 1000
+        elif provider == "anthropic":
+            url = "https://api.anthropic.com/v1/models"
+            headers.update({"x-api-key": key, "anthropic-version": "2023-06-01"})
+            params["limit"] = 100
+        else:
+            url = "https://api.deepseek.com/models"
+            headers["Authorization"] = f"Bearer {key}"
+
+        with httpx.Client(timeout=18.0, follow_redirects=True) as client:
+            response = client.get(url, headers=headers, params=params)
+        if response.status_code >= 400:
+            raise _loi_api_theo_status(provider, response.status_code)
+        try:
+            payload = response.json()
+        except ValueError as exc:
+            raise RuntimeError(f"{NHA_CUNG_CAP_LLM[provider]['nhan']}: phản hồi danh sách model không phải JSON hợp lệ.") from exc
+    except (ValueError, RuntimeError):
+        raise
     except Exception as exc:
         raise RuntimeError(
-            f"Không thể gọi OpenAI API ({type(exc).__name__}). Hãy kiểm tra API Key, model, hạn mức và kết nối mạng."
+            f"Không thể kết nối {NHA_CUNG_CAP_LLM[provider]['nhan']} ({type(exc).__name__})."
+        ) from exc
+
+    models = trich_danh_sach_model(provider, payload)
+    if not models:
+        raise RuntimeError(
+            f"{NHA_CUNG_CAP_LLM[provider]['nhan']}: khóa hợp lệ nhưng không tìm thấy model hội thoại phù hợp."
+        )
+    return models
+
+
+def _noi_dung_yeu_cau_llm(result: KetQuaThamDinh) -> str:
+    return (
+        "Hãy soạn Credit Review Summary theo đúng 10 mục: tổng quan khách hàng, "
+        "đề nghị vay, thông tin tài chính đã xác minh, chỉ số, kiểm tra nhất quán, "
+        "cảnh báo, thông tin thiếu, câu hỏi xác minh, bằng chứng và trạng thái xem xét.\n\n"
+        + du_lieu_gui_llm(result)
+    )
+
+
+def trich_noi_dung_phan_hoi(provider: str, payload: dict[str, Any]) -> str:
+    """Chuẩn hóa output text của Gemini, Claude và DeepSeek."""
+    if not isinstance(payload, dict):
+        return ""
+    if provider == "gemini":
+        candidates = payload.get("candidates") or []
+        parts = ((candidates[0].get("content") or {}).get("parts") or []) if candidates else []
+        return "\n".join(str(part.get("text", "")) for part in parts if isinstance(part, dict)).strip()
+    if provider == "anthropic":
+        blocks = payload.get("content") or []
+        return "\n".join(
+            str(block.get("text", "")) for block in blocks
+            if isinstance(block, dict) and block.get("type") == "text"
+        ).strip()
+    if provider == "deepseek":
+        choices = payload.get("choices") or []
+        return str(((choices[0].get("message") or {}).get("content", "")) if choices else "").strip()
+    return ""
+
+
+def tao_dien_giai_bang_ai(
+    result: KetQuaThamDinh,
+    api_key: str,
+    provider: str,
+    model: str,
+    system_prompt: str,
+) -> str:
+    if not api_key or len(api_key.strip()) < 12:
+        raise ValueError("API Key chưa được nhập hoặc không hợp lệ.")
+    if provider not in NHA_CUNG_CAP_LLM:
+        raise ValueError("Nhà cung cấp LLM không được hỗ trợ.")
+    if not _model_hop_le(provider, model or ""):
+        raise ValueError("Tên model không hợp lệ.")
+    key = api_key.strip()
+    prompt = system_prompt[:8000]
+    user_input = _noi_dung_yeu_cau_llm(result)
+    try:
+        if provider == "openai":
+            from openai import OpenAI
+
+            client = OpenAI(api_key=key)
+            response = client.responses.create(
+                model=model,
+                instructions=prompt,
+                input=user_input,
+                max_output_tokens=1800,
+                store=False,
+            )
+            output = (response.output_text or "").strip()
+        else:
+            import httpx
+
+            headers: dict[str, str] = {"Accept": "application/json", "Content-Type": "application/json"}
+            if provider == "gemini":
+                url = f"https://generativelanguage.googleapis.com/v1beta/models/{model}:generateContent"
+                headers["x-goog-api-key"] = key
+                body = {
+                    "system_instruction": {"parts": [{"text": prompt}]},
+                    "contents": [{"role": "user", "parts": [{"text": user_input}]}],
+                    "generationConfig": {"maxOutputTokens": 1800},
+                }
+            elif provider == "anthropic":
+                url = "https://api.anthropic.com/v1/messages"
+                headers.update({"x-api-key": key, "anthropic-version": "2023-06-01"})
+                body = {
+                    "model": model,
+                    "max_tokens": 1800,
+                    "system": prompt,
+                    "messages": [{"role": "user", "content": user_input}],
+                }
+            else:
+                url = "https://api.deepseek.com/chat/completions"
+                headers["Authorization"] = f"Bearer {key}"
+                body = {
+                    "model": model,
+                    "messages": [
+                        {"role": "system", "content": prompt},
+                        {"role": "user", "content": user_input},
+                    ],
+                    "max_tokens": 1800,
+                    "stream": False,
+                }
+
+            with httpx.Client(timeout=60.0, follow_redirects=True) as http_client:
+                http_response = http_client.post(url, headers=headers, json=body)
+            if http_response.status_code >= 400:
+                raise _loi_api_theo_status(provider, http_response.status_code)
+            try:
+                payload = http_response.json()
+            except ValueError as exc:
+                raise RuntimeError(
+                    f"{NHA_CUNG_CAP_LLM[provider]['nhan']}: phản hồi diễn giải không phải JSON hợp lệ."
+                ) from exc
+
+            output = trich_noi_dung_phan_hoi(provider, payload)
+    except (ValueError, RuntimeError):
+        raise
+    except Exception as exc:
+        raise RuntimeError(
+            f"Không thể gọi {NHA_CUNG_CAP_LLM[provider]['nhan']} ({type(exc).__name__}). "
+            "Hãy kiểm tra API Key, model, hạn mức và kết nối mạng."
         ) from exc
     if not output:
         raise RuntimeError("API không trả về nội dung.")
@@ -1893,7 +2141,12 @@ def tao_dien_giai_bang_ai(result: KetQuaThamDinh, api_key: str, model: str, syst
     ]
     if any(re.search(pattern, output, re.IGNORECASE) for pattern in prohibited):
         raise RuntimeError("Đầu ra AI chứa khuyến nghị quyết định tín dụng nên đã bị chặn. Hãy siết lại system prompt.")
-    return output + "\n\n---\n**Bắt buộc con người xem xét. Nội dung AI không phải quyết định tín dụng.**"
+    provider_label = NHA_CUNG_CAP_LLM[provider]["nhan"]
+    return (
+        output
+        + f"\n\n---\n**Mô hình diễn giải:** {provider_label} · `{model}`  "
+        + "\n**Bắt buộc con người xem xét. Nội dung AI không phải quyết định tín dụng.**"
+    )
 
 
 def hien_thi_header(st, settings: dict[str, Any]) -> None:
@@ -2204,12 +2457,30 @@ def trang_tom_tat(st, result: KetQuaThamDinh | None, settings: dict[str, Any]) -
     st.subheader("Diễn giải bổ sung bằng LLM")
     st.caption("LLM chỉ nhận dữ liệu có cấu trúc và kết quả Python; không nhận toàn bộ PDF và không được thay đổi phép tính.")
     api_key = st.session_state.get("api_key_session", "")
+    provider = st.session_state.get("llm_provider_detected") or settings.get("llm_provider", "openai")
+    model = st.session_state.get("llm_model_selector") or settings.get("model", "")
+    llm_ready = bool(
+        api_key
+        and st.session_state.get("llm_key_verified")
+        and provider in NHA_CUNG_CAP_LLM
+        and _model_hop_le(provider, model)
+    )
     if not api_key:
         st.info("Hãy nhập API Key tại mục “Cài đặt AI”. Khóa chỉ giữ trong phiên hiện tại.")
-    if st.button("Tạo diễn giải bằng AI", type="primary", disabled=not bool(api_key), width="stretch"):
+    elif llm_ready:
+        st.success(f"Đang dùng **{NHA_CUNG_CAP_LLM[provider]['nhan']}** · model **{model}**.")
+    else:
+        st.warning("API Key chưa được xác minh hoặc chưa chọn model. Hãy mở mục “Cài đặt AI”.")
+    if st.button("Tạo diễn giải bằng AI", type="primary", disabled=not llm_ready, width="stretch"):
         try:
             with st.spinner("Đang tạo diễn giải có căn cứ…"):
-                st.session_state.ai_summary = tao_dien_giai_bang_ai(result, api_key, settings["model"], settings["system_prompt"])
+                st.session_state.ai_summary = tao_dien_giai_bang_ai(
+                    result,
+                    api_key,
+                    provider,
+                    model,
+                    settings["system_prompt"],
+                )
         except (ValueError, RuntimeError) as exc:
             st.error(str(exc))
     if st.session_state.get("ai_summary"):
@@ -2254,7 +2525,9 @@ def nhap_cau_hinh_json(raw: bytes) -> dict[str, Any]:
         output["mau_nhan"] = lam_sach_mau(candidate["mau_nhan"], "#18C6D9")
     if candidate.get("che_do_giao_dien") in CHE_DO_GIAO_DIEN:
         output["che_do_giao_dien"] = candidate["che_do_giao_dien"]
-    if isinstance(candidate.get("model"), str) and re.fullmatch(r"[A-Za-z0-9._:-]{2,120}", candidate["model"]):
+    if candidate.get("llm_provider") in NHA_CUNG_CAP_LLM:
+        output["llm_provider"] = candidate["llm_provider"]
+    if isinstance(candidate.get("model"), str) and re.fullmatch(r"[A-Za-z0-9._:-]{2,160}", candidate["model"]):
         output["model"] = candidate["model"]
     if isinstance(candidate.get("system_prompt"), str):
         output["system_prompt"] = candidate["system_prompt"][:8000]
@@ -2266,13 +2539,133 @@ def nhap_cau_hinh_json(raw: bytes) -> dict[str, Any]:
     return output
 
 
+def xoa_trang_thai_ket_noi_llm(
+    st,
+    *,
+    xoa_khoa: bool = False,
+    xoa_lua_chon_model: bool = True,
+) -> None:
+    for key in (
+        "llm_provider_detected",
+        "llm_models_available",
+        "llm_key_fingerprint",
+        "llm_key_verified",
+        "llm_connection_error",
+    ):
+        st.session_state.pop(key, None)
+    if xoa_lua_chon_model:
+        st.session_state.pop("llm_model_selector", None)
+    if xoa_khoa:
+        st.session_state.api_key_session = ""
+
+
 def trang_cai_dat(st, settings: dict[str, Any]) -> None:
     st.header("Cài đặt AI và tùy chỉnh web an toàn")
-    st.warning("API Key chỉ dùng để gọi LLM trong phiên hiện tại. Không ghi khóa vào source code, JSON tải xuống hoặc log. Không nhập khóa vào website do người khác quản lý mà bạn không tin cậy.")
-    st.text_input("OpenAI API Key", type="password", key="api_key_session", placeholder="sk-…", help="Khóa nằm trong session_state và bị xóa khi phiên kết thúc.")
-    if st.button("Xóa API Key khỏi phiên"):
-        st.session_state.api_key_session = ""
-        st.success("Đã xóa API Key khỏi phiên.")
+    st.warning(
+        "API Key chỉ được giữ trong phiên hiện tại và chỉ gửi đến nhà cung cấp bạn chọn để xác thực/model inference. "
+        "Khóa không được ghi vào source code, cấu hình JSON, báo cáo hoặc log."
+    )
+
+    st.subheader("Kết nối chatbot")
+    current_provider = settings.get("llm_provider", "openai")
+    default_provider_label = NHA_CUNG_CAP_LLM.get(current_provider, NHA_CUNG_CAP_LLM["openai"])["nhan"]
+    if "llm_provider_choice" not in st.session_state:
+        st.session_state.llm_provider_choice = TU_DONG_NHAN_DIEN
+    provider_choice = st.selectbox(
+        "Nhà cung cấp chatbot",
+        LUA_CHON_NHA_CUNG_CAP,
+        key="llm_provider_choice",
+        help=(
+            "Tự động chỉ nhận diện các tiền tố không mơ hồ. Với khóa bắt đầu bằng sk- có thể thuộc OpenAI hoặc "
+            "DeepSeek, hãy chọn đúng nhà cung cấp để không truyền khóa nhầm nơi."
+        ),
+    )
+    selected_provider = MA_NHA_CUNG_CAP_THEO_NHAN.get(provider_choice)
+    placeholder = (
+        NHA_CUNG_CAP_LLM[selected_provider]["placeholder"]
+        if selected_provider in NHA_CUNG_CAP_LLM
+        else "Dán API Key của OpenAI, Gemini, Claude hoặc DeepSeek"
+    )
+    api_key = st.text_input(
+        "API Key dùng trong phiên",
+        type="password",
+        key="api_key_session",
+        placeholder=placeholder,
+        help="Sau khi dán và rời ô/nhấn Enter, hệ thống xác thực một lần và tự tải model mà khóa có quyền dùng.",
+    )
+    if not api_key and st.session_state.get("llm_key_fingerprint"):
+        xoa_trang_thai_ket_noi_llm(st)
+
+    action_col1, action_col2 = st.columns(2)
+    retry = action_col1.button("Kiểm tra lại và tải model", disabled=not bool(api_key), width="stretch")
+
+    def _clear_api_key() -> None:
+        xoa_trang_thai_ket_noi_llm(st, xoa_khoa=True)
+
+    action_col2.button("Xóa API Key khỏi phiên", on_click=_clear_api_key, width="stretch")
+
+    provider = nha_cung_cap_hieu_luc(provider_choice, api_key)
+    if api_key and provider_choice == TU_DONG_NHAN_DIEN and provider is None:
+        st.warning(
+            "Không thể nhận diện an toàn chỉ từ tiền tố của khóa này. Hãy chọn OpenAI, Gemini, Claude hoặc "
+            "DeepSeek ở trên; hệ thống sẽ chỉ gửi khóa đến đúng nhà cung cấp đã chọn."
+        )
+    elif api_key and provider:
+        fingerprint = hashlib.sha256(f"creditlens|{provider}|{api_key}".encode("utf-8")).hexdigest()
+        if retry:
+            st.session_state.llm_key_fingerprint = ""
+        if st.session_state.get("llm_key_fingerprint") != fingerprint:
+            st.session_state.llm_key_fingerprint = fingerprint
+            st.session_state.llm_key_verified = False
+            st.session_state.llm_connection_error = ""
+            st.session_state.llm_models_available = []
+            st.session_state.pop("llm_model_selector", None)
+            try:
+                with st.spinner(f"Đang xác thực {NHA_CUNG_CAP_LLM[provider]['nhan']} và tải danh sách model…"):
+                    models = lay_danh_sach_model(provider, api_key)
+                st.session_state.llm_provider_detected = provider
+                st.session_state.llm_models_available = models
+                st.session_state.llm_key_verified = True
+                settings["llm_provider"] = provider
+            except (ValueError, RuntimeError) as exc:
+                st.session_state.llm_provider_detected = provider
+                st.session_state.llm_connection_error = str(exc)
+
+    models = st.session_state.get("llm_models_available", [])
+    verified = bool(st.session_state.get("llm_key_verified"))
+    detected_provider = st.session_state.get("llm_provider_detected")
+    if api_key and st.session_state.get("llm_connection_error"):
+        st.error(st.session_state.llm_connection_error)
+    connection_ready = bool(api_key and verified and detected_provider in NHA_CUNG_CAP_LLM and models)
+    if connection_ready:
+        current_model = settings.get("model", "")
+        if st.session_state.get("llm_model_selector") not in models:
+            st.session_state.llm_model_selector = current_model if current_model in models else models[0]
+        selected_model = st.selectbox(
+            "Model dùng để tạo diễn giải",
+            models,
+            key="llm_model_selector",
+            help="Danh sách này lấy trực tiếp từ API và chỉ gồm model hội thoại mà khóa hiện tại nhìn thấy.",
+        )
+        settings["llm_provider"] = detected_provider
+        settings["model"] = selected_model
+        status_cols = st.columns(3)
+        status_cols[0].metric("Chatbot", NHA_CUNG_CAP_LLM[detected_provider]["nhan"])
+        status_cols[1].metric("Model đang chọn", selected_model)
+        status_cols[2].metric("Trạng thái", "Đã xác minh")
+        st.success(f"Đã tải {len(models)} model khả dụng. Không cần nhập tên hoặc phiên bản model thủ công.")
+    else:
+        st.selectbox(
+            "Model dùng để tạo diễn giải",
+            ["Chưa tải — hãy nhập và xác thực API Key"],
+            disabled=True,
+            key="llm_model_placeholder",
+        )
+        if not api_key:
+            st.info(
+                f"Dán API Key để kết nối. Cấu hình dự phòng hiện tại là **{default_provider_label}** · "
+                f"**{settings.get('model', 'chưa chọn')}**, nhưng sẽ không được gọi trước khi khóa được xác minh."
+            )
 
     st.subheader("Giao diện")
     st.info(
@@ -2283,8 +2676,7 @@ def trang_cai_dat(st, settings: dict[str, Any]) -> None:
     color_col1, color_col2 = st.columns(2)
     new_color = color_col1.color_picker("Màu chủ đạo · chế độ Hiện đại", value=lam_sach_mau(settings["mau_chu_dao"]))
     new_accent = color_col2.color_picker("Màu nhấn · chế độ Hiện đại", value=lam_sach_mau(settings.get("mau_nhan", "#18C6D9"), "#18C6D9"))
-    st.subheader("LLM")
-    new_model = st.text_input("Tên model OpenAI", value=settings["model"], max_chars=120)
+    st.subheader("Guardrails của LLM")
     new_prompt = st.text_area("System prompt", value=settings["system_prompt"], height=260, max_chars=8000)
 
     st.subheader("Ngưỡng minh họa")
@@ -2299,17 +2691,18 @@ def trang_cai_dat(st, settings: dict[str, Any]) -> None:
     volatility = st.number_input("Biến động thu nhập cao (%)", 0.0, 200.0, settings["nguong"]["bien_dong_thu_nhap_cao"] * 100, 1.0)
 
     if st.button("Áp dụng cấu hình", type="primary", width="stretch"):
-        if not re.fullmatch(r"[A-Za-z0-9._:-]{2,120}", new_model or ""):
-            st.error("Tên model chỉ được chứa chữ, số, dấu chấm, gạch, gạch dưới và dấu hai chấm.")
-        elif len(new_prompt.strip()) < 50:
+        if len(new_prompt.strip()) < 50:
             st.error("System prompt quá ngắn để bảo đảm guardrails.")
         else:
+            active_provider = settings.get("llm_provider", "openai")
+            active_model = settings.get("model", DEFAULT_SETTINGS["model"])
             st.session_state.settings = {
                 "ten_ung_dung": new_title.strip() or DEFAULT_SETTINGS["ten_ung_dung"],
                 "mau_chu_dao": lam_sach_mau(new_color),
                 "mau_nhan": lam_sach_mau(new_accent, "#18C6D9"),
                 "che_do_giao_dien": settings.get("che_do_giao_dien", "Theo hệ thống"),
-                "model": new_model.strip(),
+                "llm_provider": active_provider,
+                "model": active_model,
                 "system_prompt": new_prompt.strip(),
                 "nguong": {
                     "do_tin_cay_thap": low_confidence / 100,
@@ -2338,6 +2731,7 @@ def trang_cai_dat(st, settings: dict[str, Any]) -> None:
             st.session_state.result = None
             st.session_state.docs = {}
             st.session_state.ai_summary = ""
+            xoa_trang_thai_ket_noi_llm(st, xoa_lua_chon_model=False)
             st.success("Đã nạp cấu hình. API Key không được nhập từ tệp JSON.")
             st.rerun()
         except (UnicodeDecodeError, json.JSONDecodeError, ValueError) as exc:
@@ -2348,9 +2742,13 @@ def trang_cai_dat(st, settings: dict[str, Any]) -> None:
         st.session_state.result = None
         st.session_state.docs = {}
         st.session_state.ai_summary = ""
+        xoa_trang_thai_ket_noi_llm(st, xoa_lua_chon_model=False)
         st.rerun()
 
-    st.info("Phần này chỉ chỉnh giao diện, prompt và ngưỡng trong từng phiên. Source code phải sửa qua GitHub/Jupyter rồi triển khai lại; web không cho chạy mã tùy ý.")
+    st.info(
+        "Provider, model, giao diện, prompt và ngưỡng chỉ áp dụng trong phiên. API Key không nằm trong JSON cấu hình. "
+        "Source code vẫn phải sửa qua GitHub/Jupyter rồi triển khai lại; web không cho chạy mã tùy ý."
+    )
 
 
 def chay_ung_dung_streamlit() -> None:
@@ -2367,6 +2765,12 @@ def chay_ung_dung_streamlit() -> None:
         st.session_state.ai_summary = ""
     if "api_key_session" not in st.session_state:
         st.session_state.api_key_session = ""
+    if "llm_key_verified" not in st.session_state:
+        st.session_state.llm_key_verified = False
+    if "llm_models_available" not in st.session_state:
+        st.session_state.llm_models_available = []
+    if "llm_connection_error" not in st.session_state:
+        st.session_state.llm_connection_error = ""
 
     settings = st.session_state.settings
     st.sidebar.markdown("## CreditLens")
@@ -2429,8 +2833,40 @@ def chay_tu_kiem_tra() -> None:
     assert missing.trang_thai == "INSUFFICIENT INFORMATION"
     assert zero_ratio is None
     assert all(r.bang_chung for r in mismatch.canh_bao if r.loai == "INCOME_MISMATCH")
-    assert "API" not in json.dumps(cau_hinh_mac_dinh(), ensure_ascii=False)
+    assert "api_key" not in json.dumps(cau_hinh_mac_dinh(), ensure_ascii=False).lower()
     assert nhap_cau_hinh_json(b'{"mau_chu_dao":"#112233"}')["mau_chu_dao"] == "#112233"
+    imported_llm = nhap_cau_hinh_json(b'{"llm_provider":"gemini","model":"gemini-test"}')
+    assert imported_llm["llm_provider"] == "gemini" and imported_llm["model"] == "gemini-test"
+    assert nhan_dien_nha_cung_cap_tu_khoa("sk-ant-demo-123456789") == "anthropic"
+    assert nhan_dien_nha_cung_cap_tu_khoa("AIzaDemoKey123456789") == "gemini"
+    assert nhan_dien_nha_cung_cap_tu_khoa("sk-proj-demo-123456789") == "openai"
+    assert nhan_dien_nha_cung_cap_tu_khoa("sk-ambiguous-123456789") is None
+    assert nha_cung_cap_hieu_luc("DeepSeek", "sk-ambiguous-123456789") == "deepseek"
+    assert trich_danh_sach_model(
+        "openai",
+        {"data": [{"id": "gpt-5.6-sol"}, {"id": "text-embedding-3-large"}]},
+    ) == ["gpt-5.6-sol"]
+    assert trich_danh_sach_model(
+        "gemini",
+        {"models": [
+            {"name": "models/gemini-3-flash", "supportedGenerationMethods": ["generateContent"]},
+            {"name": "models/text-embedding-004", "supportedGenerationMethods": ["embedContent"]},
+        ]},
+    ) == ["gemini-3-flash"]
+    assert trich_danh_sach_model("anthropic", {"data": [{"id": "claude-sonnet-demo"}]}) == ["claude-sonnet-demo"]
+    assert trich_danh_sach_model("deepseek", {"data": [{"id": "deepseek-chat"}]}) == ["deepseek-chat"]
+    assert trich_noi_dung_phan_hoi(
+        "gemini",
+        {"candidates": [{"content": {"parts": [{"text": "Tóm tắt Gemini"}]}}]},
+    ) == "Tóm tắt Gemini"
+    assert trich_noi_dung_phan_hoi(
+        "anthropic",
+        {"content": [{"type": "text", "text": "Tóm tắt Claude"}]},
+    ) == "Tóm tắt Claude"
+    assert trich_noi_dung_phan_hoi(
+        "deepseek",
+        {"choices": [{"message": {"content": "Tóm tắt DeepSeek"}}]},
+    ) == "Tóm tắt DeepSeek"
     salary_after_period = tim_so_tien(
         "Kỳ lương\nLương thực nhận\n08/2026\n"
         "Lương thực nhận\n28.000.000 VND",
@@ -2462,7 +2898,10 @@ def chay_tu_kiem_tra() -> None:
     assert pdf_data[:5] == b"%PDF-" and len(pdf_data) > 5_000
     pdf_text = "\n".join((page.extract_text() or "") for page in PdfReader(io.BytesIO(pdf_data)).pages)
     assert "THẨM ĐỊNH TÍN DỤNG" in pdf_text and "Nguyễn Minh Anh" in pdf_text
-    print("✅ Tự kiểm tra thành công: quy tắc, 5 giao diện, nhãn lưu ý, Unicode tiếng Việt và ba định dạng báo cáo.")
+    print(
+        "✅ Tự kiểm tra thành công: quy tắc, 5 giao diện, 4 nhà cung cấp LLM, "
+        "nhận diện khóa/model, nhãn lưu ý, Unicode tiếng Việt và ba định dạng báo cáo."
+    )
 
 
 if __name__ == "__main__":
