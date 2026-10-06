@@ -6,14 +6,17 @@ CreditLens là AI Credit Underwriting Copilot hỗ trợ đọc hồ sơ PDF, ch
 
 ## Tính năng của bản này
 
-- Giao diện tiếng Việt với 5 chế độ: Theo hệ thống, Sáng, Tối, Ấm áp và Hiện đại; màu gradient và hiệu ứng neon nhẹ.
+- Nhận diện CreditLens theo logo emerald/forest/lime, logo hiển thị nổi bật ở thanh điều hướng và được dùng làm biểu tượng trang.
+- Giao diện tiếng Việt với 5 chế độ: Theo hệ thống, Sáng, Tối, Ấm áp và Hiện đại. Chế độ Theo hệ thống tự thích nghi với thiết bị sáng hoặc tối.
+- Thẻ quy trình, trạng thái xử lý, hover, focus, active và chuyển trang có phản hồi trực quan; tự giảm chuyển động khi hệ điều hành bật `prefers-reduced-motion`.
 - Upload từng tệp hoặc chọn trực tiếp một thư mục gồm 3–4 PDF của cùng một khách hàng: đơn đề nghị vay, chứng từ thu nhập, sao kê và tài liệu nghĩa vụ nợ tùy chọn.
 - Trích xuất có cấu trúc; độ tin cậy được chuyển thành nhãn “Tin cậy cao”, “Cần đối chiếu”, “Cần xác minh” hoặc “Thiếu dữ liệu” và phân biệt bằng màu.
 - Python tính DTI, DSR, thu nhập khả dụng, hệ số đệm số dư và biến động thu nhập.
 - Phát hiện chênh lệch thu nhập, doanh nghiệp, chức danh, thời gian làm việc và nghĩa vụ nợ.
 - Evidence traceability đến tài liệu, trang, trường và giá trị.
-- Kết nối OpenAI/GPT, Google Gemini, Anthropic Claude hoặc DeepSeek bằng API Key riêng cho từng phiên.
+- Kho kết nối theo phiên giữ một API Key đã xác minh cho mỗi provider OpenAI/GPT, Google Gemini, Anthropic Claude hoặc DeepSeek.
 - Nhận diện provider an toàn từ tiền tố khi có thể, xác thực key và tải trực tiếp danh sách model mà key được quyền sử dụng; người dùng chọn model từ danh sách, không nhập phiên bản thủ công.
+- Trang **Cài đặt** tách thành 4 tab: Kết nối AI, Giao diện, Ngưỡng minh họa, Guardrails và cấu hình.
 - Chuyên viên chọn xuất báo cáo `.docx`, `.xlsx` hoặc `.pdf`.
 - Có `render.yaml` để triển khai trên dịch vụ web hỗ trợ Blueprint và `packages.txt` để cài font PDF tiếng Việt.
 
@@ -32,7 +35,7 @@ URL xem trong Colab chỉ tồn tại khi runtime còn hoạt động. Không s�
 ## Triển khai công khai miễn phí bằng Streamlit Community Cloud
 
 1. Chạy ô bootstrap và tải `creditlens_public_deploy.zip` xuống máy.
-2. Giải nén ZIP. Bên trong phải có `app.py`, `credit_underwriting_colab.py`, `requirements.txt`, `packages.txt` và thư mục `.streamlit`.
+2. Giải nén ZIP. Bên trong phải có `app.py`, `credit_underwriting_colab.py`, `requirements.txt`, `packages.txt`, thư mục `.streamlit` và hai tài sản thương hiệu trong `static/` (`creditlens-logo.png`, `creditlens-icon.png`).
 3. Tạo một repository GitHub mới, ví dụ `creditlens-underwriting`.
 4. Đặt repository ở chế độ Public nếu muốn source code mở.
 5. Upload toàn bộ nội dung bên trong thư mục project lên nhánh `main`. Không upload `.env`, `secrets.toml` hoặc API Key.
@@ -55,7 +58,7 @@ Không có nền tảng miễn phí nào nên được xem là cam kết uptime 
 
 ## API Key và lựa chọn chatbot trên web công khai
 
-Mỗi người dùng mở **Cài đặt AI**, chọn **Tự động nhận diện an toàn** hoặc một nhà cung cấp cụ thể, rồi dán key của họ. Ứng dụng hỗ trợ:
+Mỗi người dùng mở **Cài đặt → Kết nối AI**, chọn **Tự động nhận diện an toàn** hoặc một nhà cung cấp cụ thể, rồi dán key của họ. Ứng dụng hỗ trợ:
 
 - OpenAI · GPT
 - Google · Gemini
@@ -64,9 +67,9 @@ Mỗi người dùng mở **Cài đặt AI**, chọn **Tự động nhận diệ
 
 Với tiền tố đặc trưng như `sk-proj-`, `sk-ant-` hoặc `AIza`, ứng dụng có thể nhận diện nhà cung cấp. Tiền tố `sk-` có thể thuộc nhiều nhà cung cấp nên ứng dụng yêu cầu người dùng chọn đúng hãng thay vì gửi thử khóa sang nhiều nơi. Sau khi xác thực, danh sách model được lấy từ API chính thức và hiển thị trong selectbox.
 
-Một API key có thể truy cập nhiều model; vì vậy key không thể tự cho biết một “phiên bản duy nhất”. CreditLens tự chọn model đầu tiên khả dụng và cho người dùng đổi model từ danh sách đã xác minh, không còn ô nhập tên model thủ công.
+Một API key có thể truy cập nhiều model; vì vậy key không thể tự cho biết một “phiên bản duy nhất”. CreditLens tự chọn model đầu tiên khả dụng và cho người dùng đổi model từ danh sách đã xác minh, không còn ô nhập tên model thủ công. Nếu phiên có nhiều provider, danh sách **API Key sử dụng ngay** quyết định kết nối mà trang Tóm tắt sẽ dùng.
 
-Key chỉ nằm trong `st.session_state` của phiên và có nút xóa. Key không được đưa vào JSON cấu hình, source, báo cáo hoặc log. Không đặt một API Key chung vào source public vì người lạ có thể gây phát sinh chi phí.
+Key chỉ nằm trong `st.session_state` của phiên, tối đa một key cho mỗi provider, và có nút xóa riêng. Key không được đưa vào JSON cấu hình, source, báo cáo hoặc log. Không đặt một API Key chung vào source public vì người lạ có thể gây phát sinh chi phí.
 
 Nếu chỉ demo riêng cho giảng viên, có thể dùng secret của nền tảng nhưng phải thêm giới hạn truy cập và hạn mức chi phí. Không commit `.streamlit/secrets.toml`.
 

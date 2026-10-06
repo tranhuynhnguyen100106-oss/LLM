@@ -3,13 +3,14 @@ maxUploadSize = 10
 headless = true
 enableXsrfProtection = true
 enableCORS = true
+enableStaticServing = true
 
 [browser]
 gatherUsageStats = false
 
 [theme]
 base = "light"
-primaryColor = "#5B5FEF"
-backgroundColor = "#F7FBFF"
+primaryColor = "#0B6B4B"
+backgroundColor = "#F4F8F5"
 secondaryBackgroundColor = "#FFFFFF"
-textColor = "#19324A"
+textColor = "#153629"

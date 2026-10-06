@@ -37,7 +37,8 @@ import time
 import unicodedata
 from datetime import datetime, timezone
 from pathlib import Path
-from typing import Any, Literal
+from types import MappingProxyType
+from typing import Any, Literal, Mapping
 
 
 def cai_dat_thu_vien() -> None:
@@ -72,7 +73,7 @@ from pypdf import PdfReader  # noqa: E402
 # 1. CẤU HÌNH — NGƯỠNG MINH HỌA, KHÔNG PHẢI CHÍNH SÁCH
 # ==========================================================
 
-NGUONG = {
+NGUONG = MappingProxyType({
     "do_tin_cay_thap": 0.75,
     "chenh_lech_thu_nhap": 0.15,
     "chenh_lech_no": 0.20,
@@ -80,7 +81,32 @@ NGUONG = {
     "dsr_canh_bao": 0.45,
     "he_so_dem_so_du_thap": 1.00,
     "bien_dong_thu_nhap_cao": 0.25,
-}
+})
+GIOI_HAN_NGUONG = MappingProxyType({
+    "do_tin_cay_thap": (0.0, 1.0),
+    "chenh_lech_thu_nhap": (0.0, 1.0),
+    "chenh_lech_no": (0.0, 5.0),
+    "dti_canh_bao": (0.0, 2.0),
+    "dsr_canh_bao": (0.0, 2.0),
+    "he_so_dem_so_du_thap": (0.0, 20.0),
+    "bien_dong_thu_nhap_cao": (0.0, 2.0),
+})
+
+
+def nguong_hieu_luc(candidate: Mapping[str, Any] | None = None) -> dict[str, float]:
+    """Tạo snapshot ngưỡng riêng cho một lần chạy; không sửa trạng thái module dùng chung."""
+    output = dict(NGUONG)
+    if candidate:
+        for key, default in output.items():
+            value = candidate.get(key, default)
+            lower, upper = GIOI_HAN_NGUONG[key]
+            if (
+                isinstance(value, (int, float))
+                and not isinstance(value, bool)
+                and lower <= float(value) <= upper
+            ):
+                output[key] = float(value)
+    return output
 
 GIOI_HAN_TEP = 10 * 1024 * 1024
 
@@ -568,7 +594,9 @@ def phan_tich_tu_du_kien(
     fields: list[TruongTrichXuat],
     docs: dict[str, TaiLieu],
     started_at: float,
+    thresholds: Mapping[str, Any] | None = None,
 ) -> KetQuaThamDinh:
+    nguong = nguong_hieu_luc(thresholds)
     verified_candidates = [v for v in [data.luong_thuc_nhan, data.thu_nhap_qua_sao_ke] if v is not None and v > 0]
     verified_income = min(verified_candidates) if verified_candidates else data.thu_nhap_ke_khai
     debt = data.nghia_vu_no_quan_sat if data.nghia_vu_no_quan_sat is not None else data.nghia_vu_no_ke_khai
@@ -594,12 +622,12 @@ def phan_tich_tu_du_kien(
         return "Cần chú ý" if is_attention else "Trong ngưỡng minh họa"
 
     metrics = [
-        ChiSoTinDung(ma_chi_so="dti", ten="DTI hiện hữu", gia_tri=dti, hien_thi=phan_tram(dti), cong_thuc="Nghĩa vụ nợ hiện hữu ÷ Thu nhập đã xác minh", trang_thai=status(dti, NGUONG["dti_canh_bao"]), ghi_chu="Gánh nặng nợ hiện hữu trước khi xét khoản vay mới."),
-        ChiSoTinDung(ma_chi_so="dsr", ten="DSR dự kiến", gia_tri=dsr, hien_thi=phan_tram(dsr), cong_thuc="(Nợ hiện hữu + Khoản trả dự kiến) ÷ Thu nhập đã xác minh", trang_thai=status(dsr, NGUONG["dsr_canh_bao"]), ghi_chu="Chỉ tính khi có khoản trả dự kiến; hệ thống không tự suy đoán."),
+        ChiSoTinDung(ma_chi_so="dti", ten="DTI hiện hữu", gia_tri=dti, hien_thi=phan_tram(dti), cong_thuc="Nghĩa vụ nợ hiện hữu ÷ Thu nhập đã xác minh", trang_thai=status(dti, nguong["dti_canh_bao"]), ghi_chu="Gánh nặng nợ hiện hữu trước khi xét khoản vay mới."),
+        ChiSoTinDung(ma_chi_so="dsr", ten="DSR dự kiến", gia_tri=dsr, hien_thi=phan_tram(dsr), cong_thuc="(Nợ hiện hữu + Khoản trả dự kiến) ÷ Thu nhập đã xác minh", trang_thai=status(dsr, nguong["dsr_canh_bao"]), ghi_chu="Chỉ tính khi có khoản trả dự kiến; hệ thống không tự suy đoán."),
         ChiSoTinDung(ma_chi_so="thu_nhap_kha_dung", ten="Thu nhập khả dụng", gia_tri=disposable, hien_thi=tien(disposable), cong_thuc="Thu nhập đã xác minh − Nợ − Chi phí sinh hoạt", trang_thai="Chưa đủ dữ liệu" if disposable is None else ("Cần chú ý" if disposable < 0 else "Trong ngưỡng minh họa"), ghi_chu="Giá trị trước khi trừ khoản trả của khoản vay mới."),
-        ChiSoTinDung(ma_chi_so="he_so_dem_so_du", ten="Hệ số đệm số dư", gia_tri=balance_buffer, hien_thi="—" if balance_buffer is None else f"{so_thap_phan(balance_buffer)}×", cong_thuc="Số dư bình quân ÷ Khoản trả dự kiến", trang_thai=status(balance_buffer, NGUONG["he_so_dem_so_du_thap"], lower_is_bad=True), ghi_chu="Chỉ báo thanh khoản dựa trên số dư bình quân."),
-        ChiSoTinDung(ma_chi_so="chenh_lech_thu_nhap", ten="Chênh lệch thu nhập", gia_tri=income_difference, hien_thi=phan_tram(income_difference), cong_thuc="(Nguồn cao nhất − Nguồn thấp nhất) ÷ Nguồn cao nhất", trang_thai=status(income_difference, NGUONG["chenh_lech_thu_nhap"]), ghi_chu="So sánh đơn vay, chứng từ thu nhập và sao kê."),
-        ChiSoTinDung(ma_chi_so="bien_dong_thu_nhap", ten="Biến động thu nhập", gia_tri=data.bien_dong_thu_nhap, hien_thi=phan_tram(data.bien_dong_thu_nhap), cong_thuc="Độ lệch chuẩn dòng tiền vào tháng ÷ Dòng tiền vào bình quân", trang_thai=status(data.bien_dong_thu_nhap, NGUONG["bien_dong_thu_nhap_cao"]), ghi_chu="Hệ số biến thiên khi sao kê có đủ dữ liệu theo tháng."),
+        ChiSoTinDung(ma_chi_so="he_so_dem_so_du", ten="Hệ số đệm số dư", gia_tri=balance_buffer, hien_thi="—" if balance_buffer is None else f"{so_thap_phan(balance_buffer)}×", cong_thuc="Số dư bình quân ÷ Khoản trả dự kiến", trang_thai=status(balance_buffer, nguong["he_so_dem_so_du_thap"], lower_is_bad=True), ghi_chu="Chỉ báo thanh khoản dựa trên số dư bình quân."),
+        ChiSoTinDung(ma_chi_so="chenh_lech_thu_nhap", ten="Chênh lệch thu nhập", gia_tri=income_difference, hien_thi=phan_tram(income_difference), cong_thuc="(Nguồn cao nhất − Nguồn thấp nhất) ÷ Nguồn cao nhất", trang_thai=status(income_difference, nguong["chenh_lech_thu_nhap"]), ghi_chu="So sánh đơn vay, chứng từ thu nhập và sao kê."),
+        ChiSoTinDung(ma_chi_so="bien_dong_thu_nhap", ten="Biến động thu nhập", gia_tri=data.bien_dong_thu_nhap, hien_thi=phan_tram(data.bien_dong_thu_nhap), cong_thuc="Độ lệch chuẩn dòng tiền vào tháng ÷ Dòng tiền vào bình quân", trang_thai=status(data.bien_dong_thu_nhap, nguong["bien_dong_thu_nhap_cao"]), ghi_chu="Hệ số biến thiên khi sao kê có đủ dữ liệu theo tháng."),
     ]
 
     risks: list[CanhBaoRuiRo] = []
@@ -607,11 +635,11 @@ def phan_tich_tu_du_kien(
     def add_risk(loai: str, muc_do: str, giai_thich: str, evidence: list[BangChung], difference: str | None = None) -> None:
         risks.append(CanhBaoRuiRo(ma_rui_ro=f"R-{len(risks) + 1:03d}", loai=loai, muc_do=muc_do, giai_thich=giai_thich, chenh_lech=difference, bang_chung=evidence))
 
-    if income_difference is not None and income_difference > NGUONG["chenh_lech_thu_nhap"]:
+    if income_difference is not None and income_difference > nguong["chenh_lech_thu_nhap"]:
         add_risk(
             "INCOME_MISMATCH",
             "HIGH" if income_difference > 0.30 else "MEDIUM",
-            f"Các nguồn thu nhập chênh {phan_tram(income_difference)}, vượt ngưỡng minh họa {phan_tram(NGUONG['chenh_lech_thu_nhap'])}. Cần xác minh nguồn thu và kỳ ghi nhận.",
+            f"Các nguồn thu nhập chênh {phan_tram(income_difference)}, vượt ngưỡng minh họa {phan_tram(nguong['chenh_lech_thu_nhap'])}. Cần xác minh nguồn thu và kỳ ghi nhận.",
             bang_chung_cua(fields, "thu_nhap_ke_khai") + bang_chung_cua(fields, "luong_thuc_nhan") + bang_chung_cua(fields, "thu_nhap_qua_sao_ke"),
             phan_tram(income_difference),
         )
@@ -619,20 +647,20 @@ def phan_tich_tu_du_kien(
         add_risk("EMPLOYER_MISMATCH", "HIGH", "Tên đơn vị công tác trên đơn vay và chứng từ thu nhập không khớp sau chuẩn hóa.", bang_chung_cua(fields, "don_vi_cong_tac_ke_khai") + bang_chung_cua(fields, "don_vi_cong_tac_chung_tu"))
     if data.nghia_vu_no_ke_khai is not None and data.nghia_vu_no_quan_sat is not None:
         debt_diff = abs(data.nghia_vu_no_quan_sat - data.nghia_vu_no_ke_khai) / max(data.nghia_vu_no_ke_khai, 1)
-        if debt_diff > NGUONG["chenh_lech_no"]:
-            add_risk("POSSIBLE_UNDECLARED_DEBT", "HIGH" if data.nghia_vu_no_quan_sat > data.nghia_vu_no_ke_khai else "MEDIUM", f"Khoản trả nợ quan sát khác {phan_tram(debt_diff)} so với kê khai, vượt ngưỡng minh họa {phan_tram(NGUONG['chenh_lech_no'])}.", bang_chung_cua(fields, "nghia_vu_no_ke_khai") + bang_chung_cua(fields, "nghia_vu_no_quan_sat"), phan_tram(debt_diff))
+        if debt_diff > nguong["chenh_lech_no"]:
+            add_risk("POSSIBLE_UNDECLARED_DEBT", "HIGH" if data.nghia_vu_no_quan_sat > data.nghia_vu_no_ke_khai else "MEDIUM", f"Khoản trả nợ quan sát khác {phan_tram(debt_diff)} so với kê khai, vượt ngưỡng minh họa {phan_tram(nguong['chenh_lech_no'])}.", bang_chung_cua(fields, "nghia_vu_no_ke_khai") + bang_chung_cua(fields, "nghia_vu_no_quan_sat"), phan_tram(debt_diff))
     if data.chuc_danh_ke_khai and data.chuc_danh_chung_tu and chuan_hoa_chuoi(data.chuc_danh_ke_khai) != chuan_hoa_chuoi(data.chuc_danh_chung_tu):
         add_risk("JOB_TITLE_MISMATCH", "MEDIUM", "Chức danh công việc khác nhau giữa đơn vay và chứng từ thu nhập.", bang_chung_cua(fields, "chuc_danh_ke_khai") + bang_chung_cua(fields, "chuc_danh_chung_tu"))
     if data.ngay_bat_dau_ke_khai and data.ngay_bat_dau_chung_tu and chuan_hoa_chuoi(data.ngay_bat_dau_ke_khai) != chuan_hoa_chuoi(data.ngay_bat_dau_chung_tu):
         add_risk("EMPLOYMENT_DATE_MISMATCH", "MEDIUM", "Ngày bắt đầu làm việc không nhất quán giữa các chứng từ.", bang_chung_cua(fields, "ngay_bat_dau_ke_khai") + bang_chung_cua(fields, "ngay_bat_dau_chung_tu"))
-    if dti is not None and dti > NGUONG["dti_canh_bao"]:
-        add_risk("HIGH_DTI_DEMO", "HIGH", f"DTI {phan_tram(dti)} vượt ngưỡng cảnh báo minh họa {phan_tram(NGUONG['dti_canh_bao'])}. Đây không phải chính sách cấp tín dụng của ngân hàng.", bang_chung_cua(fields, "nghia_vu_no_quan_sat" if data.nghia_vu_no_quan_sat is not None else "nghia_vu_no_ke_khai") + bang_chung_cua(fields, "thu_nhap_qua_sao_ke" if data.thu_nhap_qua_sao_ke is not None else "luong_thuc_nhan"))
-    if dsr is not None and dsr > NGUONG["dsr_canh_bao"]:
-        add_risk("HIGH_DSR_DEMO", "HIGH", f"DSR dự kiến {phan_tram(dsr)} vượt ngưỡng cảnh báo minh họa {phan_tram(NGUONG['dsr_canh_bao'])}.", bang_chung_cua(fields, "nghia_vu_no_quan_sat") + bang_chung_cua(fields, "khoan_tra_du_kien") + bang_chung_cua(fields, "thu_nhap_qua_sao_ke"))
-    if balance_buffer is not None and balance_buffer < NGUONG["he_so_dem_so_du_thap"]:
-        add_risk("LOW_BALANCE_BUFFER", "MEDIUM", f"Hệ số đệm số dư {so_thap_phan(balance_buffer)}× thấp hơn ngưỡng minh họa {so_thap_phan(NGUONG['he_so_dem_so_du_thap'])}×.", bang_chung_cua(fields, "so_du_binh_quan") + bang_chung_cua(fields, "khoan_tra_du_kien"))
-    if data.bien_dong_thu_nhap is not None and data.bien_dong_thu_nhap > NGUONG["bien_dong_thu_nhap_cao"]:
-        add_risk("HIGH_INCOME_VOLATILITY", "MEDIUM", f"Biến động dòng tiền vào {phan_tram(data.bien_dong_thu_nhap)} vượt ngưỡng minh họa {phan_tram(NGUONG['bien_dong_thu_nhap_cao'])}.", bang_chung_cua(fields, "bien_dong_thu_nhap"))
+    if dti is not None and dti > nguong["dti_canh_bao"]:
+        add_risk("HIGH_DTI_DEMO", "HIGH", f"DTI {phan_tram(dti)} vượt ngưỡng cảnh báo minh họa {phan_tram(nguong['dti_canh_bao'])}. Đây không phải chính sách cấp tín dụng của ngân hàng.", bang_chung_cua(fields, "nghia_vu_no_quan_sat" if data.nghia_vu_no_quan_sat is not None else "nghia_vu_no_ke_khai") + bang_chung_cua(fields, "thu_nhap_qua_sao_ke" if data.thu_nhap_qua_sao_ke is not None else "luong_thuc_nhan"))
+    if dsr is not None and dsr > nguong["dsr_canh_bao"]:
+        add_risk("HIGH_DSR_DEMO", "HIGH", f"DSR dự kiến {phan_tram(dsr)} vượt ngưỡng cảnh báo minh họa {phan_tram(nguong['dsr_canh_bao'])}.", bang_chung_cua(fields, "nghia_vu_no_quan_sat") + bang_chung_cua(fields, "khoan_tra_du_kien") + bang_chung_cua(fields, "thu_nhap_qua_sao_ke"))
+    if balance_buffer is not None and balance_buffer < nguong["he_so_dem_so_du_thap"]:
+        add_risk("LOW_BALANCE_BUFFER", "MEDIUM", f"Hệ số đệm số dư {so_thap_phan(balance_buffer)}× thấp hơn ngưỡng minh họa {so_thap_phan(nguong['he_so_dem_so_du_thap'])}×.", bang_chung_cua(fields, "so_du_binh_quan") + bang_chung_cua(fields, "khoan_tra_du_kien"))
+    if data.bien_dong_thu_nhap is not None and data.bien_dong_thu_nhap > nguong["bien_dong_thu_nhap_cao"]:
+        add_risk("HIGH_INCOME_VOLATILITY", "MEDIUM", f"Biến động dòng tiền vào {phan_tram(data.bien_dong_thu_nhap)} vượt ngưỡng minh họa {phan_tram(nguong['bien_dong_thu_nhap_cao'])}.", bang_chung_cua(fields, "bien_dong_thu_nhap"))
 
     missing: list[str] = []
     for key, label in [("application", "Đơn đề nghị vay vốn"), ("income", "Chứng từ thu nhập"), ("statement", "Sao kê ngân hàng")]:
@@ -647,9 +675,9 @@ def phan_tich_tu_du_kien(
     if data.thoi_han_vay_thang is None:
         missing.append("Thời hạn vay")
 
-    low_confidence = [f for f in fields if f.gia_tri is not None and f.do_tin_cay < NGUONG["do_tin_cay_thap"]]
+    low_confidence = [f for f in fields if f.gia_tri is not None and f.do_tin_cay < nguong["do_tin_cay_thap"]]
     if low_confidence:
-        add_risk("LOW_EXTRACTION_CONFIDENCE", "MEDIUM", f"{len(low_confidence)} trường có độ tin cậy dưới {phan_tram(NGUONG['do_tin_cay_thap'])} và cần con người kiểm tra.", [f.bang_chung for f in low_confidence if f.bang_chung])
+        add_risk("LOW_EXTRACTION_CONFIDENCE", "MEDIUM", f"{len(low_confidence)} trường có độ tin cậy dưới {phan_tram(nguong['do_tin_cay_thap'])} và cần con người kiểm tra.", [f.bang_chung for f in low_confidence if f.bang_chung])
 
     questions: list[str] = []
     risk_types = {risk.loai for risk in risks}
@@ -690,10 +718,22 @@ def phan_tich_tu_du_kien(
     )
 
 
-def phan_tich_tai_lieu(ma_ho_so: str, docs: dict[str, TaiLieu]) -> KetQuaThamDinh:
+def phan_tich_tai_lieu(
+    ma_ho_so: str,
+    docs: dict[str, TaiLieu],
+    thresholds: Mapping[str, Any] | None = None,
+) -> KetQuaThamDinh:
     started = time.perf_counter()
     data, fields = trich_xuat_du_lieu(docs)
-    return phan_tich_tu_du_kien(ma_ho_so, data.ho_ten_khach_hang or "Hồ sơ tín dụng đã tải lên", data, fields, docs, started)
+    return phan_tich_tu_du_kien(
+        ma_ho_so,
+        data.ho_ten_khach_hang or "Hồ sơ tín dụng đã tải lên",
+        data,
+        fields,
+        docs,
+        started,
+        thresholds,
+    )
 
 
 # ==========================================================
@@ -760,7 +800,10 @@ FIELD_LABELS = {
 }
 
 
-def du_lieu_demo(case_name: str) -> tuple[KetQuaThamDinh, dict[str, TaiLieu]]:
+def du_lieu_demo(
+    case_name: str,
+    thresholds: Mapping[str, Any] | None = None,
+) -> tuple[KetQuaThamDinh, dict[str, TaiLieu]]:
     if case_name not in DEMO_CASES:
         raise ValueError("Không tìm thấy hồ sơ minh họa.")
     changes, confidence_overrides, missing_docs = DEMO_CASES[case_name]
@@ -798,7 +841,15 @@ def du_lieu_demo(case_name: str) -> tuple[KetQuaThamDinh, dict[str, TaiLieu]]:
         docs["statement"] = fake_doc("statement", "sao_ke_ngan_hang_6_thang.pdf", 6)
     docs["debt"] = fake_doc("debt", "thong_tin_nghia_vu_no.pdf", 1)
     case_id = case_name.split(" — ")[0]
-    result = phan_tich_tu_du_kien(case_id, case_name, data, fields, docs, time.perf_counter() - 0.12)
+    result = phan_tich_tu_du_kien(
+        case_id,
+        case_name,
+        data,
+        fields,
+        docs,
+        time.perf_counter() - 0.12,
+        thresholds,
+    )
     return result, docs
 
 
@@ -890,7 +941,11 @@ def _xoa_markdown(text: str) -> str:
     return plain.strip()
 
 
-def tao_bao_cao_word(result: KetQuaThamDinh, ai_summary: str = "") -> bytes:
+def tao_bao_cao_word(
+    result: KetQuaThamDinh,
+    ai_summary: str = "",
+    low_confidence_threshold: float | None = None,
+) -> bytes:
     """Tạo báo cáo DOCX trong bộ nhớ, không ghi dữ liệu khách hàng xuống máy chủ."""
     from docx import Document
     from docx.enum.section import WD_SECTION
@@ -1030,7 +1085,17 @@ def tao_bao_cao_word(result: KetQuaThamDinh, ai_summary: str = "") -> bytes:
 
     doc.add_heading("7 Dữ kiện đã trích xuất", level=1)
     extracted_rows = [
-        [f.nhan, gia_tri_truong_hien_thi(f), f.tai_lieu_nguon, f.trang or "-", nhan_luu_y_tin_cay(f.do_tin_cay, missing=f.gia_tri is None)]
+        [
+            f.nhan,
+            gia_tri_truong_hien_thi(f),
+            f.tai_lieu_nguon,
+            f.trang or "-",
+            nhan_luu_y_tin_cay(
+                f.do_tin_cay,
+                missing=f.gia_tri is None,
+                low_confidence_threshold=low_confidence_threshold,
+            ),
+        ]
         for f in result.truong_trich_xuat
     ]
     add_table(["Trường", "Giá trị", "Nguồn", "Trang", "Lưu ý"], extracted_rows, [46, 44, 45, 15, 26])
@@ -1058,7 +1123,11 @@ def tao_bao_cao_word(result: KetQuaThamDinh, ai_summary: str = "") -> bytes:
     return output.getvalue()
 
 
-def tao_bao_cao_excel(result: KetQuaThamDinh, ai_summary: str = "") -> bytes:
+def tao_bao_cao_excel(
+    result: KetQuaThamDinh,
+    ai_summary: str = "",
+    low_confidence_threshold: float | None = None,
+) -> bytes:
     """Tạo workbook XLSX nhiều sheet với giá trị số giữ nguyên kiểu dữ liệu."""
     from openpyxl import Workbook
     from openpyxl.styles import Alignment, Border, Font, PatternFill, Side
@@ -1174,7 +1243,11 @@ def tao_bao_cao_excel(result: KetQuaThamDinh, ai_summary: str = "") -> bytes:
     header(ws, 3, ["Mã trường", "Trường dữ liệu", "Giá trị", "Tài liệu nguồn", "Trang", "Lưu ý", "Trích đoạn bằng chứng"])
     for row_index, field in enumerate(result.truong_trich_xuat, start=4):
         raw_value: Any = field.gia_tri
-        note = nhan_luu_y_tin_cay(field.do_tin_cay, missing=field.gia_tri is None)
+        note = nhan_luu_y_tin_cay(
+            field.do_tin_cay,
+            missing=field.gia_tri is None,
+            low_confidence_threshold=low_confidence_threshold,
+        )
         values = [field.ma_truong, field.nhan, raw_value, field.tai_lieu_nguon, field.trang, note, field.bang_chung.trich_doan if field.bang_chung else ""]
         for col_index, value in enumerate(values, start=1):
             ws.cell(row_index, col_index, value)
@@ -1266,7 +1339,11 @@ def _tim_font_pdf() -> tuple[str, str] | None:
     return None
 
 
-def tao_bao_cao_pdf(result: KetQuaThamDinh, ai_summary: str = "") -> bytes:
+def tao_bao_cao_pdf(
+    result: KetQuaThamDinh,
+    ai_summary: str = "",
+    low_confidence_threshold: float | None = None,
+) -> bytes:
     """Tạo PDF Unicode trong bộ nhớ bằng ReportLab."""
     from reportlab.lib import colors
     from reportlab.lib.enums import TA_CENTER, TA_LEFT
@@ -1389,7 +1466,20 @@ def tao_bao_cao_pdf(result: KetQuaThamDinh, ai_summary: str = "") -> bytes:
         Paragraph("6 Dữ kiện đã trích xuất", heading_style),
         table(
             ["Trường", "Giá trị", "Nguồn", "Trang", "Lưu ý"],
-            [[f.nhan, gia_tri_truong_hien_thi(f), f.tai_lieu_nguon, f.trang or "-", nhan_luu_y_tin_cay(f.do_tin_cay, missing=f.gia_tri is None)] for f in result.truong_trich_xuat],
+            [
+                [
+                    f.nhan,
+                    gia_tri_truong_hien_thi(f),
+                    f.tai_lieu_nguon,
+                    f.trang or "-",
+                    nhan_luu_y_tin_cay(
+                        f.do_tin_cay,
+                        missing=f.gia_tri is None,
+                        low_confidence_threshold=low_confidence_threshold,
+                    ),
+                ]
+                for f in result.truong_trich_xuat
+            ],
             [46, 45, 46, 15, 30],
         ),
     ]
@@ -1520,8 +1610,8 @@ MA_NHA_CUNG_CAP_THEO_NHAN = {item["nhan"]: key for key, item in NHA_CUNG_CAP_LLM
 
 DEFAULT_SETTINGS = {
     "ten_ung_dung": "CreditLens — Trợ lý thẩm định tín dụng",
-    "mau_chu_dao": "#5B5FEF",
-    "mau_nhan": "#18C6D9",
+    "mau_chu_dao": "#0B6B4B",
+    "mau_nhan": "#A8E63A",
     "che_do_giao_dien": "Theo hệ thống",
     "llm_provider": "openai",
     "model": "gpt-5-mini",
@@ -1533,36 +1623,36 @@ CHE_DO_GIAO_DIEN = ("Theo hệ thống", "Sáng", "Tối", "Ấm áp", "Hiện �
 
 THEME_PALETTES = {
     "Theo hệ thống": {
-        "page": "#F5F8FC", "page_alt": "#ECF3FA", "surface": "rgba(255,255,255,.94)",
-        "surface_solid": "#FFFFFF", "text": "#17263A", "muted": "#607086",
-        "border": "rgba(80,105,135,.22)", "sidebar_top": "#FFFFFF", "sidebar_bottom": "#EDF5FC",
+        "page": "#F4F8F5", "page_alt": "#E9F2EC", "surface": "rgba(255,255,255,.95)",
+        "surface_solid": "#FFFFFF", "text": "#153629", "muted": "#5C7469",
+        "border": "rgba(36,105,77,.20)", "sidebar_top": "#FFFFFF", "sidebar_bottom": "#E8F3EC",
     },
     "Sáng": {
-        "page": "#F7FAFD", "page_alt": "#EDF4FB", "surface": "rgba(255,255,255,.97)",
-        "surface_solid": "#FFFFFF", "text": "#14263A", "muted": "#607086",
-        "border": "rgba(65,92,123,.20)", "sidebar_top": "#FFFFFF", "sidebar_bottom": "#F1F6FB",
+        "page": "#F7FAF8", "page_alt": "#ECF5EF", "surface": "rgba(255,255,255,.98)",
+        "surface_solid": "#FFFFFF", "text": "#133528", "muted": "#5B7569",
+        "border": "rgba(37,105,78,.18)", "sidebar_top": "#FFFFFF", "sidebar_bottom": "#EDF6F0",
     },
     "Tối": {
-        "page": "#0E131B", "page_alt": "#161D27", "surface": "rgba(22,29,39,.96)",
-        "surface_solid": "#171E28", "text": "#E7EEF8", "muted": "#9AA8BA",
-        "border": "rgba(148,163,184,.22)", "sidebar_top": "#111821", "sidebar_bottom": "#171F2A",
+        "page": "#07140F", "page_alt": "#0D2119", "surface": "rgba(16,39,30,.96)",
+        "surface_solid": "#112A20", "text": "#EDF8F1", "muted": "#A1BBAF",
+        "border": "rgba(132,196,163,.22)", "sidebar_top": "#091811", "sidebar_bottom": "#10271E",
     },
     "Ấm áp": {
-        "page": "#FFF8EF", "page_alt": "#F8ECDD", "surface": "rgba(255,253,248,.96)",
-        "surface_solid": "#FFFDF8", "text": "#3B2C26", "muted": "#79675E",
-        "border": "rgba(154,105,72,.23)", "sidebar_top": "#FFFDF8", "sidebar_bottom": "#F9ECDD",
+        "page": "#FBF9EE", "page_alt": "#F1EEDB", "surface": "rgba(255,254,247,.97)",
+        "surface_solid": "#FFFEF7", "text": "#343B24", "muted": "#6E7258",
+        "border": "rgba(104,112,55,.22)", "sidebar_top": "#FFFEF7", "sidebar_bottom": "#F2F0DF",
     },
     "Hiện đại": {
-        "page": "#F4F7FF", "page_alt": "#EAF2FF", "surface": "rgba(255,255,255,.88)",
-        "surface_solid": "#FFFFFF", "text": "#15273B", "muted": "#60748A",
-        "border": "rgba(91,95,239,.20)", "sidebar_top": "#FFFFFF", "sidebar_bottom": "#ECF5FF",
+        "page": "#F1F8F5", "page_alt": "#E4F1EC", "surface": "rgba(255,255,255,.90)",
+        "surface_solid": "#FFFFFF", "text": "#11372A", "muted": "#587468",
+        "border": "rgba(11,107,75,.20)", "sidebar_top": "#FFFFFF", "sidebar_bottom": "#E7F4EE",
     },
 }
 
 THEME_ACCENTS = {
-    "Sáng": ("#315ACB", "#0E9F9A"),
-    "Tối": ("#7C83FF", "#22D3C5"),
-    "Ấm áp": ("#B85F3D", "#D99A32"),
+    "Sáng": ("#0B6B4B", "#83C92C"),
+    "Tối": ("#52D092", "#B7F34B"),
+    "Ấm áp": ("#5D6B2F", "#C2A12D"),
 }
 
 PAGES = [
@@ -1572,8 +1662,22 @@ PAGES = [
     "Cảnh báo rủi ro",
     "Tóm tắt thẩm định",
     "Đánh giá & phương pháp",
-    "Cài đặt AI",
+    "Cài đặt",
 ]
+
+NHAN_DIEU_HUONG = {
+    "Trang chủ & hồ sơ": "⌂  Tổng quan và hồ sơ",
+    "Trích xuất tài liệu": "▦  Trích xuất tài liệu",
+    "Phân tích tín dụng": "◈  Phân tích tín dụng",
+    "Cảnh báo rủi ro": "△  Cảnh báo rủi ro",
+    "Tóm tắt thẩm định": "≡  Tóm tắt thẩm định",
+    "Đánh giá & phương pháp": "◎  Phương pháp và giới hạn",
+    "Cài đặt": "⚙  Cài đặt",
+}
+
+PROJECT_ROOT = Path(__file__).resolve().parent
+LOGO_PATH = PROJECT_ROOT / "static" / "creditlens-logo.png"
+LOGO_ICON_PATH = PROJECT_ROOT / "static" / "creditlens-icon.png"
 
 STREAMLIT_CSS = """
 <style>
@@ -1589,40 +1693,66 @@ STREAMLIT_CSS = """
     --credit-border: BORDER_COLOR;
     --credit-sidebar-top: SIDEBAR_TOP_COLOR;
     --credit-sidebar-bottom: SIDEBAR_BOTTOM_COLOR;
+    --credit-metric-ok: METRIC_OK_COLOR;
+    --credit-metric-warn: METRIC_WARN_COLOR;
+    --credit-metric-missing: METRIC_MISSING_COLOR;
     --credit-radius: 18px;
+    --credit-shadow: 0 14px 42px rgba(16, 62, 44, .09);
+    --credit-focus: 0 0 0 3px color-mix(in srgb, var(--credit-accent) 34%, transparent);
   }
+  * { box-sizing: border-box; }
   html, body, .stApp, [class*="css"] {
     font-family: Inter, "Segoe UI", Roboto, Helvetica, Arial, sans-serif !important;
   }
+  html { scroll-behavior: smooth; }
   .stApp, [data-testid="stAppViewContainer"] {
     color: var(--credit-text);
     background:
-      radial-gradient(circle at 8% 4%, rgba(24, 198, 217, .13), transparent 25rem),
-      radial-gradient(circle at 91% 7%, rgba(91, 95, 239, .13), transparent 26rem),
+      radial-gradient(circle at 7% 3%, rgba(83, 207, 143, .15), transparent 25rem),
+      radial-gradient(circle at 92% 6%, rgba(168, 230, 58, .13), transparent 26rem),
       linear-gradient(180deg, var(--credit-page) 0%, var(--credit-page-alt) 100%);
   }
   .stApp h1, .stApp h2, .stApp h3, .stApp h4, .stApp p, .stApp label,
   .stApp [data-testid="stCaptionContainer"], .stApp [data-testid="stMarkdownContainer"] {
     color: var(--credit-text);
   }
-  .block-container { max-width: 1420px; padding-top: 1.25rem; padding-bottom: 4rem; }
+  .block-container {
+    max-width: 1360px; padding-top: 1.15rem; padding-bottom: 4rem;
+    animation: credit-page-enter .34s cubic-bezier(.22, .85, .35, 1) both;
+  }
   [data-testid="stSidebar"] {
     background: linear-gradient(180deg, var(--credit-sidebar-top), var(--credit-sidebar-bottom));
     border-right: 1px solid var(--credit-border);
   }
   [data-testid="stSidebar"] * { color: var(--credit-text); }
+  [data-testid="stSidebar"] [data-testid="stImage"] {
+    background: #FFFFFF; border: 1px solid rgba(24, 104, 73, .16); border-radius: 18px;
+    padding: 8px 12px; margin: 3px 0 13px; box-shadow: 0 10px 28px rgba(13, 87, 61, .10);
+  }
+  [data-testid="stSidebar"] [data-testid="stImage"] img { border-radius: 11px; }
   [data-testid="stSidebar"] .stRadio label {
-    border-radius: 12px; padding: 6px 9px; transition: all .2s ease;
+    min-height: 43px; border-radius: 12px; padding: 7px 10px; margin: 2px 0;
+    transition: transform .16s ease, background .16s ease, box-shadow .16s ease;
   }
   [data-testid="stSidebar"] .stRadio label:hover {
-    background: rgba(91,95,239,.08); transform: translateX(2px);
+    background: rgba(11,107,75,.09); transform: translateX(2px);
+  }
+  [data-testid="stSidebar"] .stRadio label:has(input:checked) {
+    background: linear-gradient(105deg, #064832, #0B6B4B);
+    box-shadow: 0 8px 20px rgba(11,107,75,.20); transform: translateX(2px);
+  }
+  [data-testid="stSidebar"] .stRadio label:has(input:checked) * { color: #FFFFFF !important; font-weight: 760 !important; }
+  [data-testid="stSidebar"] .stRadio label:active { transform: translateX(2px) scale(.985); }
+  .sidebar-section-label {
+    color: var(--credit-muted); font-size: .69rem; font-weight: 850; letter-spacing: .12em;
+    margin: 10px 0 5px; text-transform: uppercase;
   }
   .credit-hero {
     position: relative; overflow: hidden;
-    background: linear-gradient(125deg, #102A43 0%, PRIMARY_COLOR 58%, ACCENT_COLOR 130%);
+    background: linear-gradient(125deg, #052F23 0%, #0B5D42 58%, #087A57 100%);
     color: white; border: 1px solid rgba(255,255,255,.36);
-    border-radius: 26px; padding: 31px 34px; margin-bottom: 17px;
-    box-shadow: 0 18px 55px rgba(35,79,150,.20), 0 0 28px rgba(24,198,217,.22);
+    border-radius: 26px; padding: 29px 33px; margin-bottom: 17px;
+    box-shadow: 0 20px 58px rgba(8,75,51,.20), 0 0 30px rgba(168,230,58,.16);
   }
   .credit-hero:after {
     content: ""; position: absolute; width: 280px; height: 280px; right: -80px; top: -120px;
@@ -1630,6 +1760,9 @@ STREAMLIT_CSS = """
     box-shadow: 0 0 55px rgba(255,255,255,.18), inset 0 0 40px rgba(255,255,255,.08);
   }
   .credit-kicker { font-size: .76rem; font-weight: 800; letter-spacing: .14em; opacity: .86; margin-bottom: 9px; }
+  .credit-hero, .credit-hero h1, .credit-hero p, .credit-hero .credit-kicker, .credit-hero .credit-chip {
+    color: #FFFFFF !important;
+  }
   .credit-hero h1 { margin: 0 0 9px; font-size: clamp(1.75rem, 3.4vw, 2.55rem); line-height: 1.12; }
   .credit-hero p { margin: 0; max-width: 850px; opacity: .94; }
   .credit-chip {
@@ -1640,23 +1773,23 @@ STREAMLIT_CSS = """
   .credit-notice, .credit-privacy, .status-card, .evidence-card {
     background: var(--credit-surface); color: var(--credit-text); border: 1px solid var(--credit-border);
     border-radius: var(--credit-radius); padding: 15px 17px; margin: 10px 0 18px;
-    box-shadow: 0 10px 28px rgba(35,79,120,.07); backdrop-filter: blur(9px);
+    box-shadow: var(--credit-shadow); backdrop-filter: blur(9px);
   }
   .credit-notice { border-left: 5px solid #FFB020; }
   .credit-privacy { border-left: 5px solid ACCENT_COLOR; }
   .status-card { border-left: 5px solid PRIMARY_COLOR; }
   .public-pill {
     display: inline-flex; align-items: center; gap: 7px; padding: 7px 11px; border-radius: 999px;
-    color: #0B5560; background: #E4FBFD; border: 1px solid rgba(24,198,217,.38);
-    font-size: .76rem; font-weight: 800; box-shadow: 0 0 18px rgba(24,198,217,.15);
+    color: #075B3D; background: #E7F8EE; border: 1px solid rgba(11,107,75,.30);
+    font-size: .74rem; font-weight: 820; box-shadow: 0 0 18px rgba(11,107,75,.11);
   }
-  .public-dot { width: 8px; height: 8px; border-radius: 50%; background: #00B884; box-shadow: 0 0 10px #00B884; }
+  .public-dot { width: 8px; height: 8px; border-radius: 50%; background: #16A56E; box-shadow: 0 0 10px #16A56E; }
   div[data-testid="stMetric"] {
     background: var(--credit-surface);
     border: 1px solid var(--credit-border); border-radius: var(--credit-radius); padding: 15px 17px;
-    box-shadow: 0 11px 30px rgba(36,78,120,.08); transition: transform .2s ease, box-shadow .2s ease;
+    box-shadow: var(--credit-shadow); transition: transform .18s ease, box-shadow .18s ease;
   }
-  div[data-testid="stMetric"]:hover { transform: translateY(-2px); box-shadow: 0 14px 36px rgba(36,78,120,.13), 0 0 18px rgba(24,198,217,.10); }
+  div[data-testid="stMetric"]:hover { transform: translateY(-2px); box-shadow: 0 16px 38px rgba(16,78,55,.14), 0 0 18px rgba(168,230,58,.09); }
   [data-testid="stFileUploaderDropzone"] {
     min-height: 116px; color: var(--credit-text) !important;
     background: var(--credit-surface-solid) !important;
@@ -1689,50 +1822,71 @@ STREAMLIT_CSS = """
   [role="listbox"] { color: var(--credit-text) !important; background: var(--credit-surface-solid) !important; }
   [role="option"] { color: var(--credit-text) !important; background: var(--credit-surface-solid) !important; }
   [role="option"][aria-selected="true"], [role="option"]:hover {
-    background: rgba(91,95,239,.16) !important;
+    background: rgba(11,107,75,.14) !important;
   }
   .stTextInput input:focus, .stNumberInput input:focus, .stTextArea textarea:focus {
-    border-color: ACCENT_COLOR !important; box-shadow: 0 0 0 3px rgba(24,198,217,.14) !important;
+    border-color: ACCENT_COLOR !important; box-shadow: var(--credit-focus) !important;
   }
   .stButton > button, .stDownloadButton > button {
     min-height: 44px; color: var(--credit-text) !important; background: var(--credit-surface-solid) !important;
     border-radius: 14px !important; border: 1px solid var(--credit-border) !important;
-    font-weight: 750 !important; transition: all .2s ease !important;
+    font-weight: 750 !important; cursor: pointer; transition: transform .14s ease, box-shadow .16s ease, border-color .16s ease !important;
   }
   .stButton > button:hover, .stDownloadButton > button:hover {
     transform: translateY(-1px); border-color: ACCENT_COLOR !important;
-    box-shadow: 0 9px 24px rgba(35,79,150,.14), 0 0 16px rgba(24,198,217,.18) !important;
+    box-shadow: 0 10px 25px rgba(13,89,61,.15), 0 0 16px rgba(168,230,58,.13) !important;
   }
+  .stButton > button:active, .stDownloadButton > button:active { transform: translateY(0) scale(.985) !important; }
+  .stButton > button:focus-visible, .stDownloadButton > button:focus-visible,
+  input:focus-visible, textarea:focus-visible, [role="combobox"]:focus-visible,
+  [role="tab"]:focus-visible { outline: 2px solid var(--credit-accent) !important; outline-offset: 2px; }
+  .stButton > button:disabled, .stDownloadButton > button:disabled { cursor: not-allowed; opacity: .58; transform: none !important; }
   button[kind="primary"], .stDownloadButton > button[kind="primary"] {
     color: white !important; border: 0 !important;
-    background: linear-gradient(110deg, PRIMARY_COLOR, ACCENT_COLOR) !important;
-    box-shadow: 0 10px 25px rgba(91,95,239,.25), 0 0 16px rgba(24,198,217,.16) !important;
+    background: linear-gradient(110deg, #064832, #0B6B4B) !important;
+    box-shadow: 0 10px 25px rgba(11,107,75,.24), 0 0 16px rgba(168,230,58,.13) !important;
   }
   [data-testid="stExpander"] { background: var(--credit-surface); border: 1px solid var(--credit-border); border-radius: var(--credit-radius); overflow: hidden; }
-  [data-testid="stDataFrame"] { background: var(--credit-surface-solid); border: 1px solid var(--credit-border); border-radius: var(--credit-radius); overflow: hidden; box-shadow: 0 8px 25px rgba(36,78,120,.06); }
+  [data-testid="stDataFrame"] { background: var(--credit-surface-solid); border: 1px solid var(--credit-border); border-radius: var(--credit-radius); overflow: hidden; box-shadow: 0 8px 25px rgba(18,75,54,.07); }
   [data-testid="stVerticalBlockBorderWrapper"] {
     background: var(--credit-surface); border-color: var(--credit-border) !important;
-    border-radius: var(--credit-radius) !important; box-shadow: 0 8px 24px rgba(36,78,120,.06);
+    border-radius: var(--credit-radius) !important; box-shadow: 0 8px 24px rgba(18,75,54,.07);
   }
   .credit-upload-panel {
     background: var(--credit-surface); border: 1px solid var(--credit-border); border-radius: var(--credit-radius);
-    padding: 16px 18px 5px; margin: 8px 0 16px; box-shadow: 0 8px 24px rgba(36,78,120,.06);
+    padding: 16px 18px 5px; margin: 8px 0 16px; box-shadow: 0 8px 24px rgba(18,75,54,.07);
   }
+  .credit-process-grid {
+    display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 13px; margin: 5px 0 22px;
+  }
+  .credit-process-card {
+    min-height: 142px; background: var(--credit-surface); border: 1px solid var(--credit-border);
+    border-radius: 17px; padding: 16px; box-shadow: 0 9px 24px rgba(18,75,54,.07);
+    transition: transform .18s ease, border-color .18s ease, box-shadow .18s ease;
+  }
+  .credit-process-card:hover { transform: translateY(-3px); border-color: color-mix(in srgb, var(--credit-primary) 44%, var(--credit-border)); box-shadow: 0 15px 32px rgba(18,75,54,.12); }
+  .process-step {
+    display: grid; place-items: center; width: 31px; height: 31px; border-radius: 10px;
+    color: #FFFFFF; background: linear-gradient(135deg, #064832, #0B6B4B);
+    font-size: .78rem; font-weight: 900; margin-bottom: 11px;
+  }
+  .process-title { color: var(--credit-text); font-size: .92rem; font-weight: 820; margin-bottom: 5px; }
+  .process-copy { color: var(--credit-muted); font-size: .78rem; line-height: 1.48; }
   .credit-metric-grid {
     display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 18px; margin: 8px 0 20px;
   }
   .credit-metric-card {
     min-height: 238px; display: flex; flex-direction: column; box-sizing: border-box;
     background: var(--credit-surface); border: 1px solid var(--credit-border); border-radius: var(--credit-radius);
-    padding: 20px; box-shadow: 0 11px 30px rgba(36,78,120,.08); transition: transform .2s ease, box-shadow .2s ease;
+    padding: 20px; box-shadow: var(--credit-shadow); transition: transform .18s ease, box-shadow .18s ease;
   }
-  .credit-metric-card:hover { transform: translateY(-2px); box-shadow: 0 15px 38px rgba(36,78,120,.13); }
+  .credit-metric-card:hover { transform: translateY(-2px); box-shadow: 0 15px 38px rgba(18,75,54,.13); }
   .metric-name { color: var(--credit-muted); font-size: .9rem; font-weight: 750; margin-bottom: 8px; }
   .metric-value { color: var(--credit-text); font-size: clamp(1.8rem, 3vw, 2.5rem); line-height: 1.08; margin-bottom: 12px; }
   .metric-badge { width: fit-content; border-radius: 999px; padding: 5px 10px; font-size: .78rem; font-weight: 800; }
-  .metric-ok { color: #15803D; background: rgba(34,197,94,.14); }
-  .metric-warn { color: #B45309; background: rgba(245,158,11,.17); }
-  .metric-missing { color: #64748B; background: rgba(148,163,184,.18); }
+  .metric-ok { color: var(--credit-metric-ok); background: rgba(34,197,94,.14); }
+  .metric-warn { color: var(--credit-metric-warn); background: rgba(245,158,11,.17); }
+  .metric-missing { color: var(--credit-metric-missing); background: rgba(148,163,184,.18); }
   .metric-formula { color: var(--credit-muted); font-size: .78rem; line-height: 1.45; margin-top: auto; padding-top: 16px; font-weight: 650; }
   .metric-note { color: var(--credit-muted); font-size: .78rem; line-height: 1.45; margin-top: 7px; }
   .confidence-legend {
@@ -1743,9 +1897,35 @@ STREAMLIT_CSS = """
   .legend-review { border-left: 4px solid #F59E0B !important; }
   .legend-check { border-left: 4px solid #EF4444 !important; }
   .legend-missing { border-left: 4px solid #94A3B8 !important; }
-  hr { border-color: rgba(91,95,239,.13) !important; }
+  [data-testid="stTabs"] [role="tablist"] { gap: 8px; border-bottom-color: var(--credit-border); }
+  [data-testid="stTabs"] button[role="tab"] {
+    min-height: 43px; border-radius: 12px 12px 0 0; padding-inline: 14px; font-weight: 740;
+    transition: color .15s ease, background .15s ease, transform .15s ease;
+  }
+  [data-testid="stTabs"] button[role="tab"]:hover { background: rgba(11,107,75,.07); }
+  [data-testid="stTabs"] button[role="tab"][aria-selected="true"] { color: var(--credit-primary) !important; background: rgba(11,107,75,.09); }
+  [data-testid="stTabs"] button[role="tab"]:active { transform: scale(.98); }
+  [data-testid="stStatusWidget"] { border-radius: var(--credit-radius); border-color: var(--credit-border); background: var(--credit-surface); }
+  hr { border-color: rgba(11,107,75,.13) !important; }
+  @keyframes credit-page-enter {
+    from { opacity: 0; transform: translateY(8px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+  @media (max-width: 1080px) { .credit-process-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
   @media (max-width: 950px) { .credit-metric-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
-  @media (max-width: 640px) { .credit-metric-grid { grid-template-columns: 1fr; } .credit-metric-card { min-height: 218px; } }
+  @media (max-width: 640px) {
+    .block-container { padding-inline: 1rem; }
+    .credit-hero { padding: 23px 21px; border-radius: 21px; }
+    .credit-process-grid, .credit-metric-grid { grid-template-columns: 1fr; }
+    .credit-metric-card { min-height: 218px; }
+    [data-testid="stTabs"] [role="tablist"] { overflow-x: auto; }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    html { scroll-behavior: auto; }
+    *, *::before, *::after { animation-duration: .01ms !important; animation-iteration-count: 1 !important; transition-duration: .01ms !important; }
+    .block-container, .credit-process-card:hover, .credit-metric-card:hover, div[data-testid="stMetric"]:hover,
+    .stButton > button:hover, .stDownloadButton > button:hover { transform: none !important; }
+  }
   SYSTEM_THEME_MEDIA
 </style>
 """
@@ -1756,8 +1936,8 @@ def tao_css_giao_dien(settings: dict[str, Any]) -> str:
     if mode not in CHE_DO_GIAO_DIEN:
         mode = "Theo hệ thống"
     palette = THEME_PALETTES[mode]
-    primary = lam_sach_mau(settings.get("mau_chu_dao", "#5B5FEF"))
-    accent = lam_sach_mau(settings.get("mau_nhan", "#18C6D9"), "#18C6D9")
+    primary = lam_sach_mau(settings.get("mau_chu_dao", "#0B6B4B"))
+    accent = lam_sach_mau(settings.get("mau_nhan", "#A8E63A"), "#A8E63A")
     if mode in THEME_ACCENTS:
         primary, accent = THEME_ACCENTS[mode]
 
@@ -1766,10 +1946,13 @@ def tao_css_giao_dien(settings: dict[str, Any]) -> str:
         dark = THEME_PALETTES["Tối"]
         system_media = """@media (prefers-color-scheme: dark) {
           :root {
+            --credit-primary: #52D092; --credit-accent: #B7F34B;
             --credit-page: DARK_PAGE; --credit-page-alt: DARK_PAGE_ALT;
             --credit-surface: DARK_SURFACE; --credit-surface-solid: DARK_SURFACE_SOLID;
             --credit-text: DARK_TEXT; --credit-muted: DARK_MUTED; --credit-border: DARK_BORDER;
             --credit-sidebar-top: DARK_SIDEBAR_TOP; --credit-sidebar-bottom: DARK_SIDEBAR_BOTTOM;
+            --credit-metric-ok: #86EFAC; --credit-metric-warn: #FCD34D;
+            --credit-metric-missing: #CBD5E1;
           }
         }"""
         for key in sorted(dark, key=len, reverse=True):
@@ -1787,6 +1970,9 @@ def tao_css_giao_dien(settings: dict[str, Any]) -> str:
         "BORDER_COLOR": palette["border"],
         "SIDEBAR_TOP_COLOR": palette["sidebar_top"],
         "SIDEBAR_BOTTOM_COLOR": palette["sidebar_bottom"],
+        "METRIC_OK_COLOR": "#86EFAC" if mode == "Tối" else "#15803D",
+        "METRIC_WARN_COLOR": "#FCD34D" if mode == "Tối" else "#B45309",
+        "METRIC_MISSING_COLOR": "#CBD5E1" if mode == "Tối" else "#64748B",
         "SYSTEM_THEME_MEDIA": system_media,
     }
     css = STREAMLIT_CSS
@@ -1799,7 +1985,7 @@ def cau_hinh_mac_dinh() -> dict[str, Any]:
     return json.loads(json.dumps(DEFAULT_SETTINGS, ensure_ascii=False))
 
 
-def lam_sach_mau(value: str, mac_dinh: str = "#5B5FEF") -> str:
+def lam_sach_mau(value: str, mac_dinh: str = "#0B6B4B") -> str:
     return value.upper() if re.fullmatch(r"#[0-9A-Fa-f]{6}", value or "") else mac_dinh
 
 
@@ -1808,7 +1994,11 @@ def lam_sach_ma_ho_so(value: str) -> str:
     return cleaned or "CASE-CHUA-XAC-DINH"
 
 
-def xu_ly_tai_lieu_tai_len(ma_ho_so: str, uploads: dict[str, Any]) -> tuple[KetQuaThamDinh, dict[str, TaiLieu], list[str]]:
+def xu_ly_tai_lieu_tai_len(
+    ma_ho_so: str,
+    uploads: dict[str, Any],
+    thresholds: Mapping[str, Any] | None = None,
+) -> tuple[KetQuaThamDinh, dict[str, TaiLieu], list[str]]:
     docs: dict[str, TaiLieu] = {}
     errors: list[str] = []
     with tempfile.TemporaryDirectory(prefix="creditlens_upload_") as temp_dir:
@@ -1825,12 +2015,13 @@ def xu_ly_tai_lieu_tai_len(ma_ho_so: str, uploads: dict[str, Any]) -> tuple[KetQ
                 errors.append(str(exc))
     if not docs:
         raise ValueError("Không có tài liệu PDF hợp lệ để phân tích.")
-    return phan_tich_tai_lieu(lam_sach_ma_ho_so(ma_ho_so), docs), docs, errors
+    return phan_tich_tai_lieu(lam_sach_ma_ho_so(ma_ho_so), docs, thresholds), docs, errors
 
 
 def xu_ly_thu_muc_tai_lieu(
     ma_ho_so: str,
     uploaded_files: list[Any],
+    thresholds: Mapping[str, Any] | None = None,
 ) -> tuple[KetQuaThamDinh, dict[str, TaiLieu], list[str]]:
     """Đọc một thư mục gồm 3–4 PDF và tự phân loại từng tài liệu.
 
@@ -1881,7 +2072,7 @@ def xu_ly_thu_muc_tai_lieu(
     ]
     if required_missing:
         errors.append("Chưa nhận diện được tài liệu bắt buộc: " + ", ".join(required_missing) + ".")
-    return phan_tich_tai_lieu(lam_sach_ma_ho_so(ma_ho_so), docs), docs, errors
+    return phan_tich_tai_lieu(lam_sach_ma_ho_so(ma_ho_so), docs, thresholds), docs, errors
 
 
 def du_lieu_gui_llm(result: KetQuaThamDinh) -> str:
@@ -2184,6 +2375,7 @@ def nhan_luu_y_tin_cay(
     missing: bool = False,
     unreadable: bool = False,
     type_mismatch: bool = False,
+    low_confidence_threshold: float | None = None,
 ) -> str:
     """Đổi điểm confidence thành chỉ dẫn hành động dễ hiểu."""
     if unreadable:
@@ -2192,23 +2384,24 @@ def nhan_luu_y_tin_cay(
         return "Thiếu dữ liệu"
     if type_mismatch:
         return "Sai lệch loại — cần xác minh"
+    threshold = NGUONG["do_tin_cay_thap"] if low_confidence_threshold is None else low_confidence_threshold
+    if confidence < threshold:
+        return "Cần xác minh"
     if confidence >= 0.90:
         return "Tin cậy cao"
-    if confidence >= NGUONG["do_tin_cay_thap"]:
-        return "Cần đối chiếu"
-    return "Cần xác minh"
+    return "Cần đối chiếu"
 
 
 def kieu_o_luu_y(value: Any) -> str:
     text = str(value)
     base = "font-weight:700; border-radius:8px;"
     if text.startswith("Tin cậy cao"):
-        return base + "background-color:rgba(34,197,94,.16);color:#15803D;"
+        return base + "background-color:#DCFCE7;color:#14532D;"
     if text.startswith("Cần đối chiếu"):
-        return base + "background-color:rgba(245,158,11,.18);color:#A75605;"
+        return base + "background-color:#FEF3C7;color:#78350F;"
     if "cần xác minh" in text.lower() or "không đọc được" in text.lower():
-        return base + "background-color:rgba(239,68,68,.16);color:#B91C1C;"
-    return base + "background-color:rgba(148,163,184,.18);color:#596579;"
+        return base + "background-color:#FEE2E2;color:#7F1D1D;"
+    return base + "background-color:#E2E8F0;color:#334155;"
 
 
 def hien_thi_bang_luu_y(st, rows: list[dict[str, Any]], *, height: int | None = None) -> None:
@@ -2255,8 +2448,25 @@ def hien_thi_luoi_chi_so(st, metrics: list[ChiSoTinDung]) -> None:
     st.markdown("<div class='credit-metric-grid'>" + "".join(cards) + "</div>", unsafe_allow_html=True)
 
 
-def trang_ho_so(st) -> None:
+def trang_ho_so(st, thresholds: Mapping[str, Any]) -> None:
     st.header("Tạo hồ sơ thẩm định mới")
+    st.markdown(
+        "<div class='credit-process-grid' aria-label='Quy trình CreditLens'>"
+        "<article class='credit-process-card'><div class='process-step'>01</div>"
+        "<div class='process-title'>Tiếp nhận và chuẩn hóa</div>"
+        "<div class='process-copy'>Kiểm tra PDF, phân loại tài liệu và gắn từng dữ kiện với nguồn.</div></article>"
+        "<article class='credit-process-card'><div class='process-step'>02</div>"
+        "<div class='process-title'>Tính toán xác định</div>"
+        "<div class='process-copy'>Python tính các chỉ số; dữ liệu thiếu không được tự suy diễn.</div></article>"
+        "<article class='credit-process-card'><div class='process-step'>03</div>"
+        "<div class='process-title'>Đối chiếu bằng chứng</div>"
+        "<div class='process-copy'>Mỗi cảnh báo liên kết trở lại tài liệu, trang và giá trị liên quan.</div></article>"
+        "<article class='credit-process-card'><div class='process-step'>04</div>"
+        "<div class='process-title'>Con người xem xét</div>"
+        "<div class='process-copy'>Chuyên viên xác minh, diễn giải và xuất báo cáo; hệ thống không ra quyết định.</div></article>"
+        "</div>",
+        unsafe_allow_html=True,
+    )
     st.markdown(
         "<div class='credit-privacy'><b>Hệ thống minh họa.</b> Không tải lên thông tin ngân hàng thật hoặc dữ liệu mật. "
         "Tệp tạm được xóa ngay sau khi đọc; kết quả chỉ giữ trong phiên Streamlit.</div>",
@@ -2300,20 +2510,25 @@ def trang_ho_so(st) -> None:
             st.error("Hãy tải lên ít nhất một PDF hoặc chọn hồ sơ minh họa.")
         else:
             try:
-                with st.spinner("Đang kiểm tra, đọc, trích xuất và tính toán…"):
+                with st.status("Đang xử lý hồ sơ", expanded=True) as process_status:
+                    st.write("Kiểm tra định dạng, dung lượng và phân loại tài liệu…")
                     if upload_mode == "Tải một thư mục":
-                        result, docs, errors = xu_ly_thu_muc_tai_lieu(case_id, folder_files)
+                        result, docs, errors = xu_ly_thu_muc_tai_lieu(case_id, folder_files, thresholds)
                     else:
                         result, docs, errors = xu_ly_tai_lieu_tai_len(
                             case_id,
                             {"application": application, "income": income, "statement": statement, "debt": debt},
+                            thresholds,
                         )
+                    st.write("Chuẩn hóa dữ kiện, tính chỉ số và liên kết cảnh báo với bằng chứng…")
+                    process_status.update(label="Đã hoàn tất quy trình thẩm định", state="complete", expanded=False)
                 st.session_state.result = result
                 st.session_state.docs = docs
                 st.session_state.ai_summary = ""
+                st.session_state.ai_summary_context = {}
                 if errors:
                     st.warning("Một số tệp không xử lý được: " + " · ".join(errors))
-                st.success("Đã hoàn tất quy trình. Mở các mục bên trái để xem chi tiết.")
+                st.success("Đã hoàn tất. Các trang phân tích và bằng chứng đã sẵn sàng.")
             except ValueError as exc:
                 st.error(str(exc))
 
@@ -2321,15 +2536,21 @@ def trang_ho_so(st) -> None:
     st.subheader("Hồ sơ tổng hợp minh họa")
     demo_choice = st.selectbox("Chọn tình huống", list(DEMO_CASES), index=2)
     if st.button("Mở hồ sơ minh họa", width="stretch"):
-        result, docs = du_lieu_demo(demo_choice)
+        result, docs = du_lieu_demo(demo_choice, thresholds)
         st.session_state.result = result
         st.session_state.docs = docs
         st.session_state.ai_summary = ""
+        st.session_state.ai_summary_context = {}
         st.success(f"Đã mở {demo_choice}.")
     hien_thi_trang_thai(st, st.session_state.result)
 
 
-def trang_trich_xuat(st, result: KetQuaThamDinh | None, docs: dict[str, TaiLieu]) -> None:
+def trang_trich_xuat(
+    st,
+    result: KetQuaThamDinh | None,
+    docs: dict[str, TaiLieu],
+    thresholds: Mapping[str, Any],
+) -> None:
     st.header("Trích xuất tài liệu")
     if result is None:
         st.warning("Chưa có hồ sơ để hiển thị.")
@@ -2351,6 +2572,7 @@ def trang_trich_xuat(st, result: KetQuaThamDinh | None, docs: dict[str, TaiLieu]
                         doc.do_tin_cay,
                         unreadable=doc.trang_thai == "Không đọc được",
                         type_mismatch=mismatch,
+                        low_confidence_threshold=float(thresholds["do_tin_cay_thap"]),
                     ),
                 }
             )
@@ -2365,25 +2587,35 @@ def trang_trich_xuat(st, result: KetQuaThamDinh | None, docs: dict[str, TaiLieu]
                 "Giá trị": display,
                 "Nguồn": field.tai_lieu_nguon,
                 "Trang": field.trang or "—",
-                "Lưu ý": nhan_luu_y_tin_cay(field.do_tin_cay, missing=field.gia_tri is None),
+                "Lưu ý": nhan_luu_y_tin_cay(
+                    field.do_tin_cay,
+                    missing=field.gia_tri is None,
+                    low_confidence_threshold=float(thresholds["do_tin_cay_thap"]),
+                ),
             }
         )
     hien_thi_bang_luu_y(st, rows, height=485)
-    low = [field.nhan for field in result.truong_trich_xuat if field.gia_tri is not None and field.do_tin_cay < NGUONG["do_tin_cay_thap"]]
+    low = [
+        field.nhan
+        for field in result.truong_trich_xuat
+        if field.gia_tri is not None and field.do_tin_cay < float(thresholds["do_tin_cay_thap"])
+    ]
     if low:
         st.warning("Các trường cần con người xác nhận: " + ", ".join(low))
 
 
-def trang_phan_tich(st, result: KetQuaThamDinh | None) -> None:
+def trang_phan_tich(st, result: KetQuaThamDinh | None, thresholds: Mapping[str, Any]) -> None:
     st.header("Phân tích tín dụng bằng Python")
     if result is None:
         st.warning("Chưa có hồ sơ để phân tích.")
         return
     hien_thi_luoi_chi_so(st, result.chi_so)
     st.info(
-        f"Ngưỡng minh họa: chênh lệch thu nhập > {phan_tram(NGUONG['chenh_lech_thu_nhap'])}; "
-        f"DTI > {phan_tram(NGUONG['dti_canh_bao'])}; DSR > {phan_tram(NGUONG['dsr_canh_bao'])}; "
-        f"hệ số đệm số dư < {so_thap_phan(NGUONG['he_so_dem_so_du_thap'])}×. Không phải chính sách ngân hàng."
+        f"Ngưỡng minh họa: chênh lệch thu nhập > {phan_tram(float(thresholds['chenh_lech_thu_nhap']))}; "
+        f"DTI > {phan_tram(float(thresholds['dti_canh_bao']))}; "
+        f"DSR > {phan_tram(float(thresholds['dsr_canh_bao']))}; "
+        f"hệ số đệm số dư < {so_thap_phan(float(thresholds['he_so_dem_so_du_thap']))}×. "
+        "Không phải chính sách ngân hàng."
     )
 
 
@@ -2416,6 +2648,8 @@ def trang_tom_tat(st, result: KetQuaThamDinh | None, settings: dict[str, Any]) -
         return
     deterministic = bao_cao_markdown(result)
     st.markdown(deterministic)
+    connection = ket_noi_llm_dang_dung(st)
+    ai_text = tom_tat_ai_hieu_luc(st, connection, result.ma_ho_so, settings["system_prompt"])
 
     st.divider()
     st.subheader("Xuất báo cáo hồ sơ")
@@ -2431,9 +2665,12 @@ def trang_tom_tat(st, result: KetQuaThamDinh | None, settings: dict[str, Any]) -
         key="report_format",
     )
     extension, mime_type, generator = DINH_DANG_BAO_CAO[selected_format]
-    ai_text = st.session_state.get("ai_summary", "")
     try:
-        report_bytes = generator(result, ai_text)
+        report_bytes = generator(
+            result,
+            ai_text,
+            float(nguong_hieu_luc(settings.get("nguong"))["do_tin_cay_thap"]),
+        )
         file_name = f"{lam_sach_ma_ho_so(result.ma_ho_so)}_bao_cao_tham_dinh.{extension}"
         st.download_button(
             f"Tải báo cáo {selected_format}",
@@ -2456,35 +2693,43 @@ def trang_tom_tat(st, result: KetQuaThamDinh | None, settings: dict[str, Any]) -
     st.divider()
     st.subheader("Diễn giải bổ sung bằng LLM")
     st.caption("LLM chỉ nhận dữ liệu có cấu trúc và kết quả Python; không nhận toàn bộ PDF và không được thay đổi phép tính.")
-    api_key = st.session_state.get("api_key_session", "")
-    provider = st.session_state.get("llm_provider_detected") or settings.get("llm_provider", "openai")
-    model = st.session_state.get("llm_model_selector") or settings.get("model", "")
-    llm_ready = bool(
-        api_key
-        and st.session_state.get("llm_key_verified")
-        and provider in NHA_CUNG_CAP_LLM
-        and _model_hop_le(provider, model)
-    )
-    if not api_key:
-        st.info("Hãy nhập API Key tại mục “Cài đặt AI”. Khóa chỉ giữ trong phiên hiện tại.")
+    api_key = connection.get("api_key", "") if connection else ""
+    provider = connection.get("provider", "") if connection else ""
+    model = connection.get("model", "") if connection else ""
+    llm_ready = bool(connection and provider in NHA_CUNG_CAP_LLM and _model_hop_le(provider, model))
+    if not connection:
+        st.info("Hãy mở Cài đặt → Kết nối AI, xác thực khóa và chọn “API Key sử dụng ngay”.")
     elif llm_ready:
         st.success(f"Đang dùng **{NHA_CUNG_CAP_LLM[provider]['nhan']}** · model **{model}**.")
     else:
-        st.warning("API Key chưa được xác minh hoặc chưa chọn model. Hãy mở mục “Cài đặt AI”.")
+        st.warning("Kết nối chưa sẵn sàng. Hãy kiểm tra API Key và model trong Cài đặt.")
     if st.button("Tạo diễn giải bằng AI", type="primary", disabled=not llm_ready, width="stretch"):
         try:
             with st.spinner("Đang tạo diễn giải có căn cứ…"):
-                st.session_state.ai_summary = tao_dien_giai_bang_ai(
+                generated_summary = tao_dien_giai_bang_ai(
                     result,
                     api_key,
                     provider,
                     model,
                     settings["system_prompt"],
                 )
+                st.session_state.ai_summary = generated_summary
+                st.session_state.ai_summary_context = ngu_canh_tom_tat_ai(
+                    connection,
+                    result.ma_ho_so,
+                    settings["system_prompt"],
+                )
+                st.rerun()
         except (ValueError, RuntimeError) as exc:
             st.error(str(exc))
-    if st.session_state.get("ai_summary"):
-        st.markdown(st.session_state.ai_summary)
+    current_ai_text = tom_tat_ai_hieu_luc(
+        st,
+        connection,
+        result.ma_ho_so,
+        settings["system_prompt"],
+    )
+    if current_ai_text:
+        st.markdown(current_ai_text)
 
 
 def trang_danh_gia(st) -> None:
@@ -2522,7 +2767,7 @@ def nhap_cau_hinh_json(raw: bytes) -> dict[str, Any]:
     if isinstance(candidate.get("mau_chu_dao"), str):
         output["mau_chu_dao"] = lam_sach_mau(candidate["mau_chu_dao"])
     if isinstance(candidate.get("mau_nhan"), str):
-        output["mau_nhan"] = lam_sach_mau(candidate["mau_nhan"], "#18C6D9")
+        output["mau_nhan"] = lam_sach_mau(candidate["mau_nhan"], "#A8E63A")
     if candidate.get("che_do_giao_dien") in CHE_DO_GIAO_DIEN:
         output["che_do_giao_dien"] = candidate["che_do_giao_dien"]
     if candidate.get("llm_provider") in NHA_CUNG_CAP_LLM:
@@ -2534,227 +2779,354 @@ def nhap_cau_hinh_json(raw: bytes) -> dict[str, Any]:
     if isinstance(candidate.get("nguong"), dict):
         for key, default in output["nguong"].items():
             value = candidate["nguong"].get(key, default)
-            if isinstance(value, (int, float)) and 0 <= float(value) <= 5:
+            lower, upper = GIOI_HAN_NGUONG[key]
+            if (
+                isinstance(value, (int, float))
+                and not isinstance(value, bool)
+                and lower <= float(value) <= upper
+            ):
                 output["nguong"][key] = float(value)
     return output
 
 
-def xoa_trang_thai_ket_noi_llm(
+def nhan_ket_noi_llm(provider: str, connection: dict[str, Any]) -> str:
+    provider_label = NHA_CUNG_CAP_LLM.get(provider, {}).get("nhan", provider)
+    model = str(connection.get("model") or "chưa chọn model")
+    return f"{provider_label} · {model}"
+
+
+def ket_noi_llm_dang_dung(st) -> dict[str, Any] | None:
+    connections = st.session_state.get("llm_connections", {})
+    provider = st.session_state.get("active_llm_provider", "")
+    connection = connections.get(provider) if isinstance(connections, dict) else None
+    if not isinstance(connection, dict):
+        return None
+    if not connection.get("verified") or not connection.get("api_key") or not connection.get("model"):
+        return None
+    return connection
+
+
+def ngu_canh_tom_tat_ai(
+    connection: Mapping[str, Any],
+    case_id: str,
+    system_prompt: str = "",
+) -> dict[str, str]:
+    return {
+        "provider": str(connection.get("provider") or ""),
+        "model": str(connection.get("model") or ""),
+        "fingerprint": str(connection.get("fingerprint") or ""),
+        "case_id": str(case_id or ""),
+        "prompt_fingerprint": hashlib.sha256(str(system_prompt or "").encode("utf-8")).hexdigest(),
+    }
+
+
+def tom_tat_ai_hieu_luc(
     st,
-    *,
-    xoa_khoa: bool = False,
-    xoa_lua_chon_model: bool = True,
-) -> None:
-    for key in (
-        "llm_provider_detected",
-        "llm_models_available",
-        "llm_key_fingerprint",
-        "llm_key_verified",
-        "llm_connection_error",
-    ):
-        st.session_state.pop(key, None)
-    if xoa_lua_chon_model:
-        st.session_state.pop("llm_model_selector", None)
-    if xoa_khoa:
-        st.session_state.api_key_session = ""
+    connection: Mapping[str, Any] | None,
+    case_id: str,
+    system_prompt: str = "",
+) -> str:
+    summary = str(st.session_state.get("ai_summary") or "")
+    if not summary:
+        return ""
+    expected = ngu_canh_tom_tat_ai(connection, case_id, system_prompt) if connection else None
+    if st.session_state.get("ai_summary_context") != expected:
+        st.session_state.ai_summary = ""
+        st.session_state.ai_summary_context = {}
+        return ""
+    return summary
+
+
+def xoa_ket_noi_llm(st, provider: str) -> None:
+    connections = dict(st.session_state.get("llm_connections", {}))
+    removed = connections.pop(provider, None)
+    st.session_state.llm_connections = connections
+    st.session_state.active_llm_provider = next(iter(connections), "")
+    st.session_state.llm_connection_error = ""
+    if isinstance(removed, dict) and st.session_state.get("llm_api_key_draft", "").strip() == str(
+        removed.get("api_key") or ""
+    ).strip():
+        st.session_state.llm_api_key_draft = ""
+    st.session_state.pop("api_key_session", None)
+    if st.session_state.get("ai_summary_context", {}).get("provider") == provider:
+        st.session_state.ai_summary = ""
+        st.session_state.ai_summary_context = {}
+    st.session_state.pop("llm_active_selector", None)
+    st.session_state.pop(f"llm_model_selector_{provider}", None)
 
 
 def trang_cai_dat(st, settings: dict[str, Any]) -> None:
-    st.header("Cài đặt AI và tùy chỉnh web an toàn")
-    st.warning(
-        "API Key chỉ được giữ trong phiên hiện tại và chỉ gửi đến nhà cung cấp bạn chọn để xác thực/model inference. "
-        "Khóa không được ghi vào source code, cấu hình JSON, báo cáo hoặc log."
+    st.header("Cài đặt")
+    st.caption("Kết nối AI, giao diện, ngưỡng và guardrails chỉ có hiệu lực trong phiên trình duyệt hiện tại.")
+    tab_ai, tab_ui, tab_thresholds, tab_guardrails = st.tabs(
+        ["Kết nối AI", "Giao diện", "Ngưỡng minh họa", "Guardrails và cấu hình"]
     )
 
-    st.subheader("Kết nối chatbot")
-    current_provider = settings.get("llm_provider", "openai")
-    default_provider_label = NHA_CUNG_CAP_LLM.get(current_provider, NHA_CUNG_CAP_LLM["openai"])["nhan"]
-    if "llm_provider_choice" not in st.session_state:
-        st.session_state.llm_provider_choice = TU_DONG_NHAN_DIEN
-    provider_choice = st.selectbox(
-        "Nhà cung cấp chatbot",
-        LUA_CHON_NHA_CUNG_CAP,
-        key="llm_provider_choice",
-        help=(
-            "Tự động chỉ nhận diện các tiền tố không mơ hồ. Với khóa bắt đầu bằng sk- có thể thuộc OpenAI hoặc "
-            "DeepSeek, hãy chọn đúng nhà cung cấp để không truyền khóa nhầm nơi."
-        ),
-    )
-    selected_provider = MA_NHA_CUNG_CAP_THEO_NHAN.get(provider_choice)
-    placeholder = (
-        NHA_CUNG_CAP_LLM[selected_provider]["placeholder"]
-        if selected_provider in NHA_CUNG_CAP_LLM
-        else "Dán API Key của OpenAI, Gemini, Claude hoặc DeepSeek"
-    )
-    api_key = st.text_input(
-        "API Key dùng trong phiên",
-        type="password",
-        key="api_key_session",
-        placeholder=placeholder,
-        help="Sau khi dán và rời ô/nhấn Enter, hệ thống xác thực một lần và tự tải model mà khóa có quyền dùng.",
-    )
-    if not api_key and st.session_state.get("llm_key_fingerprint"):
-        xoa_trang_thai_ket_noi_llm(st)
-
-    action_col1, action_col2 = st.columns(2)
-    retry = action_col1.button("Kiểm tra lại và tải model", disabled=not bool(api_key), width="stretch")
-
-    def _clear_api_key() -> None:
-        xoa_trang_thai_ket_noi_llm(st, xoa_khoa=True)
-
-    action_col2.button("Xóa API Key khỏi phiên", on_click=_clear_api_key, width="stretch")
-
-    provider = nha_cung_cap_hieu_luc(provider_choice, api_key)
-    if api_key and provider_choice == TU_DONG_NHAN_DIEN and provider is None:
+    with tab_ai:
         st.warning(
-            "Không thể nhận diện an toàn chỉ từ tiền tố của khóa này. Hãy chọn OpenAI, Gemini, Claude hoặc "
-            "DeepSeek ở trên; hệ thống sẽ chỉ gửi khóa đến đúng nhà cung cấp đã chọn."
+            "API Key chỉ được giữ trong bộ nhớ của phiên này và chỉ gửi đến nhà cung cấp bạn chọn. "
+            "Khóa không được ghi vào source, JSON, báo cáo hoặc log."
         )
-    elif api_key and provider:
-        fingerprint = hashlib.sha256(f"creditlens|{provider}|{api_key}".encode("utf-8")).hexdigest()
-        if retry:
-            st.session_state.llm_key_fingerprint = ""
-        if st.session_state.get("llm_key_fingerprint") != fingerprint:
-            st.session_state.llm_key_fingerprint = fingerprint
-            st.session_state.llm_key_verified = False
-            st.session_state.llm_connection_error = ""
-            st.session_state.llm_models_available = []
-            st.session_state.pop("llm_model_selector", None)
-            try:
-                with st.spinner(f"Đang xác thực {NHA_CUNG_CAP_LLM[provider]['nhan']} và tải danh sách model…"):
-                    models = lay_danh_sach_model(provider, api_key)
-                st.session_state.llm_provider_detected = provider
-                st.session_state.llm_models_available = models
-                st.session_state.llm_key_verified = True
-                settings["llm_provider"] = provider
-            except (ValueError, RuntimeError) as exc:
-                st.session_state.llm_provider_detected = provider
-                st.session_state.llm_connection_error = str(exc)
+        st.subheader("Thêm hoặc thay thế kết nối")
+        provider_choice = st.selectbox(
+            "Nhà cung cấp",
+            LUA_CHON_NHA_CUNG_CAP,
+            key="llm_provider_choice",
+            help=(
+                "Tự động chỉ nhận diện tiền tố không mơ hồ. Nếu khóa bắt đầu bằng sk-, hãy chọn rõ OpenAI hoặc "
+                "DeepSeek để hệ thống không thử khóa với sai nhà cung cấp."
+            ),
+        )
+        selected_provider = MA_NHA_CUNG_CAP_THEO_NHAN.get(provider_choice)
+        placeholder = (
+            NHA_CUNG_CAP_LLM[selected_provider]["placeholder"]
+            if selected_provider in NHA_CUNG_CAP_LLM
+            else "Dán API Key của OpenAI, Gemini, Claude hoặc DeepSeek"
+        )
+        api_key_candidate = st.text_input(
+            "API Key cần xác thực",
+            type="password",
+            key="llm_api_key_draft",
+            placeholder=placeholder,
+            help="Mỗi nhà cung cấp giữ tối đa một kết nối trong phiên. Xác thực lại sẽ thay thế khóa cũ của cùng nhà cung cấp.",
+        )
+        verify_connection = st.button(
+            "Xác thực và lưu trong phiên",
+            type="primary",
+            disabled=not bool(api_key_candidate.strip()),
+            width="stretch",
+        )
+        if verify_connection:
+            provider = nha_cung_cap_hieu_luc(provider_choice, api_key_candidate)
+            if provider is None:
+                st.session_state.llm_connection_error = (
+                    "Không thể nhận diện an toàn khóa này. Hãy chọn rõ nhà cung cấp rồi thử lại."
+                )
+            else:
+                try:
+                    with st.status(f"Đang xác thực {NHA_CUNG_CAP_LLM[provider]['nhan']}", expanded=True) as status:
+                        st.write("Kiểm tra khóa trực tiếp với nhà cung cấp đã chọn…")
+                        models = lay_danh_sach_model(provider, api_key_candidate)
+                        st.write(f"Đã tải {len(models)} model hội thoại khả dụng.")
+                        status.update(label="Kết nối đã được xác minh", state="complete", expanded=False)
+                    previous = st.session_state.llm_connections.get(provider, {})
+                    preferred_model = previous.get("model") if previous.get("model") in models else models[0]
+                    connections = dict(st.session_state.llm_connections)
+                    connections[provider] = {
+                        "provider": provider,
+                        "api_key": api_key_candidate,
+                        "fingerprint": hashlib.sha256(
+                            f"creditlens|{provider}|{api_key_candidate}".encode("utf-8")
+                        ).hexdigest(),
+                        "models": models,
+                        "model": preferred_model,
+                        "verified": True,
+                        "verified_at": datetime.now(timezone.utc).isoformat(),
+                    }
+                    st.session_state.llm_connections = connections
+                    st.session_state.active_llm_provider = provider
+                    st.session_state.llm_active_selector = provider
+                    st.session_state.llm_connection_error = ""
+                    settings["llm_provider"] = provider
+                    settings["model"] = preferred_model
+                except (ValueError, RuntimeError) as exc:
+                    st.session_state.llm_connection_error = str(exc)
 
-    models = st.session_state.get("llm_models_available", [])
-    verified = bool(st.session_state.get("llm_key_verified"))
-    detected_provider = st.session_state.get("llm_provider_detected")
-    if api_key and st.session_state.get("llm_connection_error"):
-        st.error(st.session_state.llm_connection_error)
-    connection_ready = bool(api_key and verified and detected_provider in NHA_CUNG_CAP_LLM and models)
-    if connection_ready:
-        current_model = settings.get("model", "")
-        if st.session_state.get("llm_model_selector") not in models:
-            st.session_state.llm_model_selector = current_model if current_model in models else models[0]
-        selected_model = st.selectbox(
-            "Model dùng để tạo diễn giải",
-            models,
-            key="llm_model_selector",
-            help="Danh sách này lấy trực tiếp từ API và chỉ gồm model hội thoại mà khóa hiện tại nhìn thấy.",
-        )
-        settings["llm_provider"] = detected_provider
-        settings["model"] = selected_model
-        status_cols = st.columns(3)
-        status_cols[0].metric("Chatbot", NHA_CUNG_CAP_LLM[detected_provider]["nhan"])
-        status_cols[1].metric("Model đang chọn", selected_model)
-        status_cols[2].metric("Trạng thái", "Đã xác minh")
-        st.success(f"Đã tải {len(models)} model khả dụng. Không cần nhập tên hoặc phiên bản model thủ công.")
-    else:
-        st.selectbox(
-            "Model dùng để tạo diễn giải",
-            ["Chưa tải — hãy nhập và xác thực API Key"],
-            disabled=True,
-            key="llm_model_placeholder",
-        )
-        if not api_key:
-            st.info(
-                f"Dán API Key để kết nối. Cấu hình dự phòng hiện tại là **{default_provider_label}** · "
-                f"**{settings.get('model', 'chưa chọn')}**, nhưng sẽ không được gọi trước khi khóa được xác minh."
+        if st.session_state.get("llm_connection_error"):
+            st.error(st.session_state.llm_connection_error)
+
+        st.subheader("Kết nối dùng ngay")
+        connections = st.session_state.get("llm_connections", {})
+        providers = [provider for provider in NHA_CUNG_CAP_LLM if provider in connections]
+        if providers:
+            if st.session_state.get("llm_active_selector") not in providers:
+                preferred = st.session_state.get("active_llm_provider")
+                st.session_state.llm_active_selector = preferred if preferred in providers else providers[0]
+            active_provider = st.selectbox(
+                "API Key sử dụng ngay",
+                providers,
+                key="llm_active_selector",
+                format_func=lambda value: nhan_ket_noi_llm(value, connections[value]),
+                help="Chọn kết nối mà trang Tóm tắt sẽ dùng để tạo diễn giải AI.",
+            )
+            st.session_state.active_llm_provider = active_provider
+            connection = dict(connections[active_provider])
+            models = list(connection.get("models", []))
+            model_key = f"llm_model_selector_{active_provider}"
+            if st.session_state.get(model_key) not in models:
+                st.session_state[model_key] = connection.get("model") if connection.get("model") in models else models[0]
+            selected_model = st.selectbox(
+                "Model dùng để tạo diễn giải",
+                models,
+                key=model_key,
+                help="Danh sách lấy trực tiếp từ API; không cần nhập tên model thủ công.",
+            )
+            connection["model"] = selected_model
+            connections[active_provider] = connection
+            st.session_state.llm_connections = connections
+            settings["llm_provider"] = active_provider
+            settings["model"] = selected_model
+            current_result = st.session_state.get("result")
+            tom_tat_ai_hieu_luc(
+                st,
+                connection,
+                current_result.ma_ho_so if current_result is not None else "",
+                settings["system_prompt"],
             )
 
-    st.subheader("Giao diện")
-    st.info(
-        f"Chế độ hiện tại: **{settings.get('che_do_giao_dien', 'Theo hệ thống')}**. "
-        "Bạn có thể đổi nhanh giữa Theo hệ thống, Sáng, Tối, Ấm áp và Hiện đại ngay trên thanh bên."
-    )
-    new_title = st.text_input("Tên ứng dụng", value=settings["ten_ung_dung"], max_chars=90)
-    color_col1, color_col2 = st.columns(2)
-    new_color = color_col1.color_picker("Màu chủ đạo · chế độ Hiện đại", value=lam_sach_mau(settings["mau_chu_dao"]))
-    new_accent = color_col2.color_picker("Màu nhấn · chế độ Hiện đại", value=lam_sach_mau(settings.get("mau_nhan", "#18C6D9"), "#18C6D9"))
-    st.subheader("Guardrails của LLM")
-    new_prompt = st.text_area("System prompt", value=settings["system_prompt"], height=260, max_chars=8000)
+            status_cols = st.columns(3)
+            status_cols[0].metric("Nhà cung cấp", NHA_CUNG_CAP_LLM[active_provider]["nhan"])
+            status_cols[1].metric("Model đang dùng", selected_model)
+            status_cols[2].metric("Trạng thái", "Đã xác minh")
 
-    st.subheader("Ngưỡng minh họa")
-    c1, c2, c3 = st.columns(3)
-    income_mismatch = c1.number_input("Chênh lệch thu nhập (%)", 0.0, 100.0, settings["nguong"]["chenh_lech_thu_nhap"] * 100, 1.0)
-    debt_mismatch = c2.number_input("Chênh lệch nợ (%)", 0.0, 500.0, settings["nguong"]["chenh_lech_no"] * 100, 1.0)
-    low_confidence = c3.number_input("Độ tin cậy tối thiểu (%)", 0.0, 100.0, settings["nguong"]["do_tin_cay_thap"] * 100, 1.0)
-    c4, c5, c6 = st.columns(3)
-    dti = c4.number_input("Cảnh báo DTI (%)", 0.0, 200.0, settings["nguong"]["dti_canh_bao"] * 100, 1.0)
-    dsr = c5.number_input("Cảnh báo DSR (%)", 0.0, 200.0, settings["nguong"]["dsr_canh_bao"] * 100, 1.0)
-    buffer = c6.number_input("Hệ số đệm số dư tối thiểu", 0.0, 20.0, settings["nguong"]["he_so_dem_so_du_thap"], 0.1)
-    volatility = st.number_input("Biến động thu nhập cao (%)", 0.0, 200.0, settings["nguong"]["bien_dong_thu_nhap_cao"] * 100, 1.0)
-
-    if st.button("Áp dụng cấu hình", type="primary", width="stretch"):
-        if len(new_prompt.strip()) < 50:
-            st.error("System prompt quá ngắn để bảo đảm guardrails.")
+            refresh_col, delete_col = st.columns(2)
+            refresh_models = refresh_col.button("Làm mới danh sách model", width="stretch")
+            delete_col.button(
+                "Xóa kết nối khỏi phiên",
+                width="stretch",
+                on_click=xoa_ket_noi_llm,
+                args=(st, active_provider),
+            )
+            if refresh_models:
+                try:
+                    with st.status("Đang làm mới danh sách model", expanded=False) as status:
+                        refreshed_models = lay_danh_sach_model(active_provider, connection["api_key"])
+                        status.update(label="Danh sách model đã cập nhật", state="complete")
+                    connection["models"] = refreshed_models
+                    connection["model"] = selected_model if selected_model in refreshed_models else refreshed_models[0]
+                    connections[active_provider] = connection
+                    st.session_state.llm_connections = connections
+                    st.rerun()
+                except (ValueError, RuntimeError) as exc:
+                    st.error(str(exc))
         else:
-            active_provider = settings.get("llm_provider", "openai")
-            active_model = settings.get("model", DEFAULT_SETTINGS["model"])
-            st.session_state.settings = {
-                "ten_ung_dung": new_title.strip() or DEFAULT_SETTINGS["ten_ung_dung"],
-                "mau_chu_dao": lam_sach_mau(new_color),
-                "mau_nhan": lam_sach_mau(new_accent, "#18C6D9"),
-                "che_do_giao_dien": settings.get("che_do_giao_dien", "Theo hệ thống"),
-                "llm_provider": active_provider,
-                "model": active_model,
-                "system_prompt": new_prompt.strip(),
-                "nguong": {
-                    "do_tin_cay_thap": low_confidence / 100,
-                    "chenh_lech_thu_nhap": income_mismatch / 100,
-                    "chenh_lech_no": debt_mismatch / 100,
-                    "dti_canh_bao": dti / 100,
-                    "dsr_canh_bao": dsr / 100,
-                    "he_so_dem_so_du_thap": buffer,
-                    "bien_dong_thu_nhap_cao": volatility / 100,
-                },
+            st.selectbox("API Key sử dụng ngay", ["Chưa có kết nối đã xác minh"], disabled=True)
+            st.info("Thêm một API Key ở trên. Sau khi xác thực, kết nối và model sẽ xuất hiện tại đây.")
+
+    with tab_ui:
+        st.subheader("Nhận diện và chế độ hiển thị")
+        st.caption("Chế độ Theo hệ thống tự động theo cài đặt sáng hoặc tối của thiết bị.")
+        with st.form("appearance_settings"):
+            new_theme = st.selectbox(
+                "Chế độ giao diện",
+                CHE_DO_GIAO_DIEN,
+                index=CHE_DO_GIAO_DIEN.index(settings.get("che_do_giao_dien", "Theo hệ thống")),
+            )
+            new_title = st.text_input("Tên ứng dụng", value=settings["ten_ung_dung"], max_chars=90)
+            color_col1, color_col2 = st.columns(2)
+            new_color = color_col1.color_picker(
+                "Màu chủ đạo của chế độ Hiện đại",
+                value=lam_sach_mau(settings["mau_chu_dao"]),
+            )
+            new_accent = color_col2.color_picker(
+                "Màu nhấn của chế độ Hiện đại",
+                value=lam_sach_mau(settings.get("mau_nhan", "#A8E63A"), "#A8E63A"),
+            )
+            apply_appearance = st.form_submit_button("Áp dụng giao diện", type="primary", width="stretch")
+        if apply_appearance:
+            settings["ten_ung_dung"] = new_title.strip() or DEFAULT_SETTINGS["ten_ung_dung"]
+            settings["mau_chu_dao"] = lam_sach_mau(new_color)
+            settings["mau_nhan"] = lam_sach_mau(new_accent, "#A8E63A")
+            settings["che_do_giao_dien"] = new_theme
+            st.session_state.settings = settings
+            st.rerun()
+
+    with tab_thresholds:
+        st.subheader("Ngưỡng phục vụ minh họa")
+        st.warning("Các giá trị này không phải quy định pháp lý hoặc chính sách của bất kỳ ngân hàng nào.")
+        with st.form("threshold_settings"):
+            c1, c2, c3 = st.columns(3)
+            income_mismatch = c1.number_input("Chênh lệch thu nhập (%)", 0.0, 100.0, settings["nguong"]["chenh_lech_thu_nhap"] * 100, 1.0)
+            debt_mismatch = c2.number_input("Chênh lệch nợ (%)", 0.0, 500.0, settings["nguong"]["chenh_lech_no"] * 100, 1.0)
+            low_confidence = c3.number_input("Độ tin cậy tối thiểu (%)", 0.0, 100.0, settings["nguong"]["do_tin_cay_thap"] * 100, 1.0)
+            c4, c5, c6 = st.columns(3)
+            dti = c4.number_input("Cảnh báo DTI (%)", 0.0, 200.0, settings["nguong"]["dti_canh_bao"] * 100, 1.0)
+            dsr = c5.number_input("Cảnh báo DSR (%)", 0.0, 200.0, settings["nguong"]["dsr_canh_bao"] * 100, 1.0)
+            buffer = c6.number_input("Hệ số đệm số dư tối thiểu", 0.0, 20.0, settings["nguong"]["he_so_dem_so_du_thap"], 0.1)
+            volatility = st.number_input("Biến động thu nhập cao (%)", 0.0, 200.0, settings["nguong"]["bien_dong_thu_nhap_cao"] * 100, 1.0)
+            apply_thresholds = st.form_submit_button("Áp dụng ngưỡng", type="primary", width="stretch")
+        if apply_thresholds:
+            settings["nguong"] = {
+                "do_tin_cay_thap": low_confidence / 100,
+                "chenh_lech_thu_nhap": income_mismatch / 100,
+                "chenh_lech_no": debt_mismatch / 100,
+                "dti_canh_bao": dti / 100,
+                "dsr_canh_bao": dsr / 100,
+                "he_so_dem_so_du_thap": buffer,
+                "bien_dong_thu_nhap_cao": volatility / 100,
             }
-            NGUONG.update(st.session_state.settings["nguong"])
+            st.session_state.settings = settings
             st.session_state.result = None
             st.session_state.docs = {}
             st.session_state.ai_summary = ""
-            st.success("Đã áp dụng. Hãy chạy lại hồ sơ vì thay đổi ngưỡng làm thay đổi kết quả quy tắc.")
-            st.rerun()
+            st.session_state.ai_summary_context = {}
+            st.success("Đã áp dụng. Hãy chạy lại hồ sơ vì ngưỡng mới có thể làm thay đổi cảnh báo.")
 
-    col1, col2 = st.columns(2)
-    col1.download_button("Xuất cấu hình JSON", json.dumps(settings, ensure_ascii=False, indent=2), file_name="creditlens_config.json", mime="application/json", width="stretch")
-    config_upload = col2.file_uploader("Nhập cấu hình JSON", type=["json"], key="config_json")
-    if config_upload and st.button("Nạp cấu hình đã chọn"):
-        try:
-            st.session_state.settings = nhap_cau_hinh_json(config_upload.getvalue())
-            NGUONG.update(st.session_state.settings["nguong"])
+    with tab_guardrails:
+        st.subheader("Guardrails của LLM")
+        with st.form("guardrail_settings"):
+            new_prompt = st.text_area("System prompt", value=settings["system_prompt"], height=270, max_chars=8000)
+            apply_prompt = st.form_submit_button("Lưu guardrails trong phiên", type="primary", width="stretch")
+        if apply_prompt:
+            if len(new_prompt.strip()) < 50:
+                st.error("System prompt quá ngắn để bảo đảm guardrails.")
+            else:
+                normalized_prompt = new_prompt.strip()
+                if normalized_prompt != settings["system_prompt"]:
+                    st.session_state.ai_summary = ""
+                    st.session_state.ai_summary_context = {}
+                settings["system_prompt"] = normalized_prompt
+                st.session_state.settings = settings
+                st.success("Đã cập nhật guardrails cho phiên hiện tại.")
+
+        st.subheader("Nhập và xuất cấu hình")
+        st.caption("Tệp JSON chỉ chứa giao diện, ngưỡng, provider/model và guardrails; không bao giờ chứa API Key.")
+        col1, col2 = st.columns(2)
+        col1.download_button(
+            "Xuất cấu hình JSON",
+            json.dumps(settings, ensure_ascii=False, indent=2),
+            file_name="creditlens_config.json",
+            mime="application/json",
+            width="stretch",
+        )
+        config_upload = col2.file_uploader("Nhập cấu hình JSON", type=["json"], key="config_json")
+        load_col, reset_col = st.columns(2)
+        load_config = load_col.button("Nạp cấu hình đã chọn", disabled=config_upload is None, width="stretch")
+        reset_defaults = reset_col.button("Khôi phục cấu hình mặc định", width="stretch")
+        if config_upload and load_config:
+            try:
+                st.session_state.settings = nhap_cau_hinh_json(config_upload.getvalue())
+                st.session_state.result = None
+                st.session_state.docs = {}
+                st.session_state.ai_summary = ""
+                st.session_state.ai_summary_context = {}
+                st.success("Đã nạp cấu hình. Kho API Key theo phiên không bị thay đổi.")
+                st.rerun()
+            except (UnicodeDecodeError, json.JSONDecodeError, ValueError) as exc:
+                st.error(f"Không thể nạp cấu hình: {exc}")
+        if reset_defaults:
+            st.session_state.settings = cau_hinh_mac_dinh()
             st.session_state.result = None
             st.session_state.docs = {}
             st.session_state.ai_summary = ""
-            xoa_trang_thai_ket_noi_llm(st, xoa_lua_chon_model=False)
-            st.success("Đã nạp cấu hình. API Key không được nhập từ tệp JSON.")
+            st.session_state.ai_summary_context = {}
             st.rerun()
-        except (UnicodeDecodeError, json.JSONDecodeError, ValueError) as exc:
-            st.error(f"Không thể nạp cấu hình: {exc}")
-    if st.button("Khôi phục cấu hình mặc định"):
-        st.session_state.settings = cau_hinh_mac_dinh()
-        NGUONG.update(st.session_state.settings["nguong"])
-        st.session_state.result = None
-        st.session_state.docs = {}
-        st.session_state.ai_summary = ""
-        xoa_trang_thai_ket_noi_llm(st, xoa_lua_chon_model=False)
-        st.rerun()
 
-    st.info(
-        "Provider, model, giao diện, prompt và ngưỡng chỉ áp dụng trong phiên. API Key không nằm trong JSON cấu hình. "
-        "Source code vẫn phải sửa qua GitHub/Jupyter rồi triển khai lại; web không cho chạy mã tùy ý."
-    )
+        st.info(
+            "Các tinh chỉnh chỉ áp dụng trong phiên. Việc khôi phục cấu hình không tự xóa API Key; "
+            "hãy xóa từng kết nối trong tab Kết nối AI khi không còn sử dụng."
+        )
 
 
 def chay_ung_dung_streamlit() -> None:
     import streamlit as st
 
-    st.set_page_config(page_title="CreditLens", page_icon="🏦", layout="wide", initial_sidebar_state="expanded")
+    page_icon: str = (
+        str(LOGO_ICON_PATH)
+        if LOGO_ICON_PATH.exists()
+        else (str(LOGO_PATH) if LOGO_PATH.exists() else "🏦")
+    )
+    st.set_page_config(page_title="CreditLens", page_icon=page_icon, layout="wide", initial_sidebar_state="auto")
     if "settings" not in st.session_state:
         st.session_state.settings = cau_hinh_mac_dinh()
     if "result" not in st.session_state:
@@ -2763,52 +3135,62 @@ def chay_ung_dung_streamlit() -> None:
         st.session_state.docs = {}
     if "ai_summary" not in st.session_state:
         st.session_state.ai_summary = ""
-    if "api_key_session" not in st.session_state:
-        st.session_state.api_key_session = ""
-    if "llm_key_verified" not in st.session_state:
-        st.session_state.llm_key_verified = False
-    if "llm_models_available" not in st.session_state:
-        st.session_state.llm_models_available = []
+    if "ai_summary_context" not in st.session_state:
+        st.session_state.ai_summary_context = {}
+    if "llm_connections" not in st.session_state:
+        st.session_state.llm_connections = {}
+    if "active_llm_provider" not in st.session_state:
+        st.session_state.active_llm_provider = ""
+    if "llm_api_key_draft" not in st.session_state:
+        st.session_state.llm_api_key_draft = ""
     if "llm_connection_error" not in st.session_state:
         st.session_state.llm_connection_error = ""
 
     settings = st.session_state.settings
-    st.sidebar.markdown("## CreditLens")
+    if LOGO_PATH.exists():
+        st.sidebar.image(str(LOGO_PATH), width="stretch")
+    else:
+        st.sidebar.markdown("## CreditLens")
     st.sidebar.markdown(
-        "<div class='public-pill'><span class='public-dot'></span> SẴN SÀNG TRIỂN KHAI CÔNG KHAI</div>",
+        "<div class='public-pill'><span class='public-dot'></span> BẢN MINH HỌa CÔNG KHAI</div>",
         unsafe_allow_html=True,
     )
     st.sidebar.caption("Khi deploy trên cloud, ứng dụng hoạt động độc lập với máy cá nhân.")
-    current_theme = settings.get("che_do_giao_dien", "Theo hệ thống")
-    if current_theme not in CHE_DO_GIAO_DIEN:
-        current_theme = "Theo hệ thống"
-    chosen_theme = st.sidebar.selectbox(
-        "Chế độ giao diện",
-        CHE_DO_GIAO_DIEN,
-        index=CHE_DO_GIAO_DIEN.index(current_theme),
-        key="theme_mode_selector",
-    )
-    settings["che_do_giao_dien"] = chosen_theme
-    NGUONG.update(settings["nguong"])
+    thresholds = nguong_hieu_luc(settings["nguong"])
     hien_thi_header(st, settings)
 
-    page = st.sidebar.radio("Điều hướng", PAGES)
+    st.sidebar.markdown("<div class='sidebar-section-label'>Điều hướng</div>", unsafe_allow_html=True)
+    page = st.sidebar.radio(
+        "Điều hướng",
+        PAGES,
+        format_func=lambda value: NHAN_DIEU_HUONG[value],
+        label_visibility="collapsed",
+    )
+    active_connection = ket_noi_llm_dang_dung(st)
+    if active_connection:
+        st.sidebar.caption(
+            f"AI đang dùng · {NHA_CUNG_CAP_LLM[active_connection['provider']]['nhan']} · "
+            f"{active_connection['model']}"
+        )
+    else:
+        st.sidebar.caption("AI chưa kết nối · Phân tích Python vẫn hoạt động")
     st.sidebar.divider()
     if st.sidebar.button("Xóa hồ sơ khỏi phiên", width="stretch"):
         st.session_state.result = None
         st.session_state.docs = {}
         st.session_state.ai_summary = ""
+        st.session_state.ai_summary_context = {}
         st.rerun()
     st.sidebar.caption("Ngưỡng minh họa · Không phải chính sách ngân hàng · Bắt buộc con người xem xét")
 
     result = st.session_state.result
     docs = st.session_state.docs
     if page == "Trang chủ & hồ sơ":
-        trang_ho_so(st)
+        trang_ho_so(st, thresholds)
     elif page == "Trích xuất tài liệu":
-        trang_trich_xuat(st, result, docs)
+        trang_trich_xuat(st, result, docs, thresholds)
     elif page == "Phân tích tín dụng":
-        trang_phan_tich(st, result)
+        trang_phan_tich(st, result, thresholds)
     elif page == "Cảnh báo rủi ro":
         trang_rui_ro(st, result)
     elif page == "Tóm tắt thẩm định":
@@ -2824,17 +3206,34 @@ def chay_ung_dung_streamlit() -> None:
 # ==========================================================
 
 def chay_tu_kiem_tra() -> None:
+    defaults_before = dict(NGUONG)
     normal, _ = du_lieu_demo("CASE-01 — Hồ sơ bình thường")
+    strict_normal, _ = du_lieu_demo(
+        "CASE-01 — Hồ sơ bình thường",
+        {**defaults_before, "dti_canh_bao": 0.01},
+    )
+    strict_confidence, _ = du_lieu_demo(
+        "CASE-01 — Hồ sơ bình thường",
+        {**defaults_before, "do_tin_cay_thap": 0.97},
+    )
     mismatch, _ = du_lieu_demo("CASE-03 — Thu nhập không nhất quán")
     missing, _ = du_lieu_demo("CASE-08 — Đơn vay chưa đầy đủ")
     zero_ratio = chia_an_toan(10, 0)
     assert normal.trang_thai == "REVIEW READY"
+    assert any(r.loai == "HIGH_DTI_DEMO" for r in strict_normal.canh_bao)
+    assert any(r.loai == "LOW_EXTRACTION_CONFIDENCE" for r in strict_confidence.canh_bao)
+    assert dict(NGUONG) == defaults_before
     assert any(r.loai == "INCOME_MISMATCH" for r in mismatch.canh_bao)
     assert missing.trang_thai == "INSUFFICIENT INFORMATION"
     assert zero_ratio is None
     assert all(r.bang_chung for r in mismatch.canh_bao if r.loai == "INCOME_MISMATCH")
     assert "api_key" not in json.dumps(cau_hinh_mac_dinh(), ensure_ascii=False).lower()
     assert nhap_cau_hinh_json(b'{"mau_chu_dao":"#112233"}')["mau_chu_dao"] == "#112233"
+    imported_thresholds = nhap_cau_hinh_json(
+        b'{"nguong":{"he_so_dem_so_du_thap":12,"do_tin_cay_thap":4}}'
+    )["nguong"]
+    assert imported_thresholds["he_so_dem_so_du_thap"] == 12
+    assert imported_thresholds["do_tin_cay_thap"] == NGUONG["do_tin_cay_thap"]
     imported_llm = nhap_cau_hinh_json(b'{"llm_provider":"gemini","model":"gemini-test"}')
     assert imported_llm["llm_provider"] == "gemini" and imported_llm["model"] == "gemini-test"
     assert nhan_dien_nha_cung_cap_tu_khoa("sk-ant-demo-123456789") == "anthropic"
@@ -2842,6 +3241,17 @@ def chay_tu_kiem_tra() -> None:
     assert nhan_dien_nha_cung_cap_tu_khoa("sk-proj-demo-123456789") == "openai"
     assert nhan_dien_nha_cung_cap_tu_khoa("sk-ambiguous-123456789") is None
     assert nha_cung_cap_hieu_luc("DeepSeek", "sk-ambiguous-123456789") == "deepseek"
+    prompt_context_a = ngu_canh_tom_tat_ai(
+        {"provider": "openai", "model": "gpt-test", "fingerprint": "key-test"},
+        "CASE-TEST",
+        "Guardrail A",
+    )
+    prompt_context_b = ngu_canh_tom_tat_ai(
+        {"provider": "openai", "model": "gpt-test", "fingerprint": "key-test"},
+        "CASE-TEST",
+        "Guardrail B",
+    )
+    assert prompt_context_a != prompt_context_b and "Guardrail A" not in json.dumps(prompt_context_a)
     assert trich_danh_sach_model(
         "openai",
         {"data": [{"id": "gpt-5.6-sol"}, {"id": "text-embedding-3-large"}]},
@@ -2883,13 +3293,19 @@ def chay_tu_kiem_tra() -> None:
     assert nhan_luu_y_tin_cay(0.95) == "Tin cậy cao"
     assert nhan_luu_y_tin_cay(0.80) == "Cần đối chiếu"
     assert nhan_luu_y_tin_cay(0.60) == "Cần xác minh"
+    assert nhan_luu_y_tin_cay(0.93, low_confidence_threshold=0.95) == "Cần xác minh"
     assert nhan_luu_y_tin_cay(0.0, missing=True) == "Thiếu dữ liệu"
+    assert "background-color:#DCFCE7;color:#14532D" in kieu_o_luu_y("Tin cậy cao")
     for mode in CHE_DO_GIAO_DIEN:
         theme_settings = cau_hinh_mac_dinh()
         theme_settings["che_do_giao_dien"] = mode
         css = tao_css_giao_dien(theme_settings)
-        assert "PRIMARY_COLOR" not in css and "SYSTEM_THEME_MEDIA" not in css
+        assert "PRIMARY_COLOR" not in css and "SYSTEM_THEME_MEDIA" not in css and "METRIC_OK_COLOR" not in css
         assert "font-family: Inter" in css
+        if mode == "Tối":
+            assert "--credit-metric-ok: #86EFAC" in css and "--credit-metric-warn: #FCD34D" in css
+        if mode == "Theo hệ thống":
+            assert "@media (prefers-color-scheme: dark)" in css and "--credit-metric-missing: #CBD5E1" in css
     docx_data = tao_bao_cao_word(mismatch)
     xlsx_data = tao_bao_cao_excel(mismatch)
     pdf_data = tao_bao_cao_pdf(mismatch)
@@ -2898,9 +3314,37 @@ def chay_tu_kiem_tra() -> None:
     assert pdf_data[:5] == b"%PDF-" and len(pdf_data) > 5_000
     pdf_text = "\n".join((page.extract_text() or "") for page in PdfReader(io.BytesIO(pdf_data)).pages)
     assert "THẨM ĐỊNH TÍN DỤNG" in pdf_text and "Nguyễn Minh Anh" in pdf_text
+
+    # Nhãn trong mọi định dạng xuất phải dùng đúng ngưỡng của phiên, không quay về mặc định module.
+    low_case, _ = du_lieu_demo(
+        "CASE-09 — Độ tin cậy thấp",
+        {**defaults_before, "do_tin_cay_thap": 0.50},
+    )
+    from docx import Document as DocxDocument
+    from openpyxl import load_workbook
+
+    threshold_docx = DocxDocument(io.BytesIO(tao_bao_cao_word(low_case, "", 0.50)))
+    word_note = next(
+        row.cells[4].text
+        for table in threshold_docx.tables
+        for row in table.rows
+        if len(row.cells) >= 5 and row.cells[0].text == "Lương thực nhận"
+    )
+    threshold_xlsx = load_workbook(io.BytesIO(tao_bao_cao_excel(low_case, "", 0.50)), data_only=True)
+    excel_note = next(
+        row[5]
+        for row in threshold_xlsx["Trich xuat"].iter_rows(min_row=4, values_only=True)
+        if row[1] == "Lương thực nhận"
+    )
+    threshold_pdf_text = "\n".join(
+        (page.extract_text() or "")
+        for page in PdfReader(io.BytesIO(tao_bao_cao_pdf(low_case, "", 0.50))).pages
+    )
+    assert word_note == "Cần đối chiếu" and excel_note == "Cần đối chiếu"
+    assert "Cần đối chiếu" in threshold_pdf_text and "Cần xác minh" not in threshold_pdf_text
     print(
-        "✅ Tự kiểm tra thành công: quy tắc, 5 giao diện, 4 nhà cung cấp LLM, "
-        "nhận diện khóa/model, nhãn lưu ý, Unicode tiếng Việt và ba định dạng báo cáo."
+        "SELF_TEST_PASS: session-isolated thresholds, five themes, four LLM providers, "
+        "key/model detection, prompt provenance, and consistent Word/Excel/PDF labels."
     )
 
 
