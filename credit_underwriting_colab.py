@@ -27,6 +27,7 @@ import hashlib
 import html
 import io
 import json
+import logging
 import math
 import os
 import re
@@ -40,6 +41,9 @@ from datetime import date, datetime, timezone
 from pathlib import Path
 from types import MappingProxyType
 from typing import Any, Literal, Mapping
+
+
+CHAT_LOGGER = logging.getLogger("creditlens.chat")
 
 
 def cai_dat_thu_vien() -> None:
@@ -2488,6 +2492,23 @@ def chuan_hoa_lich_su_chat(messages: Any) -> list[dict[str, str]]:
     return normalized
 
 
+def _ghi_log_loi_chat_an_toan(exc: Exception, provider: str, model: str, api_key: str) -> None:
+    """Ghi lỗi provider/model để chẩn đoán mà không ghi prompt hoặc API Key."""
+    message = str(exc)
+    if api_key:
+        message = message.replace(api_key, "[REDACTED]")
+    message = re.sub(r"(?i)bearer\s+[A-Za-z0-9._-]+", "Bearer [REDACTED]", message)
+    status_code = getattr(exc, "status_code", None)
+    CHAT_LOGGER.error(
+        "CHAT_API_ERROR provider=%s model=%s exception=%s status=%s message=%s",
+        provider,
+        model,
+        type(exc).__name__,
+        status_code if status_code is not None else "n/a",
+        message[:1200],
+    )
+
+
 def tao_phan_hoi_chat_ai(
     messages: list[dict[str, str]],
     api_key: str,
@@ -2555,15 +2576,19 @@ def tao_phan_hoi_chat_ai(
                     f"{NHA_CUNG_CAP_LLM[provider]['nhan']}: phản hồi chat không phải JSON hợp lệ."
                 ) from exc
             output = trich_noi_dung_phan_hoi(provider, payload)
-    except (ValueError, RuntimeError):
+    except (ValueError, RuntimeError) as exc:
+        _ghi_log_loi_chat_an_toan(exc, provider, model, key)
         raise
     except Exception as exc:
+        _ghi_log_loi_chat_an_toan(exc, provider, model, key)
         raise RuntimeError(
             f"Không thể gọi {NHA_CUNG_CAP_LLM[provider]['nhan']} ({type(exc).__name__}). "
             "Hãy kiểm tra API Key, model, hạn mức và kết nối mạng."
         ) from exc
     if not output:
-        raise RuntimeError("API không trả về nội dung.")
+        exc = RuntimeError("API không trả về nội dung.")
+        _ghi_log_loi_chat_an_toan(exc, provider, model, key)
+        raise exc
     return output
 
 
