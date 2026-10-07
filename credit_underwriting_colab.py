@@ -22,6 +22,7 @@ Lưu ý:
 from __future__ import annotations
 
 import importlib.util
+import base64
 import hashlib
 import html
 import io
@@ -35,7 +36,7 @@ import sys
 import tempfile
 import time
 import unicodedata
-from datetime import datetime, timezone
+from datetime import date, datetime, timezone
 from pathlib import Path
 from types import MappingProxyType
 from typing import Any, Literal, Mapping
@@ -76,6 +77,7 @@ from pypdf import PdfReader  # noqa: E402
 NGUONG = MappingProxyType({
     "do_tin_cay_thap": 0.75,
     "chenh_lech_thu_nhap": 0.15,
+    "chenh_lech_thu_nhap_nghiem_trong": 0.30,
     "chenh_lech_no": 0.20,
     "dti_canh_bao": 0.40,
     "dsr_canh_bao": 0.45,
@@ -85,6 +87,7 @@ NGUONG = MappingProxyType({
 GIOI_HAN_NGUONG = MappingProxyType({
     "do_tin_cay_thap": (0.0, 1.0),
     "chenh_lech_thu_nhap": (0.0, 1.0),
+    "chenh_lech_thu_nhap_nghiem_trong": (0.0, 1.0),
     "chenh_lech_no": (0.0, 5.0),
     "dti_canh_bao": (0.0, 2.0),
     "dsr_canh_bao": (0.0, 2.0),
@@ -226,7 +229,9 @@ class KetQuaThamDinh(BaseModel):
     thong_tin_thieu: list[str]
     cau_hoi_xac_minh: list[str]
     trang_thai: Literal["REVIEW READY", "HUMAN REVIEW REQUIRED", "INSUFFICIENT INFORMATION"]
-    thu_nhap_da_xac_minh: float | None = None
+    thu_nhap_dung_de_tinh: float | None = None
+    nguon_thu_nhap_dung_de_tinh: str = "Không đủ dữ liệu"
+    thu_nhap_duoc_xac_minh_doc_lap: bool = False
     thoi_diem_xu_ly: str
     thoi_gian_xu_ly_ms: int
 
@@ -260,11 +265,61 @@ def chia_an_toan(tu_so: float | None, mau_so: float | None) -> float | None:
     return ket_qua if math.isfinite(ket_qua) else None
 
 
+def chon_thu_nhap_dung_de_tinh(data: DuLieuHoSo) -> tuple[float | None, str, bool]:
+    """Chọn nguồn thu nhập có thể giải thích và không gắn nhãn xác minh sai lệch."""
+    doi_chieu = [
+        (data.luong_thuc_nhan, "Lương thực nhận"),
+        (data.thu_nhap_qua_sao_ke, "Ghi có bình quân sao kê"),
+    ]
+    hop_le = [
+        (float(value), label)
+        for value, label in doi_chieu
+        if isinstance(value, (int, float))
+        and not isinstance(value, bool)
+        and math.isfinite(float(value))
+        and float(value) > 0
+    ]
+    if hop_le:
+        value, label = min(hop_le, key=lambda item: item[0])
+        suffix = "giá trị thận trọng hơn" if len(hop_le) > 1 else "nguồn đối chiếu hiện có"
+        return value, f"{label} ({suffix})", True
+    if (
+        isinstance(data.thu_nhap_ke_khai, (int, float))
+        and not isinstance(data.thu_nhap_ke_khai, bool)
+        and math.isfinite(float(data.thu_nhap_ke_khai))
+        and float(data.thu_nhap_ke_khai) > 0
+    ):
+        return float(data.thu_nhap_ke_khai), "Thu nhập kê khai (chưa xác minh độc lập)", False
+    return None, "Không đủ dữ liệu", False
+
+
 def chuan_hoa_chuoi(value: str | None) -> str:
     text = unicodedata.normalize("NFD", value or "")
     text = "".join(ch for ch in text if unicodedata.category(ch) != "Mn").lower()
     text = re.sub(r"\b(cong ty|company|co|ltd|jsc|tnhh|cp)\b", "", text)
     return re.sub(r"[^a-z0-9]", "", text)
+
+
+def chuan_hoa_ngay(value: str | None) -> date | None:
+    """Chuẩn hóa các định dạng ngày phổ biến trước khi đối chiếu chéo."""
+    text = (value or "").strip()
+    if not text:
+        return None
+    patterns = (
+        (r"\d{4}-\d{2}-\d{2}", "%Y-%m-%d"),
+        (r"\d{4}/\d{2}/\d{2}", "%Y/%m/%d"),
+        (r"\d{2}/\d{2}/\d{4}", "%d/%m/%Y"),
+        (r"\d{2}-\d{2}-\d{4}", "%d-%m-%Y"),
+    )
+    for pattern, format_string in patterns:
+        match = re.search(rf"(?<!\d)({pattern})(?!\d)", text)
+        if not match:
+            continue
+        try:
+            return datetime.strptime(match.group(1), format_string).date()
+        except ValueError:
+            return None
+    return None
 
 
 def doc_so(raw: str) -> float | None:
@@ -331,15 +386,18 @@ def tim_so_tien(text: str, aliases: list[str]) -> dict[str, Any] | None:
 def tim_ty_le(text: str, aliases: list[str]) -> dict[str, Any] | None:
     for alias in aliases:
         match = re.search(
-            rf"{mau_bi_danh(alias)}\s*[:\-–]?\s*([0-9]+(?:[.,][0-9]+)?)\s*%?",
+            rf"{mau_bi_danh(alias)}\s*[:\-–]?\s*(?P<raw>[0-9]+(?:[.,][0-9]+)?)\s*(?P<unit>%?)",
             text,
             re.IGNORECASE,
         )
         if match:
-            raw = float(match.group(1).replace(",", "."))
-            number = raw / 100 if raw > 1 else raw
+            raw_text = match.group("raw")
+            raw = float(raw_text.replace(",", "."))
+            # Có dấu % thì luôn là phần trăm. Không có đơn vị: 1 trở lên được
+            # hiểu là điểm phần trăm; số nhỏ hơn 1 được hiểu là tỷ lệ thập phân.
+            number = raw / 100 if match.group("unit") == "%" or raw >= 1 else raw
             return {
-                "value": match.group(1),
+                "value": raw_text + match.group("unit"),
                 "number": number,
                 "page": trang_tai_vi_tri(text, match.start()),
                 "confidence": 0.88,
@@ -597,18 +655,17 @@ def phan_tich_tu_du_kien(
     thresholds: Mapping[str, Any] | None = None,
 ) -> KetQuaThamDinh:
     nguong = nguong_hieu_luc(thresholds)
-    verified_candidates = [v for v in [data.luong_thuc_nhan, data.thu_nhap_qua_sao_ke] if v is not None and v > 0]
-    verified_income = min(verified_candidates) if verified_candidates else data.thu_nhap_ke_khai
+    income_for_calculation, income_source, income_independently_verified = chon_thu_nhap_dung_de_tinh(data)
     debt = data.nghia_vu_no_quan_sat if data.nghia_vu_no_quan_sat is not None else data.nghia_vu_no_ke_khai
 
-    dti = chia_an_toan(debt, verified_income)
+    dti = chia_an_toan(debt, income_for_calculation)
     dsr = chia_an_toan(
         (debt + data.khoan_tra_du_kien) if debt is not None and data.khoan_tra_du_kien is not None else None,
-        verified_income,
+        income_for_calculation,
     )
     disposable = (
-        verified_income - debt - data.chi_phi_sinh_hoat
-        if verified_income is not None and debt is not None and data.chi_phi_sinh_hoat is not None
+        income_for_calculation - debt - data.chi_phi_sinh_hoat
+        if income_for_calculation is not None and debt is not None and data.chi_phi_sinh_hoat is not None
         else None
     )
     balance_buffer = chia_an_toan(data.so_du_binh_quan, data.khoan_tra_du_kien)
@@ -622,9 +679,9 @@ def phan_tich_tu_du_kien(
         return "Cần chú ý" if is_attention else "Trong ngưỡng minh họa"
 
     metrics = [
-        ChiSoTinDung(ma_chi_so="dti", ten="DTI hiện hữu", gia_tri=dti, hien_thi=phan_tram(dti), cong_thuc="Nghĩa vụ nợ hiện hữu ÷ Thu nhập đã xác minh", trang_thai=status(dti, nguong["dti_canh_bao"]), ghi_chu="Gánh nặng nợ hiện hữu trước khi xét khoản vay mới."),
-        ChiSoTinDung(ma_chi_so="dsr", ten="DSR dự kiến", gia_tri=dsr, hien_thi=phan_tram(dsr), cong_thuc="(Nợ hiện hữu + Khoản trả dự kiến) ÷ Thu nhập đã xác minh", trang_thai=status(dsr, nguong["dsr_canh_bao"]), ghi_chu="Chỉ tính khi có khoản trả dự kiến; hệ thống không tự suy đoán."),
-        ChiSoTinDung(ma_chi_so="thu_nhap_kha_dung", ten="Thu nhập khả dụng", gia_tri=disposable, hien_thi=tien(disposable), cong_thuc="Thu nhập đã xác minh − Nợ − Chi phí sinh hoạt", trang_thai="Chưa đủ dữ liệu" if disposable is None else ("Cần chú ý" if disposable < 0 else "Trong ngưỡng minh họa"), ghi_chu="Giá trị trước khi trừ khoản trả của khoản vay mới."),
+        ChiSoTinDung(ma_chi_so="dti", ten="DTI hiện hữu", gia_tri=dti, hien_thi=phan_tram(dti), cong_thuc="Nghĩa vụ nợ hiện hữu ÷ Thu nhập dùng để tính", trang_thai=status(dti, nguong["dti_canh_bao"]), ghi_chu=f"Nguồn thu nhập: {income_source}."),
+        ChiSoTinDung(ma_chi_so="dsr", ten="DSR dự kiến", gia_tri=dsr, hien_thi=phan_tram(dsr), cong_thuc="(Nợ hiện hữu + Khoản trả dự kiến) ÷ Thu nhập dùng để tính", trang_thai=status(dsr, nguong["dsr_canh_bao"]), ghi_chu="Khoản trả dự kiến là đầu vào thủ công; hệ thống không tự đặt lãi suất."),
+        ChiSoTinDung(ma_chi_so="thu_nhap_kha_dung", ten="Thu nhập còn lại trước khoản vay mới", gia_tri=disposable, hien_thi=tien(disposable), cong_thuc="Thu nhập dùng để tính − Nợ hiện hữu − Chi phí sinh hoạt", trang_thai="Chưa đủ dữ liệu" if disposable is None else ("Cần chú ý" if disposable < 0 else "Trong ngưỡng minh họa"), ghi_chu="Chưa trừ khoản trả dự kiến của khoản vay mới."),
         ChiSoTinDung(ma_chi_so="he_so_dem_so_du", ten="Hệ số đệm số dư", gia_tri=balance_buffer, hien_thi="—" if balance_buffer is None else f"{so_thap_phan(balance_buffer)}×", cong_thuc="Số dư bình quân ÷ Khoản trả dự kiến", trang_thai=status(balance_buffer, nguong["he_so_dem_so_du_thap"], lower_is_bad=True), ghi_chu="Chỉ báo thanh khoản dựa trên số dư bình quân."),
         ChiSoTinDung(ma_chi_so="chenh_lech_thu_nhap", ten="Chênh lệch thu nhập", gia_tri=income_difference, hien_thi=phan_tram(income_difference), cong_thuc="(Nguồn cao nhất − Nguồn thấp nhất) ÷ Nguồn cao nhất", trang_thai=status(income_difference, nguong["chenh_lech_thu_nhap"]), ghi_chu="So sánh đơn vay, chứng từ thu nhập và sao kê."),
         ChiSoTinDung(ma_chi_so="bien_dong_thu_nhap", ten="Biến động thu nhập", gia_tri=data.bien_dong_thu_nhap, hien_thi=phan_tram(data.bien_dong_thu_nhap), cong_thuc="Độ lệch chuẩn dòng tiền vào tháng ÷ Dòng tiền vào bình quân", trang_thai=status(data.bien_dong_thu_nhap, nguong["bien_dong_thu_nhap_cao"]), ghi_chu="Hệ số biến thiên khi sao kê có đủ dữ liệu theo tháng."),
@@ -638,21 +695,46 @@ def phan_tich_tu_du_kien(
     if income_difference is not None and income_difference > nguong["chenh_lech_thu_nhap"]:
         add_risk(
             "INCOME_MISMATCH",
-            "HIGH" if income_difference > 0.30 else "MEDIUM",
+            "HIGH" if income_difference > nguong["chenh_lech_thu_nhap_nghiem_trong"] else "MEDIUM",
             f"Các nguồn thu nhập chênh {phan_tram(income_difference)}, vượt ngưỡng minh họa {phan_tram(nguong['chenh_lech_thu_nhap'])}. Cần xác minh nguồn thu và kỳ ghi nhận.",
             bang_chung_cua(fields, "thu_nhap_ke_khai") + bang_chung_cua(fields, "luong_thuc_nhan") + bang_chung_cua(fields, "thu_nhap_qua_sao_ke"),
             phan_tram(income_difference),
         )
     if data.don_vi_cong_tac_ke_khai and data.don_vi_cong_tac_chung_tu and chuan_hoa_chuoi(data.don_vi_cong_tac_ke_khai) != chuan_hoa_chuoi(data.don_vi_cong_tac_chung_tu):
         add_risk("EMPLOYER_MISMATCH", "HIGH", "Tên đơn vị công tác trên đơn vay và chứng từ thu nhập không khớp sau chuẩn hóa.", bang_chung_cua(fields, "don_vi_cong_tac_ke_khai") + bang_chung_cua(fields, "don_vi_cong_tac_chung_tu"))
+    debt_input_invalid = False
     if data.nghia_vu_no_ke_khai is not None and data.nghia_vu_no_quan_sat is not None:
-        debt_diff = abs(data.nghia_vu_no_quan_sat - data.nghia_vu_no_ke_khai) / max(data.nghia_vu_no_ke_khai, 1)
-        if debt_diff > nguong["chenh_lech_no"]:
-            add_risk("POSSIBLE_UNDECLARED_DEBT", "HIGH" if data.nghia_vu_no_quan_sat > data.nghia_vu_no_ke_khai else "MEDIUM", f"Khoản trả nợ quan sát khác {phan_tram(debt_diff)} so với kê khai, vượt ngưỡng minh họa {phan_tram(nguong['chenh_lech_no'])}.", bang_chung_cua(fields, "nghia_vu_no_ke_khai") + bang_chung_cua(fields, "nghia_vu_no_quan_sat"), phan_tram(debt_diff))
+        declared_debt = float(data.nghia_vu_no_ke_khai)
+        observed_debt = float(data.nghia_vu_no_quan_sat)
+        debt_input_invalid = (
+            not math.isfinite(declared_debt)
+            or not math.isfinite(observed_debt)
+            or declared_debt < 0
+            or observed_debt < 0
+        )
+        debt_evidence = bang_chung_cua(fields, "nghia_vu_no_ke_khai") + bang_chung_cua(fields, "nghia_vu_no_quan_sat")
+        if not debt_input_invalid and declared_debt == 0 and observed_debt > 0:
+            absolute_difference = observed_debt - declared_debt
+            add_risk(
+                "POSSIBLE_UNDECLARED_DEBT",
+                "HIGH",
+                f"Nghĩa vụ nợ kê khai là 0 VND nhưng quan sát thấy {tien(observed_debt)}. Không tính tỷ lệ vì mẫu số bằng 0.",
+                debt_evidence,
+                tien(absolute_difference),
+            )
+        elif not debt_input_invalid and declared_debt > 0:
+            debt_diff = abs(observed_debt - declared_debt) / declared_debt
+            if debt_diff > nguong["chenh_lech_no"]:
+                add_risk("POSSIBLE_UNDECLARED_DEBT", "HIGH" if observed_debt > declared_debt else "MEDIUM", f"Khoản trả nợ quan sát khác {phan_tram(debt_diff)} so với kê khai, vượt ngưỡng minh họa {phan_tram(nguong['chenh_lech_no'])}.", debt_evidence, phan_tram(debt_diff))
     if data.chuc_danh_ke_khai and data.chuc_danh_chung_tu and chuan_hoa_chuoi(data.chuc_danh_ke_khai) != chuan_hoa_chuoi(data.chuc_danh_chung_tu):
         add_risk("JOB_TITLE_MISMATCH", "MEDIUM", "Chức danh công việc khác nhau giữa đơn vay và chứng từ thu nhập.", bang_chung_cua(fields, "chuc_danh_ke_khai") + bang_chung_cua(fields, "chuc_danh_chung_tu"))
-    if data.ngay_bat_dau_ke_khai and data.ngay_bat_dau_chung_tu and chuan_hoa_chuoi(data.ngay_bat_dau_ke_khai) != chuan_hoa_chuoi(data.ngay_bat_dau_chung_tu):
-        add_risk("EMPLOYMENT_DATE_MISMATCH", "MEDIUM", "Ngày bắt đầu làm việc không nhất quán giữa các chứng từ.", bang_chung_cua(fields, "ngay_bat_dau_ke_khai") + bang_chung_cua(fields, "ngay_bat_dau_chung_tu"))
+    employment_date_unparseable = False
+    if data.ngay_bat_dau_ke_khai and data.ngay_bat_dau_chung_tu:
+        declared_start_date = chuan_hoa_ngay(data.ngay_bat_dau_ke_khai)
+        documented_start_date = chuan_hoa_ngay(data.ngay_bat_dau_chung_tu)
+        employment_date_unparseable = declared_start_date is None or documented_start_date is None
+        if not employment_date_unparseable and declared_start_date != documented_start_date:
+            add_risk("EMPLOYMENT_DATE_MISMATCH", "MEDIUM", "Ngày bắt đầu làm việc không nhất quán giữa các chứng từ sau khi chuẩn hóa định dạng.", bang_chung_cua(fields, "ngay_bat_dau_ke_khai") + bang_chung_cua(fields, "ngay_bat_dau_chung_tu"))
     if dti is not None and dti > nguong["dti_canh_bao"]:
         add_risk("HIGH_DTI_DEMO", "HIGH", f"DTI {phan_tram(dti)} vượt ngưỡng cảnh báo minh họa {phan_tram(nguong['dti_canh_bao'])}. Đây không phải chính sách cấp tín dụng của ngân hàng.", bang_chung_cua(fields, "nghia_vu_no_quan_sat" if data.nghia_vu_no_quan_sat is not None else "nghia_vu_no_ke_khai") + bang_chung_cua(fields, "thu_nhap_qua_sao_ke" if data.thu_nhap_qua_sao_ke is not None else "luong_thuc_nhan"))
     if dsr is not None and dsr > nguong["dsr_canh_bao"]:
@@ -670,8 +752,8 @@ def phan_tich_tu_du_kien(
         missing.append("Họ và tên khách hàng")
     if data.so_tien_de_nghi_vay is None:
         missing.append("Số tiền đề nghị vay")
-    if verified_income is None:
-        missing.append("Thu nhập hàng tháng đã xác minh")
+    if income_for_calculation is None:
+        missing.append("Thu nhập dùng để tính")
     if data.thoi_han_vay_thang is None:
         missing.append("Thời hạn vay")
 
@@ -687,6 +769,12 @@ def phan_tich_tu_du_kien(
         questions.append("Khách hàng có thay đổi đơn vị công tác hay chứng từ nào đã lỗi thời?")
     if "POSSIBLE_UNDECLARED_DEBT" in risk_types:
         questions.append("Các khoản ghi nợ định kỳ nào là nghĩa vụ tín dụng hiện hữu của khách hàng?")
+    if not income_independently_verified and income_for_calculation is not None:
+        questions.append("Thu nhập dùng để tính hiện chỉ dựa trên kê khai; vui lòng bổ sung chứng từ hoặc sao kê để xác minh độc lập.")
+    if employment_date_unparseable:
+        questions.append("Một hoặc cả hai ngày bắt đầu làm việc không ở định dạng được hỗ trợ; vui lòng chuẩn hóa và đối chiếu lại.")
+    if debt_input_invalid:
+        questions.append("Nghĩa vụ nợ có giá trị âm hoặc không hợp lệ; vui lòng xác nhận dữ liệu trước khi tính chênh lệch.")
     if data.khoan_tra_du_kien is None:
         questions.append("Khoản trả nợ dự kiến hàng tháng theo phương án vay là bao nhiêu?")
     if missing:
@@ -694,10 +782,10 @@ def phan_tich_tu_du_kien(
     if not questions:
         questions.append("Cán bộ tín dụng vui lòng xác nhận lại dữ kiện và bằng chứng trước khi đưa ra quyết định cuối cùng.")
 
-    critical_missing = {"Đơn đề nghị vay vốn", "Chứng từ thu nhập", "Sao kê ngân hàng", "Số tiền đề nghị vay", "Thu nhập hàng tháng đã xác minh"}
+    critical_missing = {"Đơn đề nghị vay vốn", "Chứng từ thu nhập", "Sao kê ngân hàng", "Số tiền đề nghị vay", "Thu nhập dùng để tính"}
     if any(item in critical_missing for item in missing):
         final_status = "INSUFFICIENT INFORMATION"
-    elif risks:
+    elif risks or not income_independently_verified or employment_date_unparseable or debt_input_invalid:
         final_status = "HUMAN REVIEW REQUIRED"
     else:
         final_status = "REVIEW READY"
@@ -712,7 +800,9 @@ def phan_tich_tu_du_kien(
         thong_tin_thieu=missing,
         cau_hoi_xac_minh=questions,
         trang_thai=final_status,
-        thu_nhap_da_xac_minh=verified_income,
+        thu_nhap_dung_de_tinh=income_for_calculation,
+        nguon_thu_nhap_dung_de_tinh=income_source,
+        thu_nhap_duoc_xac_minh_doc_lap=income_independently_verified,
         thoi_diem_xu_ly=datetime.now(timezone.utc).isoformat(),
         thoi_gian_xu_ly_ms=max(1, round((time.perf_counter() - started_at) * 1000)),
     )
@@ -879,8 +969,10 @@ def bao_cao_markdown(result: KetQuaThamDinh) -> str:
 - Thời hạn: {so_thap_phan(d.thoi_han_vay_thang, 0) if d.thoi_han_vay_thang is not None else '—'} tháng
 - Mục đích: {d.muc_dich_vay or 'Thông tin chưa đủ'}
 
-## 3. Thông tin tài chính đã xác minh
-- Thu nhập đã xác minh: {tien(result.thu_nhap_da_xac_minh)}
+## 3. Thông tin tài chính dùng để tính
+- Thu nhập dùng để tính: {tien(result.thu_nhap_dung_de_tinh)}
+- Nguồn/cơ sở: {result.nguon_thu_nhap_dung_de_tinh}
+- Trạng thái nguồn: {'Đã có nguồn đối chiếu độc lập' if result.thu_nhap_duoc_xac_minh_doc_lap else 'Chỉ kê khai hoặc chưa đủ dữ liệu'}
 - Khoản trả nợ quan sát hàng tháng: {tien(d.nghia_vu_no_quan_sat)}
 - Số dư bình quân: {tien(d.so_du_binh_quan)}
 
@@ -927,7 +1019,14 @@ def _noi_dung_tong_quan(result: KetQuaThamDinh) -> list[tuple[str, str]]:
         ("Số tiền đề nghị vay", tien(d.so_tien_de_nghi_vay)),
         ("Thời hạn vay", f"{so_thap_phan(d.thoi_han_vay_thang, 0)} tháng" if d.thoi_han_vay_thang is not None else "Thông tin chưa đủ"),
         ("Mục đích vay", d.muc_dich_vay or "Thông tin chưa đủ"),
-        ("Thu nhập đã xác minh", tien(result.thu_nhap_da_xac_minh)),
+        ("Thu nhập dùng để tính", tien(result.thu_nhap_dung_de_tinh)),
+        ("Nguồn thu nhập dùng để tính", result.nguon_thu_nhap_dung_de_tinh),
+        (
+            "Trạng thái nguồn thu nhập",
+            "Đã có nguồn đối chiếu độc lập"
+            if result.thu_nhap_duoc_xac_minh_doc_lap
+            else "Chỉ kê khai hoặc chưa đủ dữ liệu",
+        ),
         ("Nghĩa vụ nợ quan sát", tien(d.nghia_vu_no_quan_sat)),
         ("Số dư bình quân", tien(d.so_du_binh_quan)),
         ("Thời điểm xử lý", result.thoi_diem_xu_ly),
@@ -1610,8 +1709,8 @@ MA_NHA_CUNG_CAP_THEO_NHAN = {item["nhan"]: key for key, item in NHA_CUNG_CAP_LLM
 
 DEFAULT_SETTINGS = {
     "ten_ung_dung": "CreditLens — Trợ lý thẩm định tín dụng",
-    "mau_chu_dao": "#0B6B4B",
-    "mau_nhan": "#A8E63A",
+    "mau_chu_dao": "#203469",
+    "mau_nhan": "#A71B28",
     "che_do_giao_dien": "Theo hệ thống",
     "llm_provider": "openai",
     "model": "gpt-5-mini",
@@ -1623,36 +1722,37 @@ CHE_DO_GIAO_DIEN = ("Theo hệ thống", "Sáng", "Tối", "Ấm áp", "Hiện �
 
 THEME_PALETTES = {
     "Theo hệ thống": {
-        "page": "#F4F8F5", "page_alt": "#E9F2EC", "surface": "rgba(255,255,255,.95)",
-        "surface_solid": "#FFFFFF", "text": "#153629", "muted": "#5C7469",
-        "border": "rgba(36,105,77,.20)", "sidebar_top": "#FFFFFF", "sidebar_bottom": "#E8F3EC",
+        "page": "#F5F7FB", "page_alt": "#E9EDF6", "surface": "rgba(255,255,255,.96)",
+        "surface_solid": "#FFFFFF", "text": "#14213D", "muted": "#5C667A",
+        "border": "rgba(32,52,105,.18)", "sidebar_top": "#FFFFFF", "sidebar_bottom": "#E8EDF7",
     },
     "Sáng": {
-        "page": "#F7FAF8", "page_alt": "#ECF5EF", "surface": "rgba(255,255,255,.98)",
-        "surface_solid": "#FFFFFF", "text": "#133528", "muted": "#5B7569",
-        "border": "rgba(37,105,78,.18)", "sidebar_top": "#FFFFFF", "sidebar_bottom": "#EDF6F0",
+        "page": "#F8F9FC", "page_alt": "#EEF1F7", "surface": "rgba(255,255,255,.98)",
+        "surface_solid": "#FFFFFF", "text": "#14213D", "muted": "#626C80",
+        "border": "rgba(32,52,105,.16)", "sidebar_top": "#FFFFFF", "sidebar_bottom": "#EEF1F8",
     },
     "Tối": {
-        "page": "#07140F", "page_alt": "#0D2119", "surface": "rgba(16,39,30,.96)",
-        "surface_solid": "#112A20", "text": "#EDF8F1", "muted": "#A1BBAF",
-        "border": "rgba(132,196,163,.22)", "sidebar_top": "#091811", "sidebar_bottom": "#10271E",
+        "page": "#081226", "page_alt": "#101D39", "surface": "rgba(16,29,57,.96)",
+        "surface_solid": "#142342", "text": "#F5F7FC", "muted": "#B7C0D4",
+        "border": "rgba(185,196,221,.22)", "sidebar_top": "#0A1530", "sidebar_bottom": "#111E3B",
     },
     "Ấm áp": {
-        "page": "#FBF9EE", "page_alt": "#F1EEDB", "surface": "rgba(255,254,247,.97)",
-        "surface_solid": "#FFFEF7", "text": "#343B24", "muted": "#6E7258",
-        "border": "rgba(104,112,55,.22)", "sidebar_top": "#FFFEF7", "sidebar_bottom": "#F2F0DF",
+        "page": "#FBF7F4", "page_alt": "#F3EAE7", "surface": "rgba(255,253,251,.97)",
+        "surface_solid": "#FFFDFC", "text": "#2C2430", "muted": "#74636A",
+        "border": "rgba(167,27,40,.18)", "sidebar_top": "#FFFDFC", "sidebar_bottom": "#F6ECEA",
     },
     "Hiện đại": {
-        "page": "#F1F8F5", "page_alt": "#E4F1EC", "surface": "rgba(255,255,255,.90)",
-        "surface_solid": "#FFFFFF", "text": "#11372A", "muted": "#587468",
-        "border": "rgba(11,107,75,.20)", "sidebar_top": "#FFFFFF", "sidebar_bottom": "#E7F4EE",
+        "page": "#F2F5FA", "page_alt": "#E4EAF5", "surface": "rgba(255,255,255,.91)",
+        "surface_solid": "#FFFFFF", "text": "#15213C", "muted": "#5B667C",
+        "border": "rgba(32,52,105,.20)", "sidebar_top": "#FFFFFF", "sidebar_bottom": "#E6EBF5",
     },
 }
 
 THEME_ACCENTS = {
-    "Sáng": ("#0B6B4B", "#83C92C"),
-    "Tối": ("#52D092", "#B7F34B"),
-    "Ấm áp": ("#5D6B2F", "#C2A12D"),
+    "Theo hệ thống": ("#203469", "#A71B28"),
+    "Sáng": ("#203469", "#A71B28"),
+    "Tối": ("#9CB4F0", "#FF7180"),
+    "Ấm áp": ("#203469", "#A71B28"),
 }
 
 PAGES = [
@@ -1676,8 +1776,18 @@ NHAN_DIEU_HUONG = {
 }
 
 PROJECT_ROOT = Path(__file__).resolve().parent
-LOGO_PATH = PROJECT_ROOT / "static" / "creditlens-logo.png"
-LOGO_ICON_PATH = PROJECT_ROOT / "static" / "creditlens-icon.png"
+LOGO_PATH = PROJECT_ROOT / "static" / "hub-creditlens-lockup.png"
+LOGO_ICON_PATH = PROJECT_ROOT / "static" / "hub-favicon.png"
+CREDITLENS_LOGO_PATH = PROJECT_ROOT / "static" / "creditlens-logo-hub.png"
+WATERMARK_PATH = PROJECT_ROOT / "static" / "creditlens-watermark.png"
+
+
+def anh_nen_data_uri(path: Path) -> str:
+    """Nhúng tài sản thương hiệu để watermark hoạt động ổn định trên cloud."""
+    if not path.exists():
+        return "none"
+    encoded = base64.b64encode(path.read_bytes()).decode("ascii")
+    return f'url("data:image/png;base64,{encoded}")'
 
 STREAMLIT_CSS = """
 <style>
@@ -1696,8 +1806,8 @@ STREAMLIT_CSS = """
     --credit-metric-ok: METRIC_OK_COLOR;
     --credit-metric-warn: METRIC_WARN_COLOR;
     --credit-metric-missing: METRIC_MISSING_COLOR;
-    --credit-radius: 18px;
-    --credit-shadow: 0 14px 42px rgba(16, 62, 44, .09);
+    --credit-radius: 16px;
+    --credit-shadow: 0 14px 38px rgba(20, 39, 84, .09);
     --credit-focus: 0 0 0 3px color-mix(in srgb, var(--credit-accent) 34%, transparent);
   }
   * { box-sizing: border-box; }
@@ -1708,17 +1818,24 @@ STREAMLIT_CSS = """
   .stApp, [data-testid="stAppViewContainer"] {
     color: var(--credit-text);
     background:
-      radial-gradient(circle at 7% 3%, rgba(83, 207, 143, .15), transparent 25rem),
-      radial-gradient(circle at 92% 6%, rgba(168, 230, 58, .13), transparent 26rem),
+      radial-gradient(circle at 7% 3%, rgba(32, 52, 105, .15), transparent 25rem),
+      radial-gradient(circle at 92% 6%, rgba(167, 27, 40, .11), transparent 26rem),
       linear-gradient(180deg, var(--credit-page) 0%, var(--credit-page-alt) 100%);
+  }
+  [data-testid="stAppViewContainer"]::before {
+    content: ""; position: fixed; z-index: 0; pointer-events: none;
+    width: min(46vw, 680px); height: min(46vw, 680px); right: 4vw; top: 19vh;
+    background-image: WATERMARK_IMAGE; background-repeat: no-repeat;
+    background-size: contain; background-position: center;
+    opacity: .035; filter: saturate(.86); transform: rotate(-6deg);
   }
   .stApp h1, .stApp h2, .stApp h3, .stApp h4, .stApp p, .stApp label,
   .stApp [data-testid="stCaptionContainer"], .stApp [data-testid="stMarkdownContainer"] {
     color: var(--credit-text);
   }
   .block-container {
-    max-width: 1360px; padding-top: 1.15rem; padding-bottom: 4rem;
-    animation: credit-page-enter .34s cubic-bezier(.22, .85, .35, 1) both;
+    position: relative; z-index: 1; max-width: 1360px; padding-top: 1.15rem; padding-bottom: 4rem;
+    animation: credit-page-enter .24s cubic-bezier(.22, .85, .35, 1) both;
   }
   [data-testid="stSidebar"] {
     background: linear-gradient(180deg, var(--credit-sidebar-top), var(--credit-sidebar-bottom));
@@ -1726,8 +1843,8 @@ STREAMLIT_CSS = """
   }
   [data-testid="stSidebar"] * { color: var(--credit-text); }
   [data-testid="stSidebar"] [data-testid="stImage"] {
-    background: #FFFFFF; border: 1px solid rgba(24, 104, 73, .16); border-radius: 18px;
-    padding: 8px 12px; margin: 3px 0 13px; box-shadow: 0 10px 28px rgba(13, 87, 61, .10);
+    background: transparent; border: 1px solid color-mix(in srgb, var(--credit-primary) 18%, transparent); border-radius: 16px;
+    padding: 10px 12px; margin: 3px 0 13px; box-shadow: 0 10px 28px rgba(20, 39, 84, .08);
   }
   [data-testid="stSidebar"] [data-testid="stImage"] img { border-radius: 11px; }
   [data-testid="stSidebar"] .stRadio label {
@@ -1735,24 +1852,28 @@ STREAMLIT_CSS = """
     transition: transform .16s ease, background .16s ease, box-shadow .16s ease;
   }
   [data-testid="stSidebar"] .stRadio label:hover {
-    background: rgba(11,107,75,.09); transform: translateX(2px);
+    background: rgba(32,52,105,.09); transform: translateX(3px);
   }
   [data-testid="stSidebar"] .stRadio label:has(input:checked) {
-    background: linear-gradient(105deg, #064832, #0B6B4B);
-    box-shadow: 0 8px 20px rgba(11,107,75,.20); transform: translateX(2px);
+    background: linear-gradient(105deg, #172A59, #203469);
+    border-left: 4px solid #A71B28;
+    box-shadow: 0 8px 20px rgba(32,52,105,.22); transform: translateX(2px);
   }
   [data-testid="stSidebar"] .stRadio label:has(input:checked) * { color: #FFFFFF !important; font-weight: 760 !important; }
   [data-testid="stSidebar"] .stRadio label:active { transform: translateX(2px) scale(.985); }
+  .brand-caption { display: grid; gap: 2px; margin: -5px 2px 12px; }
+  .brand-caption strong { color: var(--credit-primary); font-size: .9rem; letter-spacing: .01em; }
+  .brand-caption span { color: var(--credit-muted); font-size: .72rem; }
   .sidebar-section-label {
     color: var(--credit-muted); font-size: .69rem; font-weight: 850; letter-spacing: .12em;
     margin: 10px 0 5px; text-transform: uppercase;
   }
   .credit-hero {
     position: relative; overflow: hidden;
-    background: linear-gradient(125deg, #052F23 0%, #0B5D42 58%, #087A57 100%);
+    background: linear-gradient(125deg, #142451 0%, #203469 66%, #7D1723 100%);
     color: white; border: 1px solid rgba(255,255,255,.36);
     border-radius: 26px; padding: 29px 33px; margin-bottom: 17px;
-    box-shadow: 0 20px 58px rgba(8,75,51,.20), 0 0 30px rgba(168,230,58,.16);
+    box-shadow: 0 20px 58px rgba(20,39,84,.24), 0 0 30px rgba(167,27,40,.13);
   }
   .credit-hero:after {
     content: ""; position: absolute; width: 280px; height: 280px; right: -80px; top: -120px;
@@ -1775,21 +1896,21 @@ STREAMLIT_CSS = """
     border-radius: var(--credit-radius); padding: 15px 17px; margin: 10px 0 18px;
     box-shadow: var(--credit-shadow); backdrop-filter: blur(9px);
   }
-  .credit-notice { border-left: 5px solid #FFB020; }
+  .credit-notice { border-left: 5px solid #D49A26; }
   .credit-privacy { border-left: 5px solid ACCENT_COLOR; }
   .status-card { border-left: 5px solid PRIMARY_COLOR; }
   .public-pill {
     display: inline-flex; align-items: center; gap: 7px; padding: 7px 11px; border-radius: 999px;
-    color: #075B3D; background: #E7F8EE; border: 1px solid rgba(11,107,75,.30);
-    font-size: .74rem; font-weight: 820; box-shadow: 0 0 18px rgba(11,107,75,.11);
+    color: #203469; background: #EDF1FA; border: 1px solid rgba(32,52,105,.28);
+    font-size: .74rem; font-weight: 820; box-shadow: 0 0 18px rgba(32,52,105,.10);
   }
-  .public-dot { width: 8px; height: 8px; border-radius: 50%; background: #16A56E; box-shadow: 0 0 10px #16A56E; }
+  .public-dot { width: 8px; height: 8px; border-radius: 50%; background: #A71B28; box-shadow: 0 0 10px rgba(167,27,40,.55); }
   div[data-testid="stMetric"] {
     background: var(--credit-surface);
     border: 1px solid var(--credit-border); border-radius: var(--credit-radius); padding: 15px 17px;
     box-shadow: var(--credit-shadow); transition: transform .18s ease, box-shadow .18s ease;
   }
-  div[data-testid="stMetric"]:hover { transform: translateY(-2px); box-shadow: 0 16px 38px rgba(16,78,55,.14), 0 0 18px rgba(168,230,58,.09); }
+  div[data-testid="stMetric"]:hover { transform: translateY(-2px); box-shadow: 0 16px 38px rgba(20,39,84,.14), 0 0 18px rgba(167,27,40,.08); }
   [data-testid="stFileUploaderDropzone"] {
     min-height: 116px; color: var(--credit-text) !important;
     background: var(--credit-surface-solid) !important;
@@ -1822,52 +1943,62 @@ STREAMLIT_CSS = """
   [role="listbox"] { color: var(--credit-text) !important; background: var(--credit-surface-solid) !important; }
   [role="option"] { color: var(--credit-text) !important; background: var(--credit-surface-solid) !important; }
   [role="option"][aria-selected="true"], [role="option"]:hover {
-    background: rgba(11,107,75,.14) !important;
+    background: rgba(32,52,105,.14) !important;
   }
   .stTextInput input:focus, .stNumberInput input:focus, .stTextArea textarea:focus {
     border-color: ACCENT_COLOR !important; box-shadow: var(--credit-focus) !important;
   }
-  .stButton > button, .stDownloadButton > button {
+  .stButton > button, .stDownloadButton > button, [data-testid="stFormSubmitButton"] button {
     min-height: 44px; color: var(--credit-text) !important; background: var(--credit-surface-solid) !important;
     border-radius: 14px !important; border: 1px solid var(--credit-border) !important;
     font-weight: 750 !important; cursor: pointer; transition: transform .14s ease, box-shadow .16s ease, border-color .16s ease !important;
   }
-  .stButton > button:hover, .stDownloadButton > button:hover {
+  .stButton > button:hover, .stDownloadButton > button:hover, [data-testid="stFormSubmitButton"] button:hover {
     transform: translateY(-1px); border-color: ACCENT_COLOR !important;
-    box-shadow: 0 10px 25px rgba(13,89,61,.15), 0 0 16px rgba(168,230,58,.13) !important;
+    box-shadow: 0 10px 25px rgba(20,39,84,.16), 0 0 16px rgba(167,27,40,.11) !important;
   }
-  .stButton > button:active, .stDownloadButton > button:active { transform: translateY(0) scale(.985) !important; }
-  .stButton > button:focus-visible, .stDownloadButton > button:focus-visible,
+  .stButton > button:active, .stDownloadButton > button:active, [data-testid="stFormSubmitButton"] button:active { transform: translateY(0) scale(.985) !important; }
+  .stButton > button:focus-visible, .stDownloadButton > button:focus-visible, [data-testid="stFormSubmitButton"] button:focus-visible,
   input:focus-visible, textarea:focus-visible, [role="combobox"]:focus-visible,
   [role="tab"]:focus-visible { outline: 2px solid var(--credit-accent) !important; outline-offset: 2px; }
-  .stButton > button:disabled, .stDownloadButton > button:disabled { cursor: not-allowed; opacity: .58; transform: none !important; }
-  button[kind="primary"], .stDownloadButton > button[kind="primary"] {
+  .stButton > button:disabled, .stDownloadButton > button:disabled, [data-testid="stFormSubmitButton"] button:disabled { cursor: not-allowed; opacity: .58; transform: none !important; }
+  button[kind="primary"], button[kind="primaryFormSubmit"], .stDownloadButton > button[kind="primary"] {
     color: white !important; border: 0 !important;
-    background: linear-gradient(110deg, #064832, #0B6B4B) !important;
-    box-shadow: 0 10px 25px rgba(11,107,75,.24), 0 0 16px rgba(168,230,58,.13) !important;
+    background: linear-gradient(110deg, #172A59, #203469 68%, #8E1826) !important;
+    box-shadow: 0 10px 25px rgba(32,52,105,.25), 0 0 16px rgba(167,27,40,.11) !important;
   }
+  button[kind="primary"] *, button[kind="primaryFormSubmit"] *, .stDownloadButton > button[kind="primary"] * { color: #FFFFFF !important; }
+  .stApp [data-testid="stFormSubmitButton"] button[kind="primaryFormSubmit"] [data-testid="stMarkdownContainer"] p {
+    color: #FFFFFF !important; -webkit-text-fill-color: #FFFFFF !important;
+  }
+  [data-testid="stFormSubmitButton"] button[kind="primaryFormSubmit"]:disabled {
+    background: var(--credit-primary) !important;
+    border-color: var(--credit-primary) !important;
+    opacity: .64;
+  }
+  [data-testid="stFormSubmitButton"] button[kind="primaryFormSubmit"]:disabled * { color: #FFFFFF !important; }
   [data-testid="stExpander"] { background: var(--credit-surface); border: 1px solid var(--credit-border); border-radius: var(--credit-radius); overflow: hidden; }
-  [data-testid="stDataFrame"] { background: var(--credit-surface-solid); border: 1px solid var(--credit-border); border-radius: var(--credit-radius); overflow: hidden; box-shadow: 0 8px 25px rgba(18,75,54,.07); }
+  [data-testid="stDataFrame"] { background: var(--credit-surface-solid); border: 1px solid var(--credit-border); border-radius: var(--credit-radius); overflow: hidden; box-shadow: 0 8px 25px rgba(20,39,84,.07); }
   [data-testid="stVerticalBlockBorderWrapper"] {
     background: var(--credit-surface); border-color: var(--credit-border) !important;
-    border-radius: var(--credit-radius) !important; box-shadow: 0 8px 24px rgba(18,75,54,.07);
+    border-radius: var(--credit-radius) !important; box-shadow: 0 8px 24px rgba(20,39,84,.07);
   }
   .credit-upload-panel {
     background: var(--credit-surface); border: 1px solid var(--credit-border); border-radius: var(--credit-radius);
-    padding: 16px 18px 5px; margin: 8px 0 16px; box-shadow: 0 8px 24px rgba(18,75,54,.07);
+    padding: 16px 18px 5px; margin: 8px 0 16px; box-shadow: 0 8px 24px rgba(20,39,84,.07);
   }
   .credit-process-grid {
     display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 13px; margin: 5px 0 22px;
   }
   .credit-process-card {
     min-height: 142px; background: var(--credit-surface); border: 1px solid var(--credit-border);
-    border-radius: 17px; padding: 16px; box-shadow: 0 9px 24px rgba(18,75,54,.07);
-    transition: transform .18s ease, border-color .18s ease, box-shadow .18s ease;
+    border-radius: 17px; padding: 16px; box-shadow: 0 9px 24px rgba(20,39,84,.07);
+    transition: transform .16s ease, border-color .16s ease, box-shadow .16s ease;
   }
-  .credit-process-card:hover { transform: translateY(-3px); border-color: color-mix(in srgb, var(--credit-primary) 44%, var(--credit-border)); box-shadow: 0 15px 32px rgba(18,75,54,.12); }
+  .credit-process-card:hover { transform: translateY(-3px); border-color: color-mix(in srgb, var(--credit-primary) 44%, var(--credit-border)); box-shadow: 0 15px 32px rgba(20,39,84,.12); }
   .process-step {
     display: grid; place-items: center; width: 31px; height: 31px; border-radius: 10px;
-    color: #FFFFFF; background: linear-gradient(135deg, #064832, #0B6B4B);
+    color: #FFFFFF; background: linear-gradient(135deg, #203469, #A71B28);
     font-size: .78rem; font-weight: 900; margin-bottom: 11px;
   }
   .process-title { color: var(--credit-text); font-size: .92rem; font-weight: 820; margin-bottom: 5px; }
@@ -1878,9 +2009,9 @@ STREAMLIT_CSS = """
   .credit-metric-card {
     min-height: 238px; display: flex; flex-direction: column; box-sizing: border-box;
     background: var(--credit-surface); border: 1px solid var(--credit-border); border-radius: var(--credit-radius);
-    padding: 20px; box-shadow: var(--credit-shadow); transition: transform .18s ease, box-shadow .18s ease;
+    padding: 20px; box-shadow: var(--credit-shadow); transition: transform .16s ease, box-shadow .16s ease, border-color .16s ease;
   }
-  .credit-metric-card:hover { transform: translateY(-2px); box-shadow: 0 15px 38px rgba(18,75,54,.13); }
+  .credit-metric-card:hover { transform: translateY(-2px); border-color: color-mix(in srgb, var(--credit-primary) 36%, var(--credit-border)); box-shadow: 0 15px 38px rgba(20,39,84,.13); }
   .metric-name { color: var(--credit-muted); font-size: .9rem; font-weight: 750; margin-bottom: 8px; }
   .metric-value { color: var(--credit-text); font-size: clamp(1.8rem, 3vw, 2.5rem); line-height: 1.08; margin-bottom: 12px; }
   .metric-badge { width: fit-content; border-radius: 999px; padding: 5px 10px; font-size: .78rem; font-weight: 800; }
@@ -1902,11 +2033,11 @@ STREAMLIT_CSS = """
     min-height: 43px; border-radius: 12px 12px 0 0; padding-inline: 14px; font-weight: 740;
     transition: color .15s ease, background .15s ease, transform .15s ease;
   }
-  [data-testid="stTabs"] button[role="tab"]:hover { background: rgba(11,107,75,.07); }
-  [data-testid="stTabs"] button[role="tab"][aria-selected="true"] { color: var(--credit-primary) !important; background: rgba(11,107,75,.09); }
+  [data-testid="stTabs"] button[role="tab"]:hover { background: rgba(32,52,105,.07); }
+  [data-testid="stTabs"] button[role="tab"][aria-selected="true"] { color: var(--credit-primary) !important; background: rgba(32,52,105,.09); }
   [data-testid="stTabs"] button[role="tab"]:active { transform: scale(.98); }
   [data-testid="stStatusWidget"] { border-radius: var(--credit-radius); border-color: var(--credit-border); background: var(--credit-surface); }
-  hr { border-color: rgba(11,107,75,.13) !important; }
+  hr { border-color: rgba(32,52,105,.13) !important; }
   @keyframes credit-page-enter {
     from { opacity: 0; transform: translateY(8px); }
     to { opacity: 1; transform: translateY(0); }
@@ -1924,7 +2055,8 @@ STREAMLIT_CSS = """
     html { scroll-behavior: auto; }
     *, *::before, *::after { animation-duration: .01ms !important; animation-iteration-count: 1 !important; transition-duration: .01ms !important; }
     .block-container, .credit-process-card:hover, .credit-metric-card:hover, div[data-testid="stMetric"]:hover,
-    .stButton > button:hover, .stDownloadButton > button:hover { transform: none !important; }
+    .stButton > button:hover, .stDownloadButton > button:hover,
+    [data-testid="stFormSubmitButton"] button:hover { transform: none !important; }
   }
   SYSTEM_THEME_MEDIA
 </style>
@@ -1936,8 +2068,8 @@ def tao_css_giao_dien(settings: dict[str, Any]) -> str:
     if mode not in CHE_DO_GIAO_DIEN:
         mode = "Theo hệ thống"
     palette = THEME_PALETTES[mode]
-    primary = lam_sach_mau(settings.get("mau_chu_dao", "#0B6B4B"))
-    accent = lam_sach_mau(settings.get("mau_nhan", "#A8E63A"), "#A8E63A")
+    primary = lam_sach_mau(settings.get("mau_chu_dao", "#203469"), "#203469")
+    accent = lam_sach_mau(settings.get("mau_nhan", "#A71B28"), "#A71B28")
     if mode in THEME_ACCENTS:
         primary, accent = THEME_ACCENTS[mode]
 
@@ -1946,7 +2078,7 @@ def tao_css_giao_dien(settings: dict[str, Any]) -> str:
         dark = THEME_PALETTES["Tối"]
         system_media = """@media (prefers-color-scheme: dark) {
           :root {
-            --credit-primary: #52D092; --credit-accent: #B7F34B;
+            --credit-primary: #9CB4F0; --credit-accent: #FF7180;
             --credit-page: DARK_PAGE; --credit-page-alt: DARK_PAGE_ALT;
             --credit-surface: DARK_SURFACE; --credit-surface-solid: DARK_SURFACE_SOLID;
             --credit-text: DARK_TEXT; --credit-muted: DARK_MUTED; --credit-border: DARK_BORDER;
@@ -1973,6 +2105,7 @@ def tao_css_giao_dien(settings: dict[str, Any]) -> str:
         "METRIC_OK_COLOR": "#86EFAC" if mode == "Tối" else "#15803D",
         "METRIC_WARN_COLOR": "#FCD34D" if mode == "Tối" else "#B45309",
         "METRIC_MISSING_COLOR": "#CBD5E1" if mode == "Tối" else "#64748B",
+        "WATERMARK_IMAGE": anh_nen_data_uri(WATERMARK_PATH),
         "SYSTEM_THEME_MEDIA": system_media,
     }
     css = STREAMLIT_CSS
@@ -1985,7 +2118,7 @@ def cau_hinh_mac_dinh() -> dict[str, Any]:
     return json.loads(json.dumps(DEFAULT_SETTINGS, ensure_ascii=False))
 
 
-def lam_sach_mau(value: str, mac_dinh: str = "#0B6B4B") -> str:
+def lam_sach_mau(value: str, mac_dinh: str = "#203469") -> str:
     return value.upper() if re.fullmatch(r"#[0-9A-Fa-f]{6}", value or "") else mac_dinh
 
 
@@ -2344,9 +2477,9 @@ def hien_thi_header(st, settings: dict[str, Any]) -> None:
     st.markdown(tao_css_giao_dien(settings), unsafe_allow_html=True)
     title = html.escape(str(settings["ten_ung_dung"])[:90])
     st.markdown(
-        f"<div class='credit-hero'><div class='credit-kicker'>AI CREDIT UNDERWRITING COPILOT</div>"
+        f"<div class='credit-hero'><div class='credit-kicker'>HUB × CREDITLENS · AI CREDIT UNDERWRITING COPILOT</div>"
         f"<h1>{title}</h1><p>Dữ kiện → Phép tính Python → Quy tắc → Bằng chứng → Con người xem xét</p>"
-        "<span class='credit-chip'>Multi-stage pipeline · Evidence grounded · Human-in-the-loop</span></div>",
+        "<span class='credit-chip'>Minh bạch nguồn số · Phản hồi tức thời · Human-in-the-loop</span></div>",
         unsafe_allow_html=True,
     )
     st.markdown(
@@ -2609,6 +2742,15 @@ def trang_phan_tich(st, result: KetQuaThamDinh | None, thresholds: Mapping[str, 
     if result is None:
         st.warning("Chưa có hồ sơ để phân tích.")
         return
+    income_col, source_col = st.columns([1, 2])
+    income_col.metric("Thu nhập dùng để tính", tien(result.thu_nhap_dung_de_tinh))
+    source_status = (
+        "Đã có nguồn đối chiếu độc lập"
+        if result.thu_nhap_duoc_xac_minh_doc_lap
+        else "Chỉ kê khai - cần xác minh"
+    )
+    source_col.metric("Trạng thái nguồn", source_status)
+    st.caption(f"Cơ sở lựa chọn: {result.nguon_thu_nhap_dung_de_tinh}.")
     hien_thi_luoi_chi_so(st, result.chi_so)
     st.info(
         f"Ngưỡng minh họa: chênh lệch thu nhập > {phan_tram(float(thresholds['chenh_lech_thu_nhap']))}; "
@@ -2767,7 +2909,7 @@ def nhap_cau_hinh_json(raw: bytes) -> dict[str, Any]:
     if isinstance(candidate.get("mau_chu_dao"), str):
         output["mau_chu_dao"] = lam_sach_mau(candidate["mau_chu_dao"])
     if isinstance(candidate.get("mau_nhan"), str):
-        output["mau_nhan"] = lam_sach_mau(candidate["mau_nhan"], "#A8E63A")
+        output["mau_nhan"] = lam_sach_mau(candidate["mau_nhan"], "#A71B28")
     if candidate.get("che_do_giao_dien") in CHE_DO_GIAO_DIEN:
         output["che_do_giao_dien"] = candidate["che_do_giao_dien"]
     if candidate.get("llm_provider") in NHA_CUNG_CAP_LLM:
@@ -2868,37 +3010,40 @@ def trang_cai_dat(st, settings: dict[str, Any]) -> None:
             "Khóa không được ghi vào source, JSON, báo cáo hoặc log."
         )
         st.subheader("Thêm hoặc thay thế kết nối")
-        provider_choice = st.selectbox(
-            "Nhà cung cấp",
-            LUA_CHON_NHA_CUNG_CAP,
-            key="llm_provider_choice",
-            help=(
-                "Tự động chỉ nhận diện tiền tố không mơ hồ. Nếu khóa bắt đầu bằng sk-, hãy chọn rõ OpenAI hoặc "
-                "DeepSeek để hệ thống không thử khóa với sai nhà cung cấp."
-            ),
-        )
-        selected_provider = MA_NHA_CUNG_CAP_THEO_NHAN.get(provider_choice)
-        placeholder = (
-            NHA_CUNG_CAP_LLM[selected_provider]["placeholder"]
-            if selected_provider in NHA_CUNG_CAP_LLM
-            else "Dán API Key của OpenAI, Gemini, Claude hoặc DeepSeek"
-        )
-        api_key_candidate = st.text_input(
-            "API Key cần xác thực",
-            type="password",
-            key="llm_api_key_draft",
-            placeholder=placeholder,
-            help="Mỗi nhà cung cấp giữ tối đa một kết nối trong phiên. Xác thực lại sẽ thay thế khóa cũ của cùng nhà cung cấp.",
-        )
-        verify_connection = st.button(
-            "Xác thực và lưu trong phiên",
-            type="primary",
-            disabled=not bool(api_key_candidate.strip()),
-            width="stretch",
-        )
+        with st.form("llm_connection_form", clear_on_submit=True):
+            provider_choice = st.selectbox(
+                "Nhà cung cấp",
+                LUA_CHON_NHA_CUNG_CAP,
+                key="llm_provider_choice",
+                help=(
+                    "Tự động chỉ nhận diện tiền tố không mơ hồ. Nếu khóa bắt đầu bằng sk-, hãy chọn rõ OpenAI hoặc "
+                    "DeepSeek để hệ thống không thử khóa với sai nhà cung cấp."
+                ),
+            )
+            selected_provider = MA_NHA_CUNG_CAP_THEO_NHAN.get(provider_choice)
+            placeholder = (
+                NHA_CUNG_CAP_LLM[selected_provider]["placeholder"]
+                if selected_provider in NHA_CUNG_CAP_LLM
+                else "Dán API Key của OpenAI, Gemini, Claude hoặc DeepSeek"
+            )
+            api_key_candidate = st.text_input(
+                "API Key cần xác thực",
+                type="password",
+                placeholder=placeholder,
+                help="Mỗi nhà cung cấp giữ tối đa một kết nối trong phiên. Xác thực lại sẽ thay thế khóa cũ của cùng nhà cung cấp.",
+            )
+            verify_connection = st.form_submit_button(
+                "Kết nối và tải danh sách model",
+                type="primary",
+                width="stretch",
+                help="Nút gửi rõ ràng giúp xác thực mà không cần dùng tổ hợp phím.",
+            )
         if verify_connection:
-            provider = nha_cung_cap_hieu_luc(provider_choice, api_key_candidate)
-            if provider is None:
+            normalized_key = api_key_candidate.strip()
+            provider = nha_cung_cap_hieu_luc(provider_choice, normalized_key)
+            if len(normalized_key) < 12:
+                st.session_state.llm_connection_error = "API Key chưa được nhập hoặc quá ngắn."
+            elif provider is None:
                 st.session_state.llm_connection_error = (
                     "Không thể nhận diện an toàn khóa này. Hãy chọn rõ nhà cung cấp rồi thử lại."
                 )
@@ -2906,7 +3051,7 @@ def trang_cai_dat(st, settings: dict[str, Any]) -> None:
                 try:
                     with st.status(f"Đang xác thực {NHA_CUNG_CAP_LLM[provider]['nhan']}", expanded=True) as status:
                         st.write("Kiểm tra khóa trực tiếp với nhà cung cấp đã chọn…")
-                        models = lay_danh_sach_model(provider, api_key_candidate)
+                        models = lay_danh_sach_model(provider, normalized_key)
                         st.write(f"Đã tải {len(models)} model hội thoại khả dụng.")
                         status.update(label="Kết nối đã được xác minh", state="complete", expanded=False)
                     previous = st.session_state.llm_connections.get(provider, {})
@@ -2914,9 +3059,9 @@ def trang_cai_dat(st, settings: dict[str, Any]) -> None:
                     connections = dict(st.session_state.llm_connections)
                     connections[provider] = {
                         "provider": provider,
-                        "api_key": api_key_candidate,
+                        "api_key": normalized_key,
                         "fingerprint": hashlib.sha256(
-                            f"creditlens|{provider}|{api_key_candidate}".encode("utf-8")
+                            f"creditlens|{provider}|{normalized_key}".encode("utf-8")
                         ).hexdigest(),
                         "models": models,
                         "model": preferred_model,
@@ -2929,11 +3074,17 @@ def trang_cai_dat(st, settings: dict[str, Any]) -> None:
                     st.session_state.llm_connection_error = ""
                     settings["llm_provider"] = provider
                     settings["model"] = preferred_model
+                    st.session_state.llm_connection_notice = (
+                        f"Đã kết nối {NHA_CUNG_CAP_LLM[provider]['nhan']} và chọn {preferred_model}."
+                    )
+                    st.rerun()
                 except (ValueError, RuntimeError) as exc:
                     st.session_state.llm_connection_error = str(exc)
 
         if st.session_state.get("llm_connection_error"):
             st.error(st.session_state.llm_connection_error)
+        if st.session_state.get("llm_connection_notice"):
+            st.success(st.session_state.pop("llm_connection_notice"))
 
         st.subheader("Kết nối dùng ngay")
         connections = st.session_state.get("llm_connections", {})
@@ -3020,13 +3171,13 @@ def trang_cai_dat(st, settings: dict[str, Any]) -> None:
             )
             new_accent = color_col2.color_picker(
                 "Màu nhấn của chế độ Hiện đại",
-                value=lam_sach_mau(settings.get("mau_nhan", "#A8E63A"), "#A8E63A"),
+                value=lam_sach_mau(settings.get("mau_nhan", "#A71B28"), "#A71B28"),
             )
             apply_appearance = st.form_submit_button("Áp dụng giao diện", type="primary", width="stretch")
         if apply_appearance:
             settings["ten_ung_dung"] = new_title.strip() or DEFAULT_SETTINGS["ten_ung_dung"]
             settings["mau_chu_dao"] = lam_sach_mau(new_color)
-            settings["mau_nhan"] = lam_sach_mau(new_accent, "#A8E63A")
+            settings["mau_nhan"] = lam_sach_mau(new_accent, "#A71B28")
             settings["che_do_giao_dien"] = new_theme
             st.session_state.settings = settings
             st.rerun()
@@ -3035,32 +3186,37 @@ def trang_cai_dat(st, settings: dict[str, Any]) -> None:
         st.subheader("Ngưỡng phục vụ minh họa")
         st.warning("Các giá trị này không phải quy định pháp lý hoặc chính sách của bất kỳ ngân hàng nào.")
         with st.form("threshold_settings"):
-            c1, c2, c3 = st.columns(3)
+            c1, c2, c3, c4 = st.columns(4)
             income_mismatch = c1.number_input("Chênh lệch thu nhập (%)", 0.0, 100.0, settings["nguong"]["chenh_lech_thu_nhap"] * 100, 1.0)
-            debt_mismatch = c2.number_input("Chênh lệch nợ (%)", 0.0, 500.0, settings["nguong"]["chenh_lech_no"] * 100, 1.0)
-            low_confidence = c3.number_input("Độ tin cậy tối thiểu (%)", 0.0, 100.0, settings["nguong"]["do_tin_cay_thap"] * 100, 1.0)
-            c4, c5, c6 = st.columns(3)
-            dti = c4.number_input("Cảnh báo DTI (%)", 0.0, 200.0, settings["nguong"]["dti_canh_bao"] * 100, 1.0)
-            dsr = c5.number_input("Cảnh báo DSR (%)", 0.0, 200.0, settings["nguong"]["dsr_canh_bao"] * 100, 1.0)
-            buffer = c6.number_input("Hệ số đệm số dư tối thiểu", 0.0, 20.0, settings["nguong"]["he_so_dem_so_du_thap"], 0.1)
+            severe_income_mismatch = c2.number_input("Chênh lệch thu nhập nghiêm trọng (%)", 0.0, 100.0, settings["nguong"]["chenh_lech_thu_nhap_nghiem_trong"] * 100, 1.0)
+            debt_mismatch = c3.number_input("Chênh lệch nợ (%)", 0.0, 500.0, settings["nguong"]["chenh_lech_no"] * 100, 1.0)
+            low_confidence = c4.number_input("Độ tin cậy tối thiểu (%)", 0.0, 100.0, settings["nguong"]["do_tin_cay_thap"] * 100, 1.0)
+            c5, c6, c7 = st.columns(3)
+            dti = c5.number_input("Cảnh báo DTI (%)", 0.0, 200.0, settings["nguong"]["dti_canh_bao"] * 100, 1.0)
+            dsr = c6.number_input("Cảnh báo DSR (%)", 0.0, 200.0, settings["nguong"]["dsr_canh_bao"] * 100, 1.0)
+            buffer = c7.number_input("Hệ số đệm số dư tối thiểu", 0.0, 20.0, settings["nguong"]["he_so_dem_so_du_thap"], 0.1)
             volatility = st.number_input("Biến động thu nhập cao (%)", 0.0, 200.0, settings["nguong"]["bien_dong_thu_nhap_cao"] * 100, 1.0)
             apply_thresholds = st.form_submit_button("Áp dụng ngưỡng", type="primary", width="stretch")
         if apply_thresholds:
-            settings["nguong"] = {
-                "do_tin_cay_thap": low_confidence / 100,
-                "chenh_lech_thu_nhap": income_mismatch / 100,
-                "chenh_lech_no": debt_mismatch / 100,
-                "dti_canh_bao": dti / 100,
-                "dsr_canh_bao": dsr / 100,
-                "he_so_dem_so_du_thap": buffer,
-                "bien_dong_thu_nhap_cao": volatility / 100,
-            }
-            st.session_state.settings = settings
-            st.session_state.result = None
-            st.session_state.docs = {}
-            st.session_state.ai_summary = ""
-            st.session_state.ai_summary_context = {}
-            st.success("Đã áp dụng. Hãy chạy lại hồ sơ vì ngưỡng mới có thể làm thay đổi cảnh báo.")
+            if severe_income_mismatch < income_mismatch:
+                st.error("Ngưỡng chênh lệch nghiêm trọng phải lớn hơn hoặc bằng ngưỡng cảnh báo thông thường.")
+            else:
+                settings["nguong"] = {
+                    "do_tin_cay_thap": low_confidence / 100,
+                    "chenh_lech_thu_nhap": income_mismatch / 100,
+                    "chenh_lech_thu_nhap_nghiem_trong": severe_income_mismatch / 100,
+                    "chenh_lech_no": debt_mismatch / 100,
+                    "dti_canh_bao": dti / 100,
+                    "dsr_canh_bao": dsr / 100,
+                    "he_so_dem_so_du_thap": buffer,
+                    "bien_dong_thu_nhap_cao": volatility / 100,
+                }
+                st.session_state.settings = settings
+                st.session_state.result = None
+                st.session_state.docs = {}
+                st.session_state.ai_summary = ""
+                st.session_state.ai_summary_context = {}
+                st.success("Đã áp dụng. Hãy chạy lại hồ sơ vì ngưỡng mới có thể làm thay đổi cảnh báo.")
 
     with tab_guardrails:
         st.subheader("Guardrails của LLM")
@@ -3149,6 +3305,10 @@ def chay_ung_dung_streamlit() -> None:
     settings = st.session_state.settings
     if LOGO_PATH.exists():
         st.sidebar.image(str(LOGO_PATH), width="stretch")
+        st.sidebar.markdown(
+            "<div class='brand-caption'><strong>HUB × CreditLens</strong><span>Thẩm định có thể kiểm chứng</span></div>",
+            unsafe_allow_html=True,
+        )
     else:
         st.sidebar.markdown("## CreditLens")
     st.sidebar.markdown(
@@ -3207,7 +3367,7 @@ def chay_ung_dung_streamlit() -> None:
 
 def chay_tu_kiem_tra() -> None:
     defaults_before = dict(NGUONG)
-    normal, _ = du_lieu_demo("CASE-01 — Hồ sơ bình thường")
+    normal, normal_docs = du_lieu_demo("CASE-01 — Hồ sơ bình thường")
     strict_normal, _ = du_lieu_demo(
         "CASE-01 — Hồ sơ bình thường",
         {**defaults_before, "dti_canh_bao": 0.01},
@@ -3227,6 +3387,64 @@ def chay_tu_kiem_tra() -> None:
     assert missing.trang_thai == "INSUFFICIENT INFORMATION"
     assert zero_ratio is None
     assert all(r.bang_chung for r in mismatch.canh_bao if r.loai == "INCOME_MISMATCH")
+
+    one_percent = tim_ty_le("Income Volatility: 1%", ["Income Volatility"])
+    one_without_unit = tim_ty_le("Income Volatility: 1", ["Income Volatility"])
+    decimal_ratio = tim_ty_le("Income Volatility: 0.25", ["Income Volatility"])
+    assert one_percent and one_percent["number"] == 0.01
+    assert one_without_unit and one_without_unit["number"] == 0.01
+    assert decimal_ratio and decimal_ratio["number"] == 0.25
+    assert chuan_hoa_ngay("2022-06-01") == chuan_hoa_ngay("01/06/2022")
+    assert chuan_hoa_ngay("2022/06/01") == chuan_hoa_ngay("01-06-2022")
+    assert chuan_hoa_ngay("31/02/2022") is None
+
+    same_date_data = BASE_DATA.model_copy(update={"ngay_bat_dau_chung_tu": "01/06/2022"})
+    same_date_result = phan_tich_tu_du_kien(
+        "TEST-DATE-SAME", "Định dạng ngày tương đương", same_date_data,
+        normal.truong_trich_xuat, normal_docs, time.perf_counter(), defaults_before,
+    )
+    assert not any(r.loai == "EMPLOYMENT_DATE_MISMATCH" for r in same_date_result.canh_bao)
+
+    zero_declared_debt_data = BASE_DATA.model_copy(
+        update={"nghia_vu_no_ke_khai": 0, "nghia_vu_no_quan_sat": 2_000_000}
+    )
+    zero_declared_debt = phan_tich_tu_du_kien(
+        "TEST-DEBT-ZERO", "Nợ kê khai bằng 0", zero_declared_debt_data,
+        normal.truong_trich_xuat, normal_docs, time.perf_counter(), defaults_before,
+    )
+    zero_debt_risk = next(r for r in zero_declared_debt.canh_bao if r.loai == "POSSIBLE_UNDECLARED_DEBT")
+    assert zero_debt_risk.muc_do == "HIGH" and "%" not in (zero_debt_risk.chenh_lech or "")
+    assert "mẫu số bằng 0" in zero_debt_risk.giai_thich
+
+    moderate_income_data = BASE_DATA.model_copy(
+        update={"thu_nhap_ke_khai": 32_000_000, "luong_thuc_nhan": 30_000_000, "thu_nhap_qua_sao_ke": 24_000_000}
+    )
+    moderate_income = phan_tich_tu_du_kien(
+        "TEST-INCOME-MEDIUM", "Mốc nghiêm trọng theo phiên", moderate_income_data,
+        normal.truong_trich_xuat, normal_docs, time.perf_counter(),
+        {**defaults_before, "chenh_lech_thu_nhap_nghiem_trong": 0.30},
+    )
+    severe_income = phan_tich_tu_du_kien(
+        "TEST-INCOME-HIGH", "Mốc nghiêm trọng theo phiên", moderate_income_data,
+        normal.truong_trich_xuat, normal_docs, time.perf_counter(),
+        {**defaults_before, "chenh_lech_thu_nhap_nghiem_trong": 0.20},
+    )
+    assert next(r for r in moderate_income.canh_bao if r.loai == "INCOME_MISMATCH").muc_do == "MEDIUM"
+    assert next(r for r in severe_income.canh_bao if r.loai == "INCOME_MISMATCH").muc_do == "HIGH"
+
+    declared_only_data = BASE_DATA.model_copy(
+        update={"luong_thuc_nhan": None, "thu_nhap_qua_sao_ke": None, "thu_nhap_ke_khai": 25_000_000}
+    )
+    declared_only = phan_tich_tu_du_kien(
+        "TEST-INCOME-FALLBACK", "Fallback kê khai", declared_only_data,
+        normal.truong_trich_xuat, normal_docs, time.perf_counter(), defaults_before,
+    )
+    assert declared_only.thu_nhap_dung_de_tinh == 25_000_000
+    assert declared_only.nguon_thu_nhap_dung_de_tinh.startswith("Thu nhập kê khai")
+    assert not declared_only.thu_nhap_duoc_xac_minh_doc_lap
+    assert declared_only.trang_thai == "HUMAN REVIEW REQUIRED"
+    declared_markdown = bao_cao_markdown(declared_only)
+    assert "Thu nhập dùng để tính" in declared_markdown and "Thu nhập đã xác minh" not in declared_markdown
     assert "api_key" not in json.dumps(cau_hinh_mac_dinh(), ensure_ascii=False).lower()
     assert nhap_cau_hinh_json(b'{"mau_chu_dao":"#112233"}')["mau_chu_dao"] == "#112233"
     imported_thresholds = nhap_cau_hinh_json(
@@ -3292,6 +3510,7 @@ def chay_tu_kiem_tra() -> None:
     assert goi_y_loai_tu_ten_tep("03_Sao_ke_ngan_hang_6_thang.pdf") == "statement"
     assert nhan_luu_y_tin_cay(0.95) == "Tin cậy cao"
     assert nhan_luu_y_tin_cay(0.80) == "Cần đối chiếu"
+    assert nhan_luu_y_tin_cay(0.88) == "Cần đối chiếu"
     assert nhan_luu_y_tin_cay(0.60) == "Cần xác minh"
     assert nhan_luu_y_tin_cay(0.93, low_confidence_threshold=0.95) == "Cần xác minh"
     assert nhan_luu_y_tin_cay(0.0, missing=True) == "Thiếu dữ liệu"
@@ -3301,6 +3520,7 @@ def chay_tu_kiem_tra() -> None:
         theme_settings["che_do_giao_dien"] = mode
         css = tao_css_giao_dien(theme_settings)
         assert "PRIMARY_COLOR" not in css and "SYSTEM_THEME_MEDIA" not in css and "METRIC_OK_COLOR" not in css
+        assert "WATERMARK_IMAGE" not in css
         assert "font-family: Inter" in css
         if mode == "Tối":
             assert "--credit-metric-ok: #86EFAC" in css and "--credit-metric-warn: #FCD34D" in css
@@ -3344,7 +3564,7 @@ def chay_tu_kiem_tra() -> None:
     assert "Cần đối chiếu" in threshold_pdf_text and "Cần xác minh" not in threshold_pdf_text
     print(
         "SELF_TEST_PASS: session-isolated thresholds, five themes, four LLM providers, "
-        "key/model detection, prompt provenance, and consistent Word/Excel/PDF labels."
+        "regression fixes, key/model detection, prompt provenance, and consistent Word/Excel/PDF labels."
     )
 
 

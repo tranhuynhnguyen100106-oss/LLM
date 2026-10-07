@@ -6,15 +6,15 @@ CreditLens là AI Credit Underwriting Copilot hỗ trợ đọc hồ sơ PDF, ch
 
 ## Tính năng của bản này
 
-- Nhận diện CreditLens theo logo emerald/forest/lime, logo hiển thị nổi bật ở thanh điều hướng và được dùng làm biểu tượng trang.
+- Nhận diện đồng thương hiệu HUB × CreditLens theo navy `#203469` và đỏ `#A71B28`; tài sản PNG nền trong suốt, favicon HUB và watermark CreditLens thích ứng giao diện sáng/tối.
 - Giao diện tiếng Việt với 5 chế độ: Theo hệ thống, Sáng, Tối, Ấm áp và Hiện đại. Chế độ Theo hệ thống tự thích nghi với thiết bị sáng hoặc tối.
-- Thẻ quy trình, trạng thái xử lý, hover, focus, active và chuyển trang có phản hồi trực quan; tự giảm chuyển động khi hệ điều hành bật `prefers-reduced-motion`.
+- Thẻ quy trình, trạng thái xử lý, hover, focus, pressed-state và chuyển trang có phản hồi trực quan; tự giảm chuyển động khi hệ điều hành bật `prefers-reduced-motion`.
 - Upload từng tệp hoặc chọn trực tiếp một thư mục gồm 3–4 PDF của cùng một khách hàng: đơn đề nghị vay, chứng từ thu nhập, sao kê và tài liệu nghĩa vụ nợ tùy chọn.
 - Trích xuất có cấu trúc; độ tin cậy được chuyển thành nhãn “Tin cậy cao”, “Cần đối chiếu”, “Cần xác minh” hoặc “Thiếu dữ liệu” và phân biệt bằng màu.
-- Python tính DTI, DSR, thu nhập khả dụng, hệ số đệm số dư và biến động thu nhập.
+- Python tính DTI, DSR, thu nhập còn lại trước khoản vay mới, hệ số đệm số dư và biến động thu nhập; “Thu nhập dùng để tính” luôn hiển thị nguồn/cơ sở và trạng thái xác minh độc lập.
 - Phát hiện chênh lệch thu nhập, doanh nghiệp, chức danh, thời gian làm việc và nghĩa vụ nợ.
 - Evidence traceability đến tài liệu, trang, trường và giá trị.
-- Kho kết nối theo phiên giữ một API Key đã xác minh cho mỗi provider OpenAI/GPT, Google Gemini, Anthropic Claude hoặc DeepSeek.
+- Kho kết nối theo phiên giữ một API Key đã xác minh cho mỗi provider OpenAI/GPT, Google Gemini, Anthropic Claude hoặc DeepSeek; form có nút “Kết nối và tải danh sách model” rõ ràng, không cần tổ hợp phím.
 - Nhận diện provider an toàn từ tiền tố khi có thể, xác thực key và tải trực tiếp danh sách model mà key được quyền sử dụng; người dùng chọn model từ danh sách, không nhập phiên bản thủ công.
 - Trang **Cài đặt** tách thành 4 tab: Kết nối AI, Giao diện, Ngưỡng minh họa, Guardrails và cấu hình.
 - Chuyên viên chọn xuất báo cáo `.docx`, `.xlsx` hoặc `.pdf`.
@@ -35,7 +35,7 @@ URL xem trong Colab chỉ tồn tại khi runtime còn hoạt động. Không s�
 ## Triển khai công khai miễn phí bằng Streamlit Community Cloud
 
 1. Chạy ô bootstrap và tải `creditlens_public_deploy.zip` xuống máy.
-2. Giải nén ZIP. Bên trong phải có `app.py`, `credit_underwriting_colab.py`, `requirements.txt`, `packages.txt`, thư mục `.streamlit` và hai tài sản thương hiệu trong `static/` (`creditlens-logo.png`, `creditlens-icon.png`).
+2. Giải nén ZIP. Bên trong phải có `app.py`, `credit_underwriting_colab.py`, `requirements.txt`, `packages.txt`, thư mục `.streamlit` và các tài sản thương hiệu trong `static/` (`hub-creditlens-lockup.png`, `hub-favicon.png`, `creditlens-logo-hub.png`, `creditlens-watermark.png`).
 3. Tạo một repository GitHub mới, ví dụ `creditlens-underwriting`.
 4. Đặt repository ở chế độ Public nếu muốn source code mở.
 5. Upload toàn bộ nội dung bên trong thư mục project lên nhánh `main`. Không upload `.env`, `secrets.toml` hoặc API Key.
