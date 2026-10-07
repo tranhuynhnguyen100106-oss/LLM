@@ -2473,6 +2473,100 @@ def tao_dien_giai_bang_ai(
     )
 
 
+def chuan_hoa_lich_su_chat(messages: Any) -> list[dict[str, str]]:
+    """Chỉ giữ các lượt hội thoại hợp lệ trước khi gửi đến provider."""
+    if not isinstance(messages, list):
+        return []
+    normalized: list[dict[str, str]] = []
+    for item in messages:
+        if not isinstance(item, dict):
+            continue
+        role = str(item.get("role") or "")
+        content = str(item.get("content") or "").strip()
+        if role in {"user", "assistant"} and content:
+            normalized.append({"role": role, "content": content})
+    return normalized
+
+
+def tao_phan_hoi_chat_ai(
+    messages: list[dict[str, str]],
+    api_key: str,
+    provider: str,
+    model: str,
+) -> str:
+    """Gửi đúng một request chat đến provider/model đang hoạt động."""
+    key = (api_key or "").strip()
+    if len(key) < 12:
+        raise ValueError("API Key chưa được nhập hoặc không hợp lệ.")
+    if provider not in NHA_CUNG_CAP_LLM:
+        raise ValueError("Nhà cung cấp LLM không được hỗ trợ.")
+    if not _model_hop_le(provider, model or ""):
+        raise ValueError("Tên model không hợp lệ.")
+    history = chuan_hoa_lich_su_chat(messages)
+    if not history or history[-1]["role"] != "user":
+        raise ValueError("Tin nhắn người dùng đang trống hoặc không hợp lệ.")
+
+    try:
+        if provider == "openai":
+            from openai import OpenAI
+
+            client = OpenAI(api_key=key)
+            response = client.responses.create(
+                model=model,
+                input=history,
+                max_output_tokens=1800,
+                store=False,
+            )
+            output = (response.output_text or "").strip()
+        else:
+            import httpx
+
+            headers: dict[str, str] = {"Accept": "application/json", "Content-Type": "application/json"}
+            if provider == "gemini":
+                url = f"https://generativelanguage.googleapis.com/v1beta/models/{model}:generateContent"
+                headers["x-goog-api-key"] = key
+                body = {
+                    "contents": [
+                        {
+                            "role": "model" if message["role"] == "assistant" else "user",
+                            "parts": [{"text": message["content"]}],
+                        }
+                        for message in history
+                    ],
+                    "generationConfig": {"maxOutputTokens": 1800},
+                }
+            elif provider == "anthropic":
+                url = "https://api.anthropic.com/v1/messages"
+                headers.update({"x-api-key": key, "anthropic-version": "2023-06-01"})
+                body = {"model": model, "max_tokens": 1800, "messages": history}
+            else:
+                url = "https://api.deepseek.com/chat/completions"
+                headers["Authorization"] = f"Bearer {key}"
+                body = {"model": model, "messages": history, "max_tokens": 1800, "stream": False}
+
+            with httpx.Client(timeout=60.0, follow_redirects=True) as http_client:
+                http_response = http_client.post(url, headers=headers, json=body)
+            if http_response.status_code >= 400:
+                raise _loi_api_theo_status(provider, http_response.status_code)
+            try:
+                payload = http_response.json()
+            except ValueError as exc:
+                raise RuntimeError(
+                    f"{NHA_CUNG_CAP_LLM[provider]['nhan']}: phản hồi chat không phải JSON hợp lệ."
+                ) from exc
+            output = trich_noi_dung_phan_hoi(provider, payload)
+    except (ValueError, RuntimeError):
+        raise
+    except Exception as exc:
+        raise RuntimeError(
+            f"Không thể gọi {NHA_CUNG_CAP_LLM[provider]['nhan']} ({type(exc).__name__}). "
+            "Hãy kiểm tra API Key, model, hạn mức và kết nối mạng."
+        ) from exc
+    if not output:
+        raise RuntimeError("API không trả về nội dung.")
+    return output
+
+
 def hien_thi_header(st, settings: dict[str, Any]) -> None:
     st.markdown(tao_css_giao_dien(settings), unsafe_allow_html=True)
     title = html.escape(str(settings["ten_ung_dung"])[:90])
@@ -2997,6 +3091,54 @@ def xoa_ket_noi_llm(st, provider: str) -> None:
     st.session_state.pop(f"llm_model_selector_{provider}", None)
 
 
+def hien_thi_chat_ai(st, connection: Mapping[str, Any] | None) -> None:
+    """Hiển thị chat nhiều lượt; chỉ gọi inference khi người dùng submit."""
+    st.subheader("Trò chuyện với AI")
+    messages = chuan_hoa_lich_su_chat(st.session_state.get("llm_chat_messages", []))
+    st.session_state.llm_chat_messages = messages
+
+    if connection is None:
+        st.info("Vui lòng kết nối API Key trước khi bắt đầu trò chuyện.")
+        st.chat_input("Nhập câu hỏi của bạn...", key="llm_chat_prompt", disabled=True)
+        return
+
+    provider = str(connection.get("provider") or "")
+    model = str(connection.get("model") or "")
+    api_key = str(connection.get("api_key") or "")
+    if not model:
+        st.info("Vui lòng chọn model trước khi bắt đầu trò chuyện.")
+        st.chat_input("Nhập câu hỏi của bạn...", key="llm_chat_prompt", disabled=True)
+        return
+
+    if not messages:
+        with st.chat_message("assistant"):
+            st.markdown("Xin chào, tôi có thể hỗ trợ gì cho bạn?")
+    for message in messages:
+        with st.chat_message(message["role"]):
+            st.markdown(message["content"])
+
+    submitted = st.chat_input("Nhập câu hỏi của bạn...", key="llm_chat_prompt")
+    prompt = (submitted or "").strip()
+    if not prompt:
+        return
+
+    messages.append({"role": "user", "content": prompt})
+    st.session_state.llm_chat_messages = messages
+    with st.chat_message("user"):
+        st.markdown(prompt)
+
+    with st.chat_message("assistant"):
+        try:
+            with st.spinner("Đang tạo phản hồi..."):
+                response = tao_phan_hoi_chat_ai(messages, api_key, provider, model)
+        except (ValueError, RuntimeError):
+            st.error("Không thể nhận phản hồi từ model. Vui lòng kiểm tra kết nối hoặc API Key.")
+            return
+        st.markdown(response)
+    messages.append({"role": "assistant", "content": response})
+    st.session_state.llm_chat_messages = messages
+
+
 def trang_cai_dat(st, settings: dict[str, Any]) -> None:
     st.header("Cài đặt")
     st.caption("Kết nối AI, giao diện, ngưỡng và guardrails chỉ có hiệu lực trong phiên trình duyệt hiện tại.")
@@ -3154,6 +3296,8 @@ def trang_cai_dat(st, settings: dict[str, Any]) -> None:
             st.selectbox("API Key sử dụng ngay", ["Chưa có kết nối đã xác minh"], disabled=True)
             st.info("Thêm một API Key ở trên. Sau khi xác thực, kết nối và model sẽ xuất hiện tại đây.")
 
+        hien_thi_chat_ai(st, ket_noi_llm_dang_dung(st))
+
     with tab_ui:
         st.subheader("Nhận diện và chế độ hiển thị")
         st.caption("Chế độ Theo hệ thống tự động theo cài đặt sáng hoặc tối của thiết bị.")
@@ -3301,6 +3445,8 @@ def chay_ung_dung_streamlit() -> None:
         st.session_state.llm_api_key_draft = ""
     if "llm_connection_error" not in st.session_state:
         st.session_state.llm_connection_error = ""
+    if "llm_chat_messages" not in st.session_state:
+        st.session_state.llm_chat_messages = []
 
     settings = st.session_state.settings
     if LOGO_PATH.exists():
@@ -3495,6 +3641,16 @@ def chay_tu_kiem_tra() -> None:
         "deepseek",
         {"choices": [{"message": {"content": "Tóm tắt DeepSeek"}}]},
     ) == "Tóm tắt DeepSeek"
+    chat_history = chuan_hoa_lich_su_chat([
+        {"role": "user", "content": " Xin chào "},
+        {"role": "assistant", "content": "Chào bạn"},
+        {"role": "system", "content": "Không được gửi"},
+        {"role": "user", "content": "   "},
+    ])
+    assert chat_history == [
+        {"role": "user", "content": "Xin chào"},
+        {"role": "assistant", "content": "Chào bạn"},
+    ]
     salary_after_period = tim_so_tien(
         "Kỳ lương\nLương thực nhận\n08/2026\n"
         "Lương thực nhận\n28.000.000 VND",
@@ -3564,7 +3720,7 @@ def chay_tu_kiem_tra() -> None:
     assert "Cần đối chiếu" in threshold_pdf_text and "Cần xác minh" not in threshold_pdf_text
     print(
         "SELF_TEST_PASS: session-isolated thresholds, five themes, four LLM providers, "
-        "regression fixes, key/model detection, prompt provenance, and consistent Word/Excel/PDF labels."
+        "regression fixes, chat history, key/model detection, prompt provenance, and consistent Word/Excel/PDF labels."
     )
 
 
