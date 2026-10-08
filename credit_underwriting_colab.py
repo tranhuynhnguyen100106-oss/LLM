@@ -1726,14 +1726,14 @@ CHE_DO_GIAO_DIEN = ("Theo hệ thống", "Sáng", "Tối", "Ấm áp", "Hiện �
 
 THEME_PALETTES = {
     "Theo hệ thống": {
-        "page": "#F5F7FB", "page_alt": "#E9EDF6", "surface": "rgba(255,255,255,.96)",
-        "surface_solid": "#FFFFFF", "text": "#14213D", "muted": "#5C667A",
-        "border": "rgba(32,52,105,.18)", "sidebar_top": "#FFFFFF", "sidebar_bottom": "#E8EDF7",
+        "page": "#F8FAFD", "page_alt": "#F1F5F9", "surface": "rgba(255,255,255,.97)",
+        "surface_solid": "#FFFFFF", "text": "#0F172A", "muted": "#64748B",
+        "border": "#E2E8F0", "sidebar_top": "#FFFFFF", "sidebar_bottom": "#F8FAFC",
     },
     "Sáng": {
-        "page": "#F8F9FC", "page_alt": "#EEF1F7", "surface": "rgba(255,255,255,.98)",
-        "surface_solid": "#FFFFFF", "text": "#14213D", "muted": "#626C80",
-        "border": "rgba(32,52,105,.16)", "sidebar_top": "#FFFFFF", "sidebar_bottom": "#EEF1F8",
+        "page": "#F8FAFD", "page_alt": "#F1F5F9", "surface": "rgba(255,255,255,.98)",
+        "surface_solid": "#FFFFFF", "text": "#0F172A", "muted": "#64748B",
+        "border": "#E2E8F0", "sidebar_top": "#FFFFFF", "sidebar_bottom": "#F8FAFC",
     },
     "Tối": {
         "page": "#081226", "page_alt": "#101D39", "surface": "rgba(16,29,57,.96)",
@@ -1771,14 +1771,14 @@ PAGES = [
 ]
 
 NHAN_DIEU_HUONG = {
-    "Trang chủ & hồ sơ": "⌂  Tổng quan và hồ sơ",
-    "Trích xuất tài liệu": "▦  Trích xuất tài liệu",
-    "Phân tích tín dụng": "◈  Phân tích tín dụng",
-    "Cảnh báo rủi ro": "△  Cảnh báo rủi ro",
-    "Tóm tắt thẩm định": "≡  Tóm tắt thẩm định",
-    "Đánh giá & phương pháp": "◎  Phương pháp và giới hạn",
-    "Evaluation": "▤  Evaluation",
-    "Cài đặt": "⚙  Cài đặt",
+    "Trang chủ & hồ sơ": "1.  Tổng quan và hồ sơ",
+    "Trích xuất tài liệu": "2.  Trích xuất tài liệu",
+    "Phân tích tín dụng": "3.  Phân tích tín dụng",
+    "Cảnh báo rủi ro": "4.  Cảnh báo rủi ro",
+    "Tóm tắt thẩm định": "5.  Tóm tắt thẩm định",
+    "Đánh giá & phương pháp": "6.  Phương pháp và giới hạn",
+    "Evaluation": "7.  Evaluation",
+    "Cài đặt": "8.  Cài đặt",
 }
 
 PROJECT_ROOT = Path(__file__).resolve().parent
@@ -1819,17 +1819,17 @@ STREAMLIT_CSS = """
     --credit-metric-ok: METRIC_OK_COLOR;
     --credit-metric-warn: METRIC_WARN_COLOR;
     --credit-metric-missing: METRIC_MISSING_COLOR;
-    --credit-radius: 16px;
-    --credit-control-radius: 8px;
-    --credit-shadow: 0 10px 28px rgba(20, 39, 84, .075);
+    --credit-radius: 12px;
+    --credit-control-radius: 6px;
+    --credit-shadow: 0 4px 14px rgba(15, 23, 42, .06);
     --credit-focus: 0 0 0 3px color-mix(in srgb, var(--credit-primary) 28%, transparent);
     --credit-success: #15803D;
     --credit-warning: #B45309;
     --credit-danger: #B91C1C;
     --credit-info: #1D4ED8;
-    --credit-grid: color-mix(in srgb, var(--credit-primary) 4%, transparent);
-    --credit-ambient-blue: color-mix(in srgb, var(--credit-primary) 7%, transparent);
-    --credit-ambient-red: color-mix(in srgb, var(--credit-accent) 5%, transparent);
+    --credit-grid: color-mix(in srgb, var(--credit-primary) 3%, transparent);
+    --credit-ambient-blue: color-mix(in srgb, var(--credit-primary) 4%, transparent);
+    --credit-ambient-red: color-mix(in srgb, var(--credit-accent) 3%, transparent);
   }
   * { box-sizing: border-box; }
   html, body, .stApp {
@@ -1845,7 +1845,7 @@ STREAMLIT_CSS = """
       linear-gradient(var(--credit-grid) 1px, transparent 1px),
       linear-gradient(90deg, var(--credit-grid) 1px, transparent 1px),
       linear-gradient(180deg, var(--credit-page) 0%, var(--credit-page-alt) 100%);
-    background-size: 48px 48px, 48px 48px, 100% 100%;
+    background-size: 56px 56px, 56px 56px, 100% 100%;
     background-attachment: fixed;
   }
   [data-testid="stAppViewContainer"]::before {
@@ -1853,7 +1853,7 @@ STREAMLIT_CSS = """
     width: min(46vw, 680px); height: min(46vw, 680px); right: 4vw; top: 19vh;
     background-image: WATERMARK_IMAGE; background-repeat: no-repeat;
     background-size: contain; background-position: center;
-    opacity: .035; filter: saturate(.86); transform: rotate(-6deg);
+    opacity: .026; filter: saturate(.72); transform: rotate(-5deg);
   }
   [data-testid="stAppViewContainer"]::after {
     content: ""; position: fixed; z-index: 0; pointer-events: none; inset: -10%;
@@ -1861,7 +1861,7 @@ STREAMLIT_CSS = """
       radial-gradient(circle at 12% 12%, var(--credit-ambient-blue), transparent 29rem),
       radial-gradient(circle at 86% 15%, var(--credit-ambient-red), transparent 27rem),
       radial-gradient(circle at 62% 88%, color-mix(in srgb, var(--credit-primary) 4%, transparent), transparent 31rem);
-    opacity: .84; transform: translate3d(-.6%, -.4%, 0) scale(1.01);
+    opacity: .56; transform: translate3d(-.6%, -.4%, 0) scale(1.01);
     animation: credit-ambient-drift 22s ease-in-out infinite alternate;
     will-change: transform, opacity;
   }
@@ -1879,10 +1879,10 @@ STREAMLIT_CSS = """
   .block-container {
     position: relative; z-index: 1; max-width: 1440px;
     padding: 1.35rem clamp(1rem, 2.2vw, 2rem) 2.5rem;
-    animation: credit-page-enter .18s cubic-bezier(.22, .85, .35, 1) both;
+    animation: credit-page-enter .22s cubic-bezier(.22, .85, .35, 1) both;
   }
   [data-testid="stSidebar"] {
-    background: linear-gradient(180deg, var(--credit-sidebar-top), var(--credit-sidebar-bottom));
+    background: var(--credit-sidebar-top);
     border-right: 1px solid var(--credit-border);
   }
   [data-testid="stSidebarContent"] { padding-top: .85rem; }
@@ -1890,7 +1890,7 @@ STREAMLIT_CSS = """
   [data-testid="stSidebar"] [data-testid="stImage"] {
     background: color-mix(in srgb, var(--credit-surface-solid) 94%, transparent);
     border: 1px solid color-mix(in srgb, var(--credit-primary) 18%, transparent); border-radius: 12px;
-    padding: 8px 10px; margin: 2px 0 10px; box-shadow: 0 7px 20px rgba(20, 39, 84, .065);
+    padding: 8px 10px; margin: 2px 0 10px; box-shadow: 0 2px 8px rgba(15, 23, 42, .045);
   }
   [data-testid="stSidebar"] [data-testid="stImage"] img {
     display: block; width: 100%; height: auto; max-height: 104px; object-fit: contain; border-radius: 8px;
@@ -1900,13 +1900,14 @@ STREAMLIT_CSS = """
     transition: transform 140ms cubic-bezier(.2,.8,.2,1), background-color 160ms ease,
       border-color 160ms ease, box-shadow 160ms ease;
   }
+  [data-testid="stSidebar"] .stRadio label > div:first-child { display: none; }
   [data-testid="stSidebar"] .stRadio label:hover {
     background: rgba(32,52,105,.09); transform: translateX(3px);
   }
   [data-testid="stSidebar"] .stRadio label:has(input:checked) {
-    background: linear-gradient(105deg, #172A59, #203469);
+    background: #203469;
     border-left: 4px solid #A71B28;
-    box-shadow: 0 8px 20px rgba(32,52,105,.22); transform: translateX(2px);
+    box-shadow: 0 4px 12px rgba(32,52,105,.16); transform: translateX(2px);
   }
   [data-testid="stSidebar"] .stRadio label:has(input:checked) * { color: #FFFFFF !important; font-weight: 760 !important; }
   [data-testid="stSidebar"] .stRadio label:active { transform: translateX(2px) scale(.985); }
@@ -1918,57 +1919,61 @@ STREAMLIT_CSS = """
     margin: 10px 0 5px; text-transform: uppercase;
   }
   .credit-hero {
-    position: relative; overflow: hidden;
-    background: linear-gradient(125deg, #142451 0%, #203469 66%, #7D1723 100%);
-    color: white; border: 1px solid rgba(255,255,255,.36);
-    border-radius: 18px; padding: 21px 25px; margin-bottom: 12px;
-    box-shadow: 0 16px 42px rgba(20,39,84,.21), 0 0 24px rgba(167,27,40,.09);
+    position: relative; overflow: hidden; background: var(--credit-surface-solid);
+    border: 1px solid var(--credit-border); border-top: 3px solid #203469;
+    border-radius: 10px; padding: 0; margin-bottom: 12px;
+    box-shadow: 0 4px 14px rgba(15,23,42,.055);
   }
   .credit-hero-inner {
-    position: relative; z-index: 1; display: grid; grid-template-columns: minmax(0, 1fr) auto;
-    align-items: center; gap: clamp(1rem, 2.4vw, 2rem);
+    position: relative; z-index: 1; display: grid; grid-template-columns: auto minmax(0, 1fr) auto;
+    align-items: center; gap: 18px; padding: 14px 18px 12px;
   }
   .credit-hero-copy { min-width: 0; }
   .credit-brand-lockup {
-    display: grid; place-items: center; width: clamp(112px, 11vw, 148px);
-    padding: 8px 10px; border: 1px solid rgba(255,255,255,.64); border-radius: 12px;
-    background: rgba(255,255,255,.95); box-shadow: 0 8px 24px rgba(8,18,38,.18);
+    display: grid; place-items: center; width: clamp(110px, 10vw, 142px);
+    padding: 5px 8px; border-right: 1px solid var(--credit-border);
+    background: #FFFFFF;
   }
   .credit-brand-lockup img { display: block; width: 100%; height: auto; max-height: 84px; object-fit: contain; }
-  .credit-hero:after {
-    content: ""; position: absolute; width: 280px; height: 280px; right: -80px; top: -120px;
-    border: 1px solid rgba(255,255,255,.28); border-radius: 50%;
-    box-shadow: 0 0 55px rgba(255,255,255,.18), inset 0 0 40px rgba(255,255,255,.08);
-  }
-  .credit-kicker { font-size: .72rem; font-weight: 750; letter-spacing: .12em; opacity: .88; margin-bottom: 7px; }
-  .credit-hero, .credit-hero h1, .credit-hero p, .credit-hero .credit-kicker, .credit-hero .credit-chip {
-    color: #FFFFFF !important;
-  }
-  .credit-hero h1 { margin: 0 0 7px; font-size: clamp(1.65rem, 2.8vw, 2.05rem); line-height: 1.15; letter-spacing: -.025em; }
-  .credit-hero p { margin: 0; max-width: 850px; font-size: .93rem; opacity: .94; }
+  .credit-kicker { color: var(--credit-muted) !important; font-size: .66rem; font-weight: 800; letter-spacing: .13em; margin-bottom: 4px; }
+  .credit-hero h1 { color: var(--credit-text) !important; margin: 0; font-size: clamp(1.15rem, 2vw, 1.42rem); line-height: 1.2; letter-spacing: -.02em; }
+  .credit-hero p { color: var(--credit-muted) !important; margin: 4px 0 0; max-width: 850px; font-size: .79rem; }
   .credit-chip {
-    display: inline-block; margin-top: 12px; padding: 5px 10px; border-radius: 999px;
-    background: rgba(255,255,255,.14); border: 1px solid rgba(255,255,255,.34);
-    font-size: .74rem; font-weight: 650; backdrop-filter: blur(6px);
+    display: inline-flex; align-items: center; gap: 7px; white-space: nowrap;
+    color: #203469 !important; padding: 6px 9px; border-radius: 4px;
+    background: #EEF2FF; border: 1px solid #C7D2FE; font-size: .68rem; font-weight: 800;
+  }
+  .credit-chip:before { content: ""; width: 7px; height: 7px; border-radius: 50%; background: #15803D; box-shadow: 0 0 0 3px rgba(21,128,61,.12); }
+  .credit-workflow-rail {
+    display: flex; align-items: center; flex-wrap: wrap; gap: 6px; padding: 8px 18px;
+    color: var(--credit-muted); background: color-mix(in srgb, var(--credit-page) 72%, var(--credit-surface-solid));
+    border-top: 1px solid var(--credit-border); font-size: .7rem; font-weight: 650;
+  }
+  .credit-workflow-rail b { color: var(--credit-text); font-weight: 750; }
+  .workflow-arrow { color: var(--credit-accent); font-weight: 850; }
+  .workstation-badge {
+    display: inline-flex; margin-left: 8px; padding: 3px 6px; color: #A71B28;
+    background: #FFF1F2; border: 1px solid #FECDD3; border-radius: 4px;
+    font-size: .6rem; font-weight: 850; letter-spacing: .08em; vertical-align: 2px;
   }
   .credit-notice, .credit-privacy, .status-card, .evidence-card {
     background: var(--credit-surface); color: var(--credit-text); border: 1px solid var(--credit-border);
-    border-radius: var(--credit-radius); padding: 15px 17px; margin: 10px 0 18px;
-    box-shadow: var(--credit-shadow); backdrop-filter: blur(9px);
+    border-radius: var(--credit-radius); padding: 13px 15px; margin: 10px 0 18px;
+    box-shadow: var(--credit-shadow);
   }
-  .credit-notice { border-left: 5px solid #D49A26; }
-  .credit-privacy { border-left: 5px solid ACCENT_COLOR; }
-  .status-card { border-left: 5px solid PRIMARY_COLOR; }
+  .credit-notice { background: var(--credit-surface); border-color: color-mix(in srgb, #F59E0B 38%, var(--credit-border)); border-left: 4px solid #B45309; }
+  .credit-privacy { border-left: 4px solid ACCENT_COLOR; }
+  .status-card { border-top: 3px solid PRIMARY_COLOR; }
   .public-pill {
     display: inline-flex; align-items: center; gap: 7px; padding: 7px 11px; border-radius: 999px;
     color: #203469; background: #EDF1FA; border: 1px solid rgba(32,52,105,.28);
-    font-size: .74rem; font-weight: 820; box-shadow: 0 0 18px rgba(32,52,105,.10);
+    font-size: .74rem; font-weight: 820;
   }
   .public-dot { width: 8px; height: 8px; border-radius: 50%; background: #A71B28; box-shadow: 0 0 10px rgba(167,27,40,.55); }
   div[data-testid="stMetric"] {
     background: var(--credit-surface);
     border: 1px solid var(--credit-border); border-radius: 12px; padding: 12px 14px;
-    box-shadow: var(--credit-shadow);
+    box-shadow: 0 3px 10px rgba(15,23,42,.05); border-top: 3px solid var(--credit-primary);
   }
   [data-testid="stMetricLabel"] { color: var(--credit-muted); font-size: .78rem; font-weight: 600; }
   [data-testid="stMetricValue"], .metric-value, .financial-num {
@@ -1980,7 +1985,7 @@ STREAMLIT_CSS = """
     min-height: 104px; color: var(--credit-text) !important;
     background: var(--credit-surface-solid) !important;
     border: 1.5px dashed color-mix(in srgb, var(--credit-primary) 66%, var(--credit-border)) !important;
-    border-radius: 12px !important;
+    border-radius: 8px !important;
   }
   [data-testid="stFileUploaderDropzone"] [data-testid="stBaseButton-secondary"] {
     color: var(--credit-text) !important; background: var(--credit-surface) !important;
@@ -2033,7 +2038,7 @@ STREAMLIT_CSS = """
   [data-testid="stLinkButton"] a {
     min-height: 40px; color: var(--credit-text) !important; background: var(--credit-surface-solid) !important;
     border-radius: var(--credit-control-radius) !important; border: 1px solid var(--credit-border) !important;
-    box-shadow: 0 2px 7px rgba(20,39,84,.045);
+    box-shadow: 0 1px 3px rgba(15,23,42,.04);
     font-family: Inter, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Arial, sans-serif !important;
     font-size: .84rem; font-weight: 650 !important; letter-spacing: .002em; cursor: pointer;
     transition: background-color 160ms ease, border-color 160ms ease, box-shadow 160ms ease,
@@ -2065,15 +2070,15 @@ STREAMLIT_CSS = """
     cursor: progress; opacity: .72; transform: none !important;
   }
   button[kind="primary"], button[kind="primaryFormSubmit"], .stDownloadButton > button[kind="primary"] {
-    color: white !important; border: 0 !important;
-    background: linear-gradient(110deg, #203469, #152347) !important;
-    box-shadow: 0 7px 18px rgba(32,52,105,.22) !important;
+    color: white !important; border: 1px solid #203469 !important;
+    background: #203469 !important;
+    box-shadow: 0 4px 10px rgba(32,52,105,.16) !important;
   }
   button[kind="primary"] *, button[kind="primaryFormSubmit"] *, .stDownloadButton > button[kind="primary"] * { color: #FFFFFF !important; }
   button[kind="primary"]:not(:disabled):hover, button[kind="primaryFormSubmit"]:not(:disabled):hover,
   .stDownloadButton > button[kind="primary"]:not(:disabled):hover {
-    color: #FFFFFF !important; background: linear-gradient(110deg, #263E7B, #17284F) !important;
-    box-shadow: 0 9px 22px rgba(32,52,105,.27) !important;
+    color: #FFFFFF !important; background: #172A59 !important;
+    box-shadow: 0 6px 14px rgba(32,52,105,.22) !important;
   }
   button[kind="primary"]:not(:disabled):hover *, button[kind="primaryFormSubmit"]:not(:disabled):hover * { color: #FFFFFF !important; }
   .stApp [data-testid="stFormSubmitButton"] button[kind="primaryFormSubmit"] [data-testid="stMarkdownContainer"] p {
@@ -2092,28 +2097,32 @@ STREAMLIT_CSS = """
   [data-testid="stExpander"] details > summary:hover { background: color-mix(in srgb, var(--credit-primary) 5%, transparent); }
   [data-testid="stDataFrame"] {
     background: var(--credit-surface-solid); border: 1px solid var(--credit-border); border-radius: 10px;
-    overflow: hidden; box-shadow: 0 6px 18px rgba(20,39,84,.055);
+    overflow: hidden; box-shadow: 0 3px 10px rgba(15,23,42,.045);
     font-variant-numeric: tabular-nums lining-nums; font-feature-settings: "tnum" 1, "lnum" 1;
   }
   [data-testid="stVerticalBlockBorderWrapper"] {
     background: var(--credit-surface); border-color: var(--credit-border) !important;
-    border-radius: var(--credit-radius) !important; box-shadow: 0 8px 24px rgba(20,39,84,.07);
+    border-radius: var(--credit-radius) !important; box-shadow: var(--credit-shadow);
   }
   .credit-upload-panel {
     background: var(--credit-surface); border: 1px solid var(--credit-border); border-radius: var(--credit-radius);
-    padding: 16px 18px 5px; margin: 8px 0 16px; box-shadow: 0 8px 24px rgba(20,39,84,.07);
+    padding: 16px 18px 5px; margin: 8px 0 16px; box-shadow: var(--credit-shadow);
   }
   .credit-process-grid {
-    display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 13px; margin: 5px 0 22px;
+    display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 10px; margin: 5px 0 22px;
   }
   .credit-process-card {
-    min-height: 142px; background: var(--credit-surface); border: 1px solid var(--credit-border);
-    border-radius: 13px; padding: 15px; box-shadow: 0 7px 20px rgba(20,39,84,.055);
+    min-height: 134px; position: relative; background: var(--credit-surface-solid); border: 1px solid var(--credit-border);
+    border-radius: 8px; padding: 14px; box-shadow: 0 2px 8px rgba(15,23,42,.04);
+    transition: border-color 160ms ease, box-shadow 160ms ease, transform 160ms ease;
   }
+  .credit-process-card:hover { border-color: color-mix(in srgb, var(--credit-primary) 52%, var(--credit-border)); box-shadow: 0 6px 16px rgba(15,23,42,.07); transform: translateY(-2px); }
+  .credit-process-card:first-child { border: 2px solid var(--credit-primary); padding: 13px; }
+  .process-label { color: var(--credit-accent); font-size: .61rem; font-weight: 850; letter-spacing: .1em; text-transform: uppercase; }
   .process-step {
-    display: grid; place-items: center; width: 31px; height: 31px; border-radius: 10px;
-    color: #FFFFFF; background: linear-gradient(135deg, #203469, #A71B28);
-    font-size: .78rem; font-weight: 900; margin-bottom: 11px;
+    display: grid; place-items: center; width: 29px; height: 29px; border-radius: 50%;
+    color: #FFFFFF; background: #203469; font-family: "JetBrains Mono", monospace;
+    font-size: .72rem; font-weight: 800; margin: 8px 0 9px;
   }
   .process-title { color: var(--credit-text); font-size: .92rem; font-weight: 820; margin-bottom: 5px; }
   .process-copy { color: var(--credit-muted); font-size: .78rem; line-height: 1.48; }
@@ -2122,8 +2131,8 @@ STREAMLIT_CSS = """
   }
   .credit-metric-card {
     min-height: 218px; display: flex; flex-direction: column; box-sizing: border-box;
-    background: var(--credit-surface); border: 1px solid var(--credit-border); border-radius: 13px;
-    padding: 17px; box-shadow: var(--credit-shadow);
+    background: var(--credit-surface-solid); border: 1px solid var(--credit-border); border-radius: 8px;
+    padding: 17px; box-shadow: var(--credit-shadow); border-top: 3px solid var(--credit-primary);
   }
   .metric-name { color: var(--credit-muted); font-size: .82rem; font-weight: 650; margin-bottom: 7px; }
   .metric-value { color: var(--credit-text); font-size: clamp(1.65rem, 2.6vw, 2.15rem); font-weight: 700; line-height: 1.08; margin-bottom: 11px; letter-spacing: -.025em; }
@@ -2164,15 +2173,15 @@ STREAMLIT_CSS = """
   @media (max-width: 950px) { .credit-metric-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
   @media (max-width: 820px) {
     .block-container { padding-top: 1.1rem; }
-    .credit-hero { padding: 18px 20px; }
     .credit-brand-lockup { width: 112px; }
   }
   @media (max-width: 640px) {
     .block-container { padding-inline: 1rem; }
-    .credit-hero { padding: 17px 18px; border-radius: 14px; }
-    .credit-hero-inner { grid-template-columns: 1fr; gap: 12px; }
-    .credit-brand-lockup { width: 100px; padding: 6px 8px; order: -1; }
+    .credit-hero-inner { grid-template-columns: 1fr; gap: 10px; padding: 14px; }
+    .credit-brand-lockup { width: 116px; padding: 4px 6px; border-right: 0; border-bottom: 1px solid var(--credit-border); }
     .credit-brand-lockup img { max-height: 64px; }
+    .credit-chip { width: fit-content; }
+    .credit-workflow-rail { padding: 9px 14px; }
     .credit-process-grid, .credit-metric-grid { grid-template-columns: 1fr; }
     .credit-metric-card { min-height: 198px; }
     [data-testid="stTabs"] [role="tablist"] { overflow-x: auto; }
@@ -2728,11 +2737,18 @@ def hien_thi_header(st, settings: dict[str, Any]) -> None:
     )
     st.markdown(
         "<div class='credit-hero'><div class='credit-hero-inner'>"
+        f"{logo_html}"
         "<div class='credit-hero-copy'>"
         "<div class='credit-kicker'>HUB × CREDITLENS · AI CREDIT UNDERWRITING COPILOT</div>"
-        f"<h1>{title}</h1><p>Dữ kiện → Phép tính Python → Quy tắc → Bằng chứng → Con người xem xét</p>"
-        "<span class='credit-chip'>Minh bạch nguồn số · Phản hồi tức thời · Human-in-the-loop</span>"
-        f"</div>{logo_html}</div></div>",
+        f"<h1>{title}<span class='workstation-badge'>WORKSTATION</span></h1>"
+        "<p>Không gian làm việc thẩm định tín dụng có kiểm soát và truy vết nguồn số.</p>"
+        "</div><span class='credit-chip'>Deterministic · Không dùng LLM để tính chỉ số</span>"
+        "</div><div class='credit-workflow-rail' aria-label='Luồng xử lý CreditLens'>"
+        "<b>Dữ kiện PDF</b><span class='workflow-arrow'>→</span>"
+        "<b>Toán Python</b><span class='workflow-arrow'>→</span>"
+        "<b>Rule Engine</b><span class='workflow-arrow'>→</span>"
+        "<b>Bằng chứng</b><span class='workflow-arrow'>→</span>"
+        "<b>Con người xem xét</b></div></div>",
         unsafe_allow_html=True,
     )
     st.markdown(
@@ -2838,16 +2854,16 @@ def trang_ho_so(st, thresholds: Mapping[str, Any]) -> None:
     st.header("Tạo hồ sơ thẩm định mới")
     st.markdown(
         "<div class='credit-process-grid' aria-label='Quy trình CreditLens'>"
-        "<article class='credit-process-card'><div class='process-step'>01</div>"
+        "<article class='credit-process-card'><div class='process-label'>Bước đang thực hiện</div><div class='process-step'>01</div>"
         "<div class='process-title'>Tiếp nhận và chuẩn hóa</div>"
         "<div class='process-copy'>Kiểm tra PDF, phân loại tài liệu và gắn từng dữ kiện với nguồn.</div></article>"
-        "<article class='credit-process-card'><div class='process-step'>02</div>"
+        "<article class='credit-process-card'><div class='process-label'>Bước tiếp theo</div><div class='process-step'>02</div>"
         "<div class='process-title'>Tính toán xác định</div>"
         "<div class='process-copy'>Python tính các chỉ số; dữ liệu thiếu không được tự suy diễn.</div></article>"
-        "<article class='credit-process-card'><div class='process-step'>03</div>"
+        "<article class='credit-process-card'><div class='process-label'>Bước tiếp theo</div><div class='process-step'>03</div>"
         "<div class='process-title'>Đối chiếu bằng chứng</div>"
         "<div class='process-copy'>Mỗi cảnh báo liên kết trở lại tài liệu, trang và giá trị liên quan.</div></article>"
-        "<article class='credit-process-card'><div class='process-step'>04</div>"
+        "<article class='credit-process-card'><div class='process-label'>Bước cuối</div><div class='process-step'>04</div>"
         "<div class='process-title'>Con người xem xét</div>"
         "<div class='process-copy'>Chuyên viên xác minh, diễn giải và xuất báo cáo; hệ thống không ra quyết định.</div></article>"
         "</div>",

@@ -11,6 +11,6 @@ gatherUsageStats = false
 [theme]
 base = "light"
 primaryColor = "#203469"
-backgroundColor = "#F5F7FB"
+backgroundColor = "#F8FAFD"
 secondaryBackgroundColor = "#FFFFFF"
-textColor = "#14213D"
+textColor = "#0F172A"
