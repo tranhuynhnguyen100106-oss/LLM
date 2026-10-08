@@ -1,0 +1,39 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "CreditLens evaluation case",
+  "type": "object",
+  "required": [
+    "case_id",
+    "scenario",
+    "synthetic",
+    "input_documents",
+    "extracted_input",
+    "ground_truth",
+    "saved_llm_outputs"
+  ],
+  "properties": {
+    "case_id": {"type": "string"},
+    "scenario": {"type": "string"},
+    "synthetic": {"const": true},
+    "input_documents": {"type": "object"},
+    "extracted_input": {"type": "object"},
+    "ground_truth": {
+      "type": "object",
+      "required": ["fields", "expected_risk_flags", "expected_status", "expected_evidence"],
+      "properties": {
+        "fields": {"type": "object"},
+        "expected_risk_flags": {"type": "array", "items": {"type": "string"}},
+        "expected_status": {"type": "string"},
+        "expected_evidence": {"type": "array", "items": {"type": "string"}}
+      }
+    },
+    "saved_llm_outputs": {
+      "type": "object",
+      "required": ["structured_grounded", "generic_prompt"],
+      "properties": {
+        "structured_grounded": {"type": "array"},
+        "generic_prompt": {"type": "array"}
+      }
+    }
+  }
+}

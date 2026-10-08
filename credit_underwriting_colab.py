@@ -1766,6 +1766,7 @@ PAGES = [
     "Cảnh báo rủi ro",
     "Tóm tắt thẩm định",
     "Đánh giá & phương pháp",
+    "Evaluation",
     "Cài đặt",
 ]
 
@@ -1776,6 +1777,7 @@ NHAN_DIEU_HUONG = {
     "Cảnh báo rủi ro": "△  Cảnh báo rủi ro",
     "Tóm tắt thẩm định": "≡  Tóm tắt thẩm định",
     "Đánh giá & phương pháp": "◎  Phương pháp và giới hạn",
+    "Evaluation": "▤  Evaluation",
     "Cài đặt": "⚙  Cài đặt",
 }
 
@@ -3018,6 +3020,191 @@ def trang_danh_gia(st) -> None:
     st.warning("Giới hạn: chưa tích hợp OCR; bí danh không bao phủ mọi mẫu; bảng phức tạp có thể sai thứ tự; ngưỡng chỉ minh họa; dữ liệu tổng hợp không chứng minh hiệu năng sản xuất; mọi diễn giải AI cần kiểm chứng.")
 
 
+def trang_evaluation(st, settings: Mapping[str, Any]) -> None:
+    """Render the isolated, explicit-run evaluation subsystem."""
+    from evaluation.evaluator import report_to_csv, report_to_json, run_evaluation
+
+    def display_rate(value: float | None) -> str:
+        return "N/A" if value is None else f"{value * 100:.1f}%"
+
+    st.header("Model / Pipeline Evaluation")
+    st.caption(
+        "Bộ đánh giá độc lập gồm dữ liệu tổng hợp/ẩn danh. Chỉ chạy khi bấm nút; "
+        "không gọi LLM, không xác thực lại kết nối và không thay đổi hồ sơ đang mở."
+    )
+    if st.button("Run Evaluation", type="primary", width="stretch"):
+        connection = ket_noi_llm_dang_dung(st)
+        provider = str(connection.get("provider")) if connection else "not-used"
+        model = str(connection.get("model")) if connection else "deterministic-saved-output"
+        with st.spinner("Đang chạy bộ đánh giá xác định…"):
+            st.session_state.evaluation_report = run_evaluation(
+                threshold_config=settings.get("nguong"),
+                provider=provider,
+                model=model,
+            )
+
+    report = st.session_state.get("evaluation_report")
+    if not isinstance(report, dict):
+        st.info("Bấm **Run Evaluation** để tạo báo cáo. Streamlit rerun chỉ hiển thị lại kết quả đã lưu.")
+        return
+
+    reproducibility = report["reproducibility"]
+    dataset = report["dataset_summary"]
+    summary = report["overall_summary"]
+
+    st.subheader("1. Reproducibility")
+    st.dataframe(
+        [
+            {"Thuộc tính": "Run ID", "Giá trị": str(reproducibility["evaluation_run_id"])},
+            {"Thuộc tính": "Timestamp (UTC)", "Giá trị": str(reproducibility["timestamp"])},
+            {"Thuộc tính": "Dataset version", "Giá trị": str(reproducibility["dataset_version"])},
+            {"Thuộc tính": "App version", "Giá trị": str(reproducibility["app_version"])},
+            {"Thuộc tính": "Provider / model", "Giá trị": f"{reproducibility['provider']} / {reproducibility['model']}"},
+            {"Thuộc tính": "LLM API calls", "Giá trị": str(reproducibility["llm_api_calls"])},
+        ],
+        hide_index=True,
+        width="stretch",
+    )
+    with st.expander("Threshold config của lần chạy"):
+        st.json(reproducibility["threshold_config"])
+
+    st.subheader("2. Dataset summary")
+    columns = st.columns(3)
+    columns[0].metric("Test cases", dataset["case_count"])
+    columns[1].metric("Scenarios", dataset["scenario_count"])
+    columns[2].metric("Synthetic / anonymized", dataset["synthetic_case_count"])
+    st.caption(dataset["scope_note"])
+
+    st.subheader("3. Extraction metrics")
+    st.metric("Overall field accuracy", display_rate(summary["extraction_accuracy"]))
+    extraction_rows = []
+    for row in report["extraction_metrics"]["by_field"]:
+        extraction_rows.append({**row, "accuracy": display_rate(row["accuracy"])})
+    st.dataframe(extraction_rows, hide_index=True, width="stretch")
+    with st.expander("Numeric/date/text tolerances"):
+        st.json(report["extraction_metrics"]["tolerances"])
+
+    st.subheader("4. Risk detection")
+    risk = report["risk_detection"]
+    risk_columns = st.columns(6)
+    for column, label, value in zip(
+        risk_columns,
+        ("TP", "FP", "FN", "TN", "Precision", "Recall"),
+        (risk["tp"], risk["fp"], risk["fn"], risk["tn"], display_rate(risk["precision"]), display_rate(risk["recall"])),
+        strict=True,
+    ):
+        column.metric(label, value)
+    st.metric("Risk F1", display_rate(risk["f1"]))
+    risk_rows = []
+    for row in risk["by_risk"]:
+        risk_rows.append(
+            {
+                **row,
+                "precision": display_rate(row["precision"]),
+                "recall": display_rate(row["recall"]),
+                "f1": display_rate(row["f1"]),
+            }
+        )
+    st.dataframe(risk_rows, hide_index=True, width="stretch")
+
+    st.subheader("5. Status classification")
+    status_metrics = report["status_classification"]
+    status_columns = st.columns(2)
+    status_columns[0].metric("Accuracy", display_rate(status_metrics["accuracy"]))
+    status_columns[1].metric("Macro F1", display_rate(status_metrics["macro_f1"]))
+    matrix_rows = [
+        {"Actual \\ Predicted": actual, **predicted_counts}
+        for actual, predicted_counts in status_metrics["confusion_matrix"].items()
+    ]
+    st.dataframe(matrix_rows, hide_index=True, width="stretch")
+    status_rows = []
+    for row in status_metrics["by_status"]:
+        status_rows.append(
+            {
+                **row,
+                "precision": display_rate(row["precision"]),
+                "recall": display_rate(row["recall"]),
+                "f1": display_rate(row["f1"]),
+            }
+        )
+    st.dataframe(status_rows, hide_index=True, width="stretch")
+
+    st.subheader("6. LLM grounding (saved outputs, no API)")
+    grounding_rows = []
+    for name, label in (("structured_grounded", "Structured + evidence"), ("generic_prompt", "Generic prompt")):
+        metrics = report["llm_grounding"][name]
+        grounding_rows.append(
+            {
+                "Variant": label,
+                "Evidence coverage": display_rate(metrics["evidence_coverage"]),
+                "Unsupported claim rate": display_rate(metrics["unsupported_claim_rate"]),
+                "Factual consistency": display_rate(metrics["factual_consistency"]),
+            }
+        )
+    st.dataframe(grounding_rows, hide_index=True, width="stretch")
+
+    st.subheader("7. Baselines")
+    baseline_a = report["baselines"]["baseline_a"]
+    baseline_rows = []
+    for key, label in (("current", "Current multi-document pipeline"), ("no_cross_document", "No cross-document checks")):
+        values = baseline_a[key]
+        baseline_rows.append(
+            {
+                "Variant": label,
+                "Risk precision": display_rate(values["risk_precision"]),
+                "Risk recall": display_rate(values["risk_recall"]),
+                "Risk F1": display_rate(values["risk_f1"]),
+                "Status accuracy": display_rate(values["status_accuracy"]),
+                "Status macro F1": display_rate(values["status_macro_f1"]),
+            }
+        )
+    st.dataframe(baseline_rows, hide_index=True, width="stretch")
+    st.caption(report["baselines"]["baseline_b"]["note"])
+
+    st.subheader("8. Processing time")
+    st.dataframe([report["processing_time"]], hide_index=True, width="stretch")
+
+    st.subheader("9. Failure cases")
+    failure_rows = []
+    for row in report["failure_cases"]:
+        failure_rows.append(
+            {
+                **row,
+                "actual_output": json.dumps(row["actual_output"], ensure_ascii=False)
+                if isinstance(row["actual_output"], (dict, list))
+                else row["actual_output"],
+            }
+        )
+    st.dataframe(failure_rows, hide_index=True, width="stretch")
+
+    st.subheader("10. Limitations")
+    for limitation in report["limitations"]:
+        st.markdown(f"- {limitation}")
+
+    st.subheader("11. Overall summary & export")
+    st.dataframe(
+        [{key: display_rate(value) for key, value in summary.items()}],
+        hide_index=True,
+        width="stretch",
+    )
+    download_columns = st.columns(2)
+    run_suffix = reproducibility["evaluation_run_id"].split("-")[0]
+    download_columns[0].download_button(
+        "Tải Evaluation JSON",
+        report_to_json(report),
+        file_name=f"creditlens_evaluation_{run_suffix}.json",
+        mime="application/json",
+        width="stretch",
+    )
+    download_columns[1].download_button(
+        "Tải Evaluation CSV",
+        report_to_csv(report),
+        file_name=f"creditlens_evaluation_{run_suffix}.csv",
+        mime="text/csv",
+        width="stretch",
+    )
+
+
 def nhap_cau_hinh_json(raw: bytes) -> dict[str, Any]:
     candidate = json.loads(raw.decode("utf-8"))
     if not isinstance(candidate, dict):
@@ -3528,6 +3715,8 @@ def chay_ung_dung_streamlit() -> None:
         trang_tom_tat(st, result, settings)
     elif page == "Đánh giá & phương pháp":
         trang_danh_gia(st)
+    elif page == "Evaluation":
+        trang_evaluation(st, settings)
     else:
         trang_cai_dat(st, settings)
 
