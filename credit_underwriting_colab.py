@@ -1788,15 +1788,22 @@ CREDITLENS_LOGO_PATH = PROJECT_ROOT / "static" / "creditlens-logo-hub.png"
 WATERMARK_PATH = PROJECT_ROOT / "static" / "creditlens-watermark.png"
 
 
-def anh_nen_data_uri(path: Path) -> str:
-    """Nhúng tài sản thương hiệu để watermark hoạt động ổn định trên cloud."""
+def anh_data_uri(path: Path) -> str:
+    """Nhúng tài sản thương hiệu cục bộ, không phụ thuộc hotlink bên ngoài."""
     if not path.exists():
-        return "none"
+        return ""
     encoded = base64.b64encode(path.read_bytes()).decode("ascii")
-    return f'url("data:image/png;base64,{encoded}")'
+    return f"data:image/png;base64,{encoded}"
+
+
+def anh_nen_data_uri(path: Path) -> str:
+    """Đổi tài sản thương hiệu thành CSS background-image ổn định trên cloud."""
+    data_uri = anh_data_uri(path)
+    return f'url("{data_uri}")' if data_uri else "none"
 
 STREAMLIT_CSS = """
 <style>
+  @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500;700&display=swap');
   :root {
     --credit-primary: PRIMARY_COLOR;
     --credit-accent: ACCENT_COLOR;
@@ -1813,20 +1820,33 @@ STREAMLIT_CSS = """
     --credit-metric-warn: METRIC_WARN_COLOR;
     --credit-metric-missing: METRIC_MISSING_COLOR;
     --credit-radius: 16px;
-    --credit-shadow: 0 14px 38px rgba(20, 39, 84, .09);
-    --credit-focus: 0 0 0 3px color-mix(in srgb, var(--credit-accent) 34%, transparent);
+    --credit-control-radius: 8px;
+    --credit-shadow: 0 10px 28px rgba(20, 39, 84, .075);
+    --credit-focus: 0 0 0 3px color-mix(in srgb, var(--credit-primary) 28%, transparent);
+    --credit-success: #15803D;
+    --credit-warning: #B45309;
+    --credit-danger: #B91C1C;
+    --credit-info: #1D4ED8;
+    --credit-grid: color-mix(in srgb, var(--credit-primary) 4%, transparent);
+    --credit-ambient-blue: color-mix(in srgb, var(--credit-primary) 7%, transparent);
+    --credit-ambient-red: color-mix(in srgb, var(--credit-accent) 5%, transparent);
   }
   * { box-sizing: border-box; }
-  html, body, .stApp, [class*="css"] {
-    font-family: Inter, "Segoe UI", Roboto, Helvetica, Arial, sans-serif !important;
+  html, body, .stApp {
+    font-family: Inter, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Arial, sans-serif !important;
+    font-size: 15px;
+    text-rendering: optimizeLegibility;
+    -webkit-font-smoothing: antialiased;
   }
   html { scroll-behavior: smooth; }
   .stApp, [data-testid="stAppViewContainer"] {
     color: var(--credit-text);
     background:
-      radial-gradient(circle at 7% 3%, rgba(32, 52, 105, .15), transparent 25rem),
-      radial-gradient(circle at 92% 6%, rgba(167, 27, 40, .11), transparent 26rem),
+      linear-gradient(var(--credit-grid) 1px, transparent 1px),
+      linear-gradient(90deg, var(--credit-grid) 1px, transparent 1px),
       linear-gradient(180deg, var(--credit-page) 0%, var(--credit-page-alt) 100%);
+    background-size: 48px 48px, 48px 48px, 100% 100%;
+    background-attachment: fixed;
   }
   [data-testid="stAppViewContainer"]::before {
     content: ""; position: fixed; z-index: 0; pointer-events: none;
@@ -1835,27 +1855,50 @@ STREAMLIT_CSS = """
     background-size: contain; background-position: center;
     opacity: .035; filter: saturate(.86); transform: rotate(-6deg);
   }
+  [data-testid="stAppViewContainer"]::after {
+    content: ""; position: fixed; z-index: 0; pointer-events: none; inset: -10%;
+    background:
+      radial-gradient(circle at 12% 12%, var(--credit-ambient-blue), transparent 29rem),
+      radial-gradient(circle at 86% 15%, var(--credit-ambient-red), transparent 27rem),
+      radial-gradient(circle at 62% 88%, color-mix(in srgb, var(--credit-primary) 4%, transparent), transparent 31rem);
+    opacity: .84; transform: translate3d(-.6%, -.4%, 0) scale(1.01);
+    animation: credit-ambient-drift 22s ease-in-out infinite alternate;
+    will-change: transform, opacity;
+  }
+  [data-testid="stHeader"] { background: transparent; }
   .stApp h1, .stApp h2, .stApp h3, .stApp h4, .stApp p, .stApp label,
   .stApp [data-testid="stCaptionContainer"], .stApp [data-testid="stMarkdownContainer"] {
     color: var(--credit-text);
   }
+  .stApp h1 { font-size: clamp(1.75rem, 2.6vw, 2rem); line-height: 1.18; font-weight: 780; letter-spacing: -.025em; }
+  .stApp h2 { font-size: clamp(1.35rem, 2vw, 1.5rem); line-height: 1.24; font-weight: 720; letter-spacing: -.018em; }
+  .stApp h3 { font-size: 1.08rem; line-height: 1.32; font-weight: 680; letter-spacing: -.008em; }
+  .stApp h4 { font-size: .95rem; line-height: 1.38; font-weight: 650; }
+  .stApp p, .stApp label, .stApp li { line-height: 1.55; }
+  .stApp [data-testid="stCaptionContainer"] { color: var(--credit-muted); font-size: .78rem; line-height: 1.45; }
   .block-container {
-    position: relative; z-index: 1; max-width: 1360px; padding-top: 1.15rem; padding-bottom: 4rem;
-    animation: credit-page-enter .24s cubic-bezier(.22, .85, .35, 1) both;
+    position: relative; z-index: 1; max-width: 1440px;
+    padding: 1.35rem clamp(1rem, 2.2vw, 2rem) 2.5rem;
+    animation: credit-page-enter .18s cubic-bezier(.22, .85, .35, 1) both;
   }
   [data-testid="stSidebar"] {
     background: linear-gradient(180deg, var(--credit-sidebar-top), var(--credit-sidebar-bottom));
     border-right: 1px solid var(--credit-border);
   }
+  [data-testid="stSidebarContent"] { padding-top: .85rem; }
   [data-testid="stSidebar"] * { color: var(--credit-text); }
   [data-testid="stSidebar"] [data-testid="stImage"] {
-    background: transparent; border: 1px solid color-mix(in srgb, var(--credit-primary) 18%, transparent); border-radius: 16px;
-    padding: 10px 12px; margin: 3px 0 13px; box-shadow: 0 10px 28px rgba(20, 39, 84, .08);
+    background: color-mix(in srgb, var(--credit-surface-solid) 94%, transparent);
+    border: 1px solid color-mix(in srgb, var(--credit-primary) 18%, transparent); border-radius: 12px;
+    padding: 8px 10px; margin: 2px 0 10px; box-shadow: 0 7px 20px rgba(20, 39, 84, .065);
   }
-  [data-testid="stSidebar"] [data-testid="stImage"] img { border-radius: 11px; }
+  [data-testid="stSidebar"] [data-testid="stImage"] img {
+    display: block; width: 100%; height: auto; max-height: 104px; object-fit: contain; border-radius: 8px;
+  }
   [data-testid="stSidebar"] .stRadio label {
-    min-height: 43px; border-radius: 12px; padding: 7px 10px; margin: 2px 0;
-    transition: transform .16s ease, background .16s ease, box-shadow .16s ease;
+    min-height: 40px; border-radius: 8px; padding: 6px 9px; margin: 2px 0;
+    transition: transform 140ms cubic-bezier(.2,.8,.2,1), background-color 160ms ease,
+      border-color 160ms ease, box-shadow 160ms ease;
   }
   [data-testid="stSidebar"] .stRadio label:hover {
     background: rgba(32,52,105,.09); transform: translateX(3px);
@@ -1878,24 +1921,35 @@ STREAMLIT_CSS = """
     position: relative; overflow: hidden;
     background: linear-gradient(125deg, #142451 0%, #203469 66%, #7D1723 100%);
     color: white; border: 1px solid rgba(255,255,255,.36);
-    border-radius: 26px; padding: 29px 33px; margin-bottom: 17px;
-    box-shadow: 0 20px 58px rgba(20,39,84,.24), 0 0 30px rgba(167,27,40,.13);
+    border-radius: 18px; padding: 21px 25px; margin-bottom: 12px;
+    box-shadow: 0 16px 42px rgba(20,39,84,.21), 0 0 24px rgba(167,27,40,.09);
   }
+  .credit-hero-inner {
+    position: relative; z-index: 1; display: grid; grid-template-columns: minmax(0, 1fr) auto;
+    align-items: center; gap: clamp(1rem, 2.4vw, 2rem);
+  }
+  .credit-hero-copy { min-width: 0; }
+  .credit-brand-lockup {
+    display: grid; place-items: center; width: clamp(112px, 11vw, 148px);
+    padding: 8px 10px; border: 1px solid rgba(255,255,255,.64); border-radius: 12px;
+    background: rgba(255,255,255,.95); box-shadow: 0 8px 24px rgba(8,18,38,.18);
+  }
+  .credit-brand-lockup img { display: block; width: 100%; height: auto; max-height: 84px; object-fit: contain; }
   .credit-hero:after {
     content: ""; position: absolute; width: 280px; height: 280px; right: -80px; top: -120px;
     border: 1px solid rgba(255,255,255,.28); border-radius: 50%;
     box-shadow: 0 0 55px rgba(255,255,255,.18), inset 0 0 40px rgba(255,255,255,.08);
   }
-  .credit-kicker { font-size: .76rem; font-weight: 800; letter-spacing: .14em; opacity: .86; margin-bottom: 9px; }
+  .credit-kicker { font-size: .72rem; font-weight: 750; letter-spacing: .12em; opacity: .88; margin-bottom: 7px; }
   .credit-hero, .credit-hero h1, .credit-hero p, .credit-hero .credit-kicker, .credit-hero .credit-chip {
     color: #FFFFFF !important;
   }
-  .credit-hero h1 { margin: 0 0 9px; font-size: clamp(1.75rem, 3.4vw, 2.55rem); line-height: 1.12; }
-  .credit-hero p { margin: 0; max-width: 850px; opacity: .94; }
+  .credit-hero h1 { margin: 0 0 7px; font-size: clamp(1.65rem, 2.8vw, 2.05rem); line-height: 1.15; letter-spacing: -.025em; }
+  .credit-hero p { margin: 0; max-width: 850px; font-size: .93rem; opacity: .94; }
   .credit-chip {
-    display: inline-block; margin-top: 16px; padding: 6px 11px; border-radius: 999px;
+    display: inline-block; margin-top: 12px; padding: 5px 10px; border-radius: 999px;
     background: rgba(255,255,255,.14); border: 1px solid rgba(255,255,255,.34);
-    font-size: .78rem; font-weight: 700; backdrop-filter: blur(6px);
+    font-size: .74rem; font-weight: 650; backdrop-filter: blur(6px);
   }
   .credit-notice, .credit-privacy, .status-card, .evidence-card {
     background: var(--credit-surface); color: var(--credit-text); border: 1px solid var(--credit-border);
@@ -1913,18 +1967,24 @@ STREAMLIT_CSS = """
   .public-dot { width: 8px; height: 8px; border-radius: 50%; background: #A71B28; box-shadow: 0 0 10px rgba(167,27,40,.55); }
   div[data-testid="stMetric"] {
     background: var(--credit-surface);
-    border: 1px solid var(--credit-border); border-radius: var(--credit-radius); padding: 15px 17px;
-    box-shadow: var(--credit-shadow); transition: transform .18s ease, box-shadow .18s ease;
+    border: 1px solid var(--credit-border); border-radius: 12px; padding: 12px 14px;
+    box-shadow: var(--credit-shadow);
   }
-  div[data-testid="stMetric"]:hover { transform: translateY(-2px); box-shadow: 0 16px 38px rgba(20,39,84,.14), 0 0 18px rgba(167,27,40,.08); }
+  [data-testid="stMetricLabel"] { color: var(--credit-muted); font-size: .78rem; font-weight: 600; }
+  [data-testid="stMetricValue"], .metric-value, .financial-num {
+    font-variant-numeric: tabular-nums lining-nums;
+    font-feature-settings: "tnum" 1, "lnum" 1;
+  }
+  [data-testid="stMetricValue"] { font-size: clamp(1.45rem, 2.4vw, 1.9rem); font-weight: 700; letter-spacing: -.025em; }
   [data-testid="stFileUploaderDropzone"] {
-    min-height: 116px; color: var(--credit-text) !important;
+    min-height: 104px; color: var(--credit-text) !important;
     background: var(--credit-surface-solid) !important;
-    border: 1.5px dashed var(--credit-primary) !important; border-radius: var(--credit-radius) !important;
+    border: 1.5px dashed color-mix(in srgb, var(--credit-primary) 66%, var(--credit-border)) !important;
+    border-radius: 12px !important;
   }
   [data-testid="stFileUploaderDropzone"] [data-testid="stBaseButton-secondary"] {
     color: var(--credit-text) !important; background: var(--credit-surface) !important;
-    border: 1px solid var(--credit-border) !important; border-radius: 13px !important;
+    border: 1px solid var(--credit-border) !important; border-radius: var(--credit-control-radius) !important;
   }
   [data-testid="stFileUploaderDropzone"] [data-testid="stMarkdownContainer"] p,
   [data-testid="stFileUploaderDropzone"] [data-testid="stIconMaterial"],
@@ -1932,14 +1992,18 @@ STREAMLIT_CSS = """
   [data-testid="stFileUploaderDropzone"] > div {
     color: var(--credit-text) !important;
   }
-  .stTextInput input, .stNumberInput input, .stTextArea textarea {
-    color: var(--credit-text) !important; border-radius: 14px !important; border-color: var(--credit-border) !important;
+  .stTextInput input, .stNumberInput input, .stTextArea textarea,
+  [data-testid="stChatInput"] textarea {
+    color: var(--credit-text) !important; border-radius: var(--credit-control-radius) !important;
+    border-color: var(--credit-border) !important;
     background: var(--credit-surface-solid) !important;
+    transition: border-color 160ms ease, box-shadow 160ms ease, background-color 160ms ease;
   }
   [data-testid="stSelectbox"] [role="group"] {
     color: var(--credit-text) !important; background: var(--credit-surface-solid) !important;
-    border: 1px solid var(--credit-border) !important; border-radius: 14px !important;
-    box-shadow: none !important;
+    border: 1px solid var(--credit-border) !important; border-radius: var(--credit-control-radius) !important;
+    box-shadow: none !important; min-height: 40px;
+    transition: border-color 160ms ease, box-shadow 160ms ease, background-color 160ms ease;
   }
   [data-testid="stSelectbox"] input[role="combobox"],
   [data-testid="stSelectbox"] button[aria-label="Open"] {
@@ -1951,29 +2015,67 @@ STREAMLIT_CSS = """
   [role="option"][aria-selected="true"], [role="option"]:hover {
     background: rgba(32,52,105,.14) !important;
   }
-  .stTextInput input:focus, .stNumberInput input:focus, .stTextArea textarea:focus {
-    border-color: ACCENT_COLOR !important; box-shadow: var(--credit-focus) !important;
+  [data-testid="stMultiSelect"] [data-baseweb="select"] > div,
+  [data-testid="stChatInput"] {
+    border-radius: var(--credit-control-radius) !important;
+    border-color: var(--credit-border) !important;
+    background: var(--credit-surface-solid) !important;
+    transition: border-color 160ms ease, box-shadow 160ms ease;
   }
-  .stButton > button, .stDownloadButton > button, [data-testid="stFormSubmitButton"] button {
-    min-height: 44px; color: var(--credit-text) !important; background: var(--credit-surface-solid) !important;
-    border-radius: 14px !important; border: 1px solid var(--credit-border) !important;
-    font-weight: 750 !important; cursor: pointer; transition: transform .14s ease, box-shadow .16s ease, border-color .16s ease !important;
+  .stTextInput input:focus, .stNumberInput input:focus, .stTextArea textarea:focus,
+  [data-testid="stChatInput"] textarea:focus,
+  [data-testid="stSelectbox"] [role="group"]:focus-within,
+  [data-testid="stMultiSelect"] [data-baseweb="select"] > div:focus-within,
+  [data-testid="stChatInput"]:focus-within {
+    border-color: var(--credit-primary) !important; box-shadow: var(--credit-focus) !important;
   }
-  .stButton > button:hover, .stDownloadButton > button:hover, [data-testid="stFormSubmitButton"] button:hover {
-    transform: translateY(-1px); border-color: ACCENT_COLOR !important;
-    box-shadow: 0 10px 25px rgba(20,39,84,.16), 0 0 16px rgba(167,27,40,.11) !important;
+  .stButton > button, .stDownloadButton > button, [data-testid="stFormSubmitButton"] button,
+  [data-testid="stLinkButton"] a {
+    min-height: 40px; color: var(--credit-text) !important; background: var(--credit-surface-solid) !important;
+    border-radius: var(--credit-control-radius) !important; border: 1px solid var(--credit-border) !important;
+    box-shadow: 0 2px 7px rgba(20,39,84,.045);
+    font-family: Inter, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Arial, sans-serif !important;
+    font-size: .84rem; font-weight: 650 !important; letter-spacing: .002em; cursor: pointer;
+    transition: background-color 160ms ease, border-color 160ms ease, box-shadow 160ms ease,
+      color 160ms ease, transform 140ms cubic-bezier(.2,.8,.2,1) !important;
   }
-  .stButton > button:active, .stDownloadButton > button:active, [data-testid="stFormSubmitButton"] button:active { transform: translateY(0) scale(.985) !important; }
-  .stButton > button:focus-visible, .stDownloadButton > button:focus-visible, [data-testid="stFormSubmitButton"] button:focus-visible,
+  .stButton > button:not(:disabled):hover, .stDownloadButton > button:not(:disabled):hover,
+  [data-testid="stFormSubmitButton"] button:not(:disabled):hover, [data-testid="stLinkButton"] a:hover {
+    transform: translateY(-1px); color: var(--credit-primary) !important;
+    background: color-mix(in srgb, var(--credit-primary) 5%, var(--credit-surface-solid)) !important;
+    border-color: color-mix(in srgb, var(--credit-primary) 70%, var(--credit-border)) !important;
+    box-shadow: 0 7px 18px rgba(20,39,84,.11) !important;
+  }
+  .stButton > button:not(:disabled):active, .stDownloadButton > button:not(:disabled):active,
+  [data-testid="stFormSubmitButton"] button:not(:disabled):active, [data-testid="stLinkButton"] a:active {
+    transform: translateY(0) scale(.985) !important; box-shadow: 0 2px 7px rgba(20,39,84,.07) !important;
+  }
+  .stButton > button:focus-visible, .stDownloadButton > button:focus-visible,
+  [data-testid="stFormSubmitButton"] button:focus-visible, [data-testid="stLinkButton"] a:focus-visible,
   input:focus-visible, textarea:focus-visible, [role="combobox"]:focus-visible,
-  [role="tab"]:focus-visible { outline: 2px solid var(--credit-accent) !important; outline-offset: 2px; }
-  .stButton > button:disabled, .stDownloadButton > button:disabled, [data-testid="stFormSubmitButton"] button:disabled { cursor: not-allowed; opacity: .58; transform: none !important; }
+  [role="tab"]:focus-visible, summary:focus-visible {
+    outline: 2px solid var(--credit-primary) !important; outline-offset: 2px;
+  }
+  .stButton > button:disabled, .stDownloadButton > button:disabled,
+  [data-testid="stFormSubmitButton"] button:disabled {
+    cursor: not-allowed; opacity: .48; transform: none !important; box-shadow: none !important;
+    filter: saturate(.55);
+  }
+  .stButton > button[aria-busy="true"], [data-testid="stFormSubmitButton"] button[aria-busy="true"] {
+    cursor: progress; opacity: .72; transform: none !important;
+  }
   button[kind="primary"], button[kind="primaryFormSubmit"], .stDownloadButton > button[kind="primary"] {
     color: white !important; border: 0 !important;
-    background: linear-gradient(110deg, #172A59, #203469 68%, #8E1826) !important;
-    box-shadow: 0 10px 25px rgba(32,52,105,.25), 0 0 16px rgba(167,27,40,.11) !important;
+    background: linear-gradient(110deg, #203469, #152347) !important;
+    box-shadow: 0 7px 18px rgba(32,52,105,.22) !important;
   }
   button[kind="primary"] *, button[kind="primaryFormSubmit"] *, .stDownloadButton > button[kind="primary"] * { color: #FFFFFF !important; }
+  button[kind="primary"]:not(:disabled):hover, button[kind="primaryFormSubmit"]:not(:disabled):hover,
+  .stDownloadButton > button[kind="primary"]:not(:disabled):hover {
+    color: #FFFFFF !important; background: linear-gradient(110deg, #263E7B, #17284F) !important;
+    box-shadow: 0 9px 22px rgba(32,52,105,.27) !important;
+  }
+  button[kind="primary"]:not(:disabled):hover *, button[kind="primaryFormSubmit"]:not(:disabled):hover * { color: #FFFFFF !important; }
   .stApp [data-testid="stFormSubmitButton"] button[kind="primaryFormSubmit"] [data-testid="stMarkdownContainer"] p {
     color: #FFFFFF !important; -webkit-text-fill-color: #FFFFFF !important;
   }
@@ -1983,8 +2085,16 @@ STREAMLIT_CSS = """
     opacity: .64;
   }
   [data-testid="stFormSubmitButton"] button[kind="primaryFormSubmit"]:disabled * { color: #FFFFFF !important; }
-  [data-testid="stExpander"] { background: var(--credit-surface); border: 1px solid var(--credit-border); border-radius: var(--credit-radius); overflow: hidden; }
-  [data-testid="stDataFrame"] { background: var(--credit-surface-solid); border: 1px solid var(--credit-border); border-radius: var(--credit-radius); overflow: hidden; box-shadow: 0 8px 25px rgba(20,39,84,.07); }
+  [data-testid="stExpander"] { background: var(--credit-surface); border: 1px solid var(--credit-border); border-radius: 12px; overflow: hidden; }
+  [data-testid="stExpander"] details > summary {
+    transition: background-color 160ms ease, color 160ms ease; min-height: 42px;
+  }
+  [data-testid="stExpander"] details > summary:hover { background: color-mix(in srgb, var(--credit-primary) 5%, transparent); }
+  [data-testid="stDataFrame"] {
+    background: var(--credit-surface-solid); border: 1px solid var(--credit-border); border-radius: 10px;
+    overflow: hidden; box-shadow: 0 6px 18px rgba(20,39,84,.055);
+    font-variant-numeric: tabular-nums lining-nums; font-feature-settings: "tnum" 1, "lnum" 1;
+  }
   [data-testid="stVerticalBlockBorderWrapper"] {
     background: var(--credit-surface); border-color: var(--credit-border) !important;
     border-radius: var(--credit-radius) !important; box-shadow: 0 8px 24px rgba(20,39,84,.07);
@@ -1998,10 +2108,8 @@ STREAMLIT_CSS = """
   }
   .credit-process-card {
     min-height: 142px; background: var(--credit-surface); border: 1px solid var(--credit-border);
-    border-radius: 17px; padding: 16px; box-shadow: 0 9px 24px rgba(20,39,84,.07);
-    transition: transform .16s ease, border-color .16s ease, box-shadow .16s ease;
+    border-radius: 13px; padding: 15px; box-shadow: 0 7px 20px rgba(20,39,84,.055);
   }
-  .credit-process-card:hover { transform: translateY(-3px); border-color: color-mix(in srgb, var(--credit-primary) 44%, var(--credit-border)); box-shadow: 0 15px 32px rgba(20,39,84,.12); }
   .process-step {
     display: grid; place-items: center; width: 31px; height: 31px; border-radius: 10px;
     color: #FFFFFF; background: linear-gradient(135deg, #203469, #A71B28);
@@ -2013,13 +2121,12 @@ STREAMLIT_CSS = """
     display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 18px; margin: 8px 0 20px;
   }
   .credit-metric-card {
-    min-height: 238px; display: flex; flex-direction: column; box-sizing: border-box;
-    background: var(--credit-surface); border: 1px solid var(--credit-border); border-radius: var(--credit-radius);
-    padding: 20px; box-shadow: var(--credit-shadow); transition: transform .16s ease, box-shadow .16s ease, border-color .16s ease;
+    min-height: 218px; display: flex; flex-direction: column; box-sizing: border-box;
+    background: var(--credit-surface); border: 1px solid var(--credit-border); border-radius: 13px;
+    padding: 17px; box-shadow: var(--credit-shadow);
   }
-  .credit-metric-card:hover { transform: translateY(-2px); border-color: color-mix(in srgb, var(--credit-primary) 36%, var(--credit-border)); box-shadow: 0 15px 38px rgba(20,39,84,.13); }
-  .metric-name { color: var(--credit-muted); font-size: .9rem; font-weight: 750; margin-bottom: 8px; }
-  .metric-value { color: var(--credit-text); font-size: clamp(1.8rem, 3vw, 2.5rem); line-height: 1.08; margin-bottom: 12px; }
+  .metric-name { color: var(--credit-muted); font-size: .82rem; font-weight: 650; margin-bottom: 7px; }
+  .metric-value { color: var(--credit-text); font-size: clamp(1.65rem, 2.6vw, 2.15rem); font-weight: 700; line-height: 1.08; margin-bottom: 11px; letter-spacing: -.025em; }
   .metric-badge { width: fit-content; border-radius: 999px; padding: 5px 10px; font-size: .78rem; font-weight: 800; }
   .metric-ok { color: var(--credit-metric-ok); background: rgba(34,197,94,.14); }
   .metric-warn { color: var(--credit-metric-warn); background: rgba(245,158,11,.17); }
@@ -2036,7 +2143,7 @@ STREAMLIT_CSS = """
   .legend-missing { border-left: 4px solid #94A3B8 !important; }
   [data-testid="stTabs"] [role="tablist"] { gap: 8px; border-bottom-color: var(--credit-border); }
   [data-testid="stTabs"] button[role="tab"] {
-    min-height: 43px; border-radius: 12px 12px 0 0; padding-inline: 14px; font-weight: 740;
+    min-height: 40px; border-radius: 8px 8px 0 0; padding-inline: 12px; font-size: .84rem; font-weight: 650;
     transition: color .15s ease, background .15s ease, transform .15s ease;
   }
   [data-testid="stTabs"] button[role="tab"]:hover { background: rgba(32,52,105,.07); }
@@ -2048,21 +2155,36 @@ STREAMLIT_CSS = """
     from { opacity: 0; transform: translateY(8px); }
     to { opacity: 1; transform: translateY(0); }
   }
+  @keyframes credit-ambient-drift {
+    0% { opacity: .72; transform: translate3d(-.6%, -.4%, 0) scale(1.01); }
+    50% { opacity: .9; }
+    100% { opacity: .78; transform: translate3d(.8%, .6%, 0) scale(1.025); }
+  }
   @media (max-width: 1080px) { .credit-process-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
   @media (max-width: 950px) { .credit-metric-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+  @media (max-width: 820px) {
+    .block-container { padding-top: 1.1rem; }
+    .credit-hero { padding: 18px 20px; }
+    .credit-brand-lockup { width: 112px; }
+  }
   @media (max-width: 640px) {
     .block-container { padding-inline: 1rem; }
-    .credit-hero { padding: 23px 21px; border-radius: 21px; }
+    .credit-hero { padding: 17px 18px; border-radius: 14px; }
+    .credit-hero-inner { grid-template-columns: 1fr; gap: 12px; }
+    .credit-brand-lockup { width: 100px; padding: 6px 8px; order: -1; }
+    .credit-brand-lockup img { max-height: 64px; }
     .credit-process-grid, .credit-metric-grid { grid-template-columns: 1fr; }
-    .credit-metric-card { min-height: 218px; }
+    .credit-metric-card { min-height: 198px; }
     [data-testid="stTabs"] [role="tablist"] { overflow-x: auto; }
   }
   @media (prefers-reduced-motion: reduce) {
     html { scroll-behavior: auto; }
     *, *::before, *::after { animation-duration: .01ms !important; animation-iteration-count: 1 !important; transition-duration: .01ms !important; }
-    .block-container, .credit-process-card:hover, .credit-metric-card:hover, div[data-testid="stMetric"]:hover,
+    [data-testid="stAppViewContainer"]::after { animation: none !important; transform: none !important; }
+    .block-container,
     .stButton > button:hover, .stDownloadButton > button:hover,
-    [data-testid="stFormSubmitButton"] button:hover { transform: none !important; }
+    [data-testid="stFormSubmitButton"] button:hover, [data-testid="stLinkButton"] a:hover,
+    [data-testid="stSidebar"] .stRadio label:hover { transform: none !important; }
   }
   SYSTEM_THEME_MEDIA
 </style>
@@ -2597,10 +2719,20 @@ def tao_phan_hoi_chat_ai(
 def hien_thi_header(st, settings: dict[str, Any]) -> None:
     st.markdown(tao_css_giao_dien(settings), unsafe_allow_html=True)
     title = html.escape(str(settings["ten_ung_dung"])[:90])
+    logo_data_uri = anh_data_uri(LOGO_PATH)
+    logo_html = (
+        "<div class='credit-brand-lockup' aria-label='Logo chính thức HUB và CreditLens'>"
+        f"<img src='{logo_data_uri}' alt='HUB × CreditLens' decoding='async'></div>"
+        if logo_data_uri
+        else ""
+    )
     st.markdown(
-        f"<div class='credit-hero'><div class='credit-kicker'>HUB × CREDITLENS · AI CREDIT UNDERWRITING COPILOT</div>"
+        "<div class='credit-hero'><div class='credit-hero-inner'>"
+        "<div class='credit-hero-copy'>"
+        "<div class='credit-kicker'>HUB × CREDITLENS · AI CREDIT UNDERWRITING COPILOT</div>"
         f"<h1>{title}</h1><p>Dữ kiện → Phép tính Python → Quy tắc → Bằng chứng → Con người xem xét</p>"
-        "<span class='credit-chip'>Minh bạch nguồn số · Phản hồi tức thời · Human-in-the-loop</span></div>",
+        "<span class='credit-chip'>Minh bạch nguồn số · Phản hồi tức thời · Human-in-the-loop</span>"
+        f"</div>{logo_html}</div></div>",
         unsafe_allow_html=True,
     )
     st.markdown(
