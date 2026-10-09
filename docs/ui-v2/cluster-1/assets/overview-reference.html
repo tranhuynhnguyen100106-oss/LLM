@@ -1,0 +1,633 @@
+<!doctype html>
+<html lang="vi">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>CreditLens — Overview reference</title>
+  <style>
+    * { box-sizing: border-box; }
+    :root {
+      color-scheme: light;
+      --cl-canvas: #f6f8fc;
+      --cl-surface: #ffffff;
+      --cl-raised: #ffffff;
+      --cl-hover: #f1f5f9;
+      --cl-selected: #e8eef7;
+      --cl-text: #0f172a;
+      --cl-text-secondary: #334155;
+      --cl-text-muted: #526071;
+      --cl-border: #d8e0ec;
+      --cl-border-strong: #7c899f;
+      --cl-primary: #203469;
+      --cl-on-primary: #ffffff;
+      --cl-accent: #a71b28;
+      --cl-scrim: rgba(15, 23, 42, 0.52);
+      --cl-focus: #2563eb;
+      --cl-info-bg: #eff6ff;
+      --cl-info-fg: #1e40af;
+      --cl-info-border: #93c5fd;
+      --cl-success-bg: #f0fdf4;
+      --cl-success-fg: #166534;
+      --cl-success-border: #86efac;
+      --cl-warning-bg: #fffbeb;
+      --cl-warning-fg: #92400e;
+      --cl-warning-border: #fcd34d;
+      --cl-error-bg: #fef2f2;
+      --cl-error-fg: #991b1b;
+      --cl-error-border: #fca5a5;
+      --cl-shadow-sm: 0 4px 10px rgba(15, 23, 42, .08);
+      --cl-shadow-md: 0 12px 28px rgba(15, 23, 42, .12);
+      --cl-radius-sm: 4px;
+      --cl-radius-md: 8px;
+      --cl-radius-lg: 12px;
+      --cl-speed: 160ms;
+    }
+    [data-theme="dark"] {
+      color-scheme: dark;
+      --cl-canvas: #081226;
+      --cl-surface: #101d39;
+      --cl-raised: #142342;
+      --cl-hover: #0d1931;
+      --cl-selected: #182746;
+      --cl-text: #f8fafc;
+      --cl-text-secondary: #d5dcec;
+      --cl-text-muted: #aeb8cb;
+      --cl-border: #33435f;
+      --cl-border-strong: #64748b;
+      --cl-primary: #b4c5ff;
+      --cl-on-primary: #0b1734;
+      --cl-accent: #ff8b98;
+      --cl-scrim: rgba(2, 6, 23, 0.72);
+      --cl-focus: #93c5fd;
+      --cl-info-bg: #0b254a;
+      --cl-info-fg: #bfdbfe;
+      --cl-info-border: #1d4ed8;
+      --cl-success-bg: #052e1a;
+      --cl-success-fg: #86efac;
+      --cl-success-border: #166534;
+      --cl-warning-bg: #3b2305;
+      --cl-warning-fg: #fde68a;
+      --cl-warning-border: #92400e;
+      --cl-error-bg: #3b0a0a;
+      --cl-error-fg: #fca5a5;
+      --cl-error-border: #991b1b;
+      --cl-shadow-sm: 0 4px 12px rgba(0, 0, 0, .32);
+      --cl-shadow-md: 0 14px 32px rgba(0, 0, 0, .40);
+    }
+    html { background: #0b1734; }
+    body {
+      margin: 0;
+      color: var(--cl-text);
+      background: var(--cl-canvas);
+      font-family: "Be Vietnam Pro", Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      font-size: 14px;
+      line-height: 1.55;
+      transition: color var(--cl-speed) ease, background var(--cl-speed) ease;
+    }
+    button, select, input { font: inherit; }
+    button, select, a, label[for] { -webkit-tap-highlight-color: transparent; }
+    button:focus-visible, select:focus-visible, a:focus-visible, input:focus-visible, summary:focus-visible {
+      outline: 2px solid var(--cl-focus);
+      outline-offset: 2px;
+    }
+    .cl-skip {
+      position: fixed; top: 8px; left: 8px; z-index: 1000; transform: translateY(-160%);
+      padding: 10px 14px; border-radius: var(--cl-radius-sm); color: var(--cl-on-primary); background: var(--cl-primary);
+    }
+    .cl-skip:focus { transform: translateY(0); }
+    .cl-prototype-bar {
+      position: fixed; right: 16px; bottom: 16px; z-index: 1000; min-height: 52px; max-width: min(720px, calc(100vw - 32px));
+      display: flex; align-items: center; justify-content: space-between; gap: 16px;
+      padding: 8px 12px; color: #f8fafc; background: #0b1734; border: 1px solid #52627d; border-radius: 12px;
+      box-shadow: 0 24px 56px rgba(15,23,42,.18);
+    }
+    .cl-prototype-bar.is-collapsed { min-height: 40px; width: auto; }
+    .cl-prototype-bar.is-collapsed .cl-prototype-note, .cl-prototype-bar.is-collapsed .cl-prototype-controls { display: none; }
+    .cl-prototype-note { font-size: 12px; color: #cbd5e1; }
+    .cl-prototype-note strong { color: #fff; font-size: 13px; }
+    .cl-prototype-controls { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+    .cl-prototype-controls label { font-size: 12px; color: #cbd5e1; }
+    .cl-prototype-controls select, .cl-theme-toggle {
+      min-height: 36px; border: 1px solid #64748b; border-radius: 8px; color: #f8fafc; background: #15233f; padding: 6px 10px;
+    }
+    .cl-theme-toggle[aria-pressed="true"] { border-color: #b4c5ff; box-shadow: 0 0 0 1px #b4c5ff inset; }
+    .cl-prototype-collapse { min-height: 36px; border: 1px solid #64748b; border-radius: 8px; color: #f8fafc; background: #15233f; padding: 6px 10px; white-space: nowrap; }
+    .cl-app { min-height: 100vh; background: var(--cl-canvas); }
+    .cl-global-header {
+      position: sticky; top: 0; z-index: 80; height: 72px; display: flex; align-items: center; gap: 24px;
+      padding: 0 28px; color: var(--cl-text); background: var(--cl-surface);
+      border-bottom: 1px solid var(--cl-border); backdrop-filter: blur(14px);
+    }
+    .cl-brand { display: flex; align-items: center; gap: 11px; width: 228px; flex: 0 0 228px; }
+    .cl-brand-mark {
+      width: 36px; height: 36px; display: grid; place-items: center; border-radius: 10px;
+      color: #fff; background: linear-gradient(145deg, #0b1734, #203469); font-weight: 700; letter-spacing: -.05em;
+      box-shadow: inset 0 0 0 1px rgba(255,255,255,.2);
+    }
+    .cl-brand-name { line-height: 1.15; }
+    .cl-brand-name strong { display: block; font-size: 15px; letter-spacing: -.02em; }
+    .cl-brand-name span { color: var(--cl-text-muted); font-size: 12px; }
+    .cl-header-status { flex: 1; display: flex; align-items: center; justify-content: center; gap: 8px; color: var(--cl-text-secondary); font-size: 12px; }
+    .cl-status-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--cl-success-fg); box-shadow: 0 0 0 3px var(--cl-success-bg); }
+    .cl-header-actions { width: 228px; display: flex; justify-content: flex-end; gap: 8px; }
+    .cl-icon-action {
+      width: 44px; height: 44px; display: inline-grid; place-items: center; border: 1px solid var(--cl-border);
+      border-radius: var(--cl-radius-md); color: var(--cl-text-secondary); background: var(--cl-surface); cursor: pointer;
+    }
+    .cl-icon-action:hover { background: var(--cl-hover); }
+    .cl-menu-action { display: none; }
+    .cl-shell { display: grid; grid-template-columns: 256px minmax(0, 1fr); min-height: calc(100vh - 124px); }
+    .cl-sidebar {
+      position: sticky; top: 72px; align-self: start; height: calc(100vh - 72px); overflow: auto;
+      padding: 24px 16px; background: var(--cl-surface); border-right: 1px solid var(--cl-border);
+    }
+    .cl-nav-section + .cl-nav-section { margin-top: 22px; }
+    .cl-drawer-close { display: none; }
+    .cl-nav-label { margin: 0 12px 8px; color: var(--cl-text-muted); font-size: 12px; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; }
+    .cl-nav-item {
+      width: 100%; min-height: 44px; display: flex; align-items: center; gap: 11px; position: relative;
+      padding: 9px 12px; border: 0; border-radius: var(--cl-radius-md); color: var(--cl-text-secondary); background: transparent;
+      text-align: left; cursor: pointer;
+    }
+    .cl-nav-item:hover { color: var(--cl-text); background: var(--cl-hover); }
+    .cl-nav-item[aria-current="page"] { color: var(--cl-text); background: var(--cl-selected); font-weight: 600; }
+    .cl-nav-item[aria-current="page"]::before { content: ""; position: absolute; left: 0; top: 11px; bottom: 11px; width: 3px; border-radius: 9px; background: var(--cl-accent); }
+    .cl-nav-icon { width: 22px; text-align: center; font-size: 16px; }
+    .cl-nav-footer { margin-top: 26px; padding: 14px 12px; border-top: 1px solid var(--cl-border); color: var(--cl-text-muted); font-size: 12px; }
+    .cl-main { min-width: 0; padding: 32px 40px 48px; }
+    .cl-content { width: 100%; max-width: 1104px; margin: 0 auto; }
+    .cl-case-context {
+      min-height: 48px; display: flex; align-items: center; justify-content: space-between; gap: 16px;
+      margin-bottom: 20px; padding: 9px 14px; border: 1px solid var(--cl-border); border-radius: var(--cl-radius-md);
+      color: var(--cl-text-secondary); background: var(--cl-surface); box-shadow: var(--cl-shadow-sm);
+    }
+    .cl-case-context strong { color: var(--cl-text); }
+    .cl-context-link { color: var(--cl-primary); font-weight: 600; text-decoration-thickness: 1px; text-underline-offset: 3px; }
+    .cl-page-heading { display: flex; justify-content: space-between; align-items: flex-start; gap: 24px; margin-bottom: 20px; }
+    .cl-page-heading h1 { margin: 0 0 7px; font-size: clamp(27px, 2.3vw, 36px); line-height: 1.18; letter-spacing: -.035em; }
+    .cl-page-heading p { max-width: 700px; margin: 0; color: var(--cl-text-secondary); font-size: 15px; }
+    .cl-badge {
+      display: inline-flex; align-items: center; gap: 7px; min-height: 28px; flex: 0 0 auto;
+      padding: 4px 10px; border-radius: 999px; color: var(--cl-info-fg); background: var(--cl-info-bg); font-size: 12px; font-weight: 600;
+    }
+    .cl-badge::before { content: ""; width: 7px; height: 7px; border-radius: 50%; background: currentColor; }
+    .cl-notice {
+      display: flex; align-items: flex-start; gap: 12px; margin-bottom: 20px; padding: 13px 16px;
+      border: 1px solid var(--cl-info-border); border-radius: var(--cl-radius-md);
+      color: var(--cl-info-fg); background: var(--cl-info-bg);
+    }
+    .cl-notice-symbol { font-size: 18px; line-height: 1.35; }
+    .cl-notice p { margin: 0; }
+    .cl-notice details { margin-top: 5px; }
+    .cl-notice summary { width: fit-content; cursor: pointer; font-weight: 600; }
+    .cl-notice details p { margin-top: 6px; max-width: 820px; font-size: 12px; }
+    .cl-workflow {
+      margin-bottom: 24px; padding: 20px 22px; border: 1px solid var(--cl-border); border-radius: var(--cl-radius-lg);
+      background: var(--cl-surface); box-shadow: var(--cl-shadow-sm);
+    }
+    .cl-workflow-header { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 17px; }
+    .cl-workflow-header h2 { margin: 0; font-size: 15px; letter-spacing: -.01em; }
+    .cl-workflow-header span { color: var(--cl-text-muted); font-size: 12px; }
+    .cl-step-list { display: grid; grid-template-columns: repeat(4, 1fr); gap: 0; padding: 0; margin: 0; list-style: none; }
+    .cl-step { min-width: 0; position: relative; display: grid; grid-template-columns: 32px minmax(0, 1fr); gap: 10px; padding-right: 18px; }
+    .cl-step:not(:last-child)::after { content: ""; position: absolute; left: 38px; right: 6px; top: 15px; height: 1px; background: var(--cl-border-strong); }
+    .cl-step-number {
+      width: 32px; height: 32px; z-index: 1; display: grid; place-items: center; border: 1px solid var(--cl-border-strong);
+      border-radius: 50%; color: var(--cl-text-muted); background: var(--cl-surface); font-size: 12px; font-weight: 700;
+    }
+    .cl-step[data-step-state="current"] .cl-step-number { border-color: var(--cl-primary); color: var(--cl-on-primary); background: var(--cl-primary); }
+    .cl-step[data-step-state="complete"] .cl-step-number { border-color: var(--cl-success-fg); color: var(--cl-success-fg); background: var(--cl-success-bg); }
+    .cl-step[data-step-state="warning"] .cl-step-number { border-color: var(--cl-warning-fg); color: var(--cl-warning-fg); background: var(--cl-warning-bg); }
+    .cl-step[data-step-state="error"] .cl-step-number { border-color: var(--cl-error-fg); color: var(--cl-error-fg); background: var(--cl-error-bg); }
+    .cl-step-copy { min-width: 0; padding-top: 1px; background: var(--cl-surface); z-index: 2; }
+    .cl-step-copy strong { display: block; font-size: 12px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .cl-step-copy span { display: block; color: var(--cl-text-muted); font-size: 12px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .cl-workspace { display: grid; grid-template-columns: repeat(12, minmax(0, 1fr)); gap: 24px; align-items: start; }
+    .cl-upload-panel { grid-column: span 8; }
+    .cl-demo-panel { grid-column: span 4; }
+    .cl-panel {
+      min-width: 0; padding: 24px; border: 1px solid var(--cl-border); border-radius: var(--cl-radius-lg);
+      background: var(--cl-surface); box-shadow: var(--cl-shadow-sm);
+    }
+    .cl-panel h2 { margin: 0 0 5px; font-size: 18px; letter-spacing: -.02em; }
+    .cl-panel > p { margin: 0 0 19px; color: var(--cl-text-secondary); font-size: 13px; }
+    .cl-upload-modes { display: inline-flex; gap: 4px; margin-bottom: 16px; padding: 4px; border: 1px solid var(--cl-border); border-radius: var(--cl-radius-md); background: var(--cl-hover); }
+    .cl-upload-mode { min-height: 36px; padding: 6px 12px; border: 0; border-radius: var(--cl-radius-sm); color: var(--cl-text-secondary); background: transparent; font-weight: 600; cursor: pointer; }
+    .cl-upload-mode[aria-checked="true"] { color: var(--cl-text); background: var(--cl-surface); box-shadow: var(--cl-shadow-sm); }
+    .cl-upload-view[hidden] { display: none !important; }
+    .cl-file-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px; }
+    .cl-file-slot {
+      min-height: 112px; display: flex; flex-direction: column; align-items: flex-start; justify-content: space-between; gap: 10px;
+      padding: 14px; border: 1px dashed var(--cl-border-strong); border-radius: var(--cl-radius-md); background: var(--cl-canvas);
+      transition: border-color var(--cl-speed) ease, background var(--cl-speed) ease;
+    }
+    .cl-file-slot:hover { border-color: var(--cl-primary); background: var(--cl-hover); }
+    .cl-file-slot strong { font-size: 12px; }
+    .cl-file-slot small { color: var(--cl-text-muted); font-size: 12px; }
+    .cl-file-pick { color: var(--cl-primary); font-size: 12px; font-weight: 700; cursor: pointer; text-decoration: underline; text-underline-offset: 3px; }
+    .cl-file-input { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0,0,0,0); }
+    .cl-file-input:focus-visible + .cl-file-pick { outline: 2px solid var(--cl-focus); outline-offset: 2px; border-radius: var(--cl-radius-sm); }
+    .cl-panel-actions { display: flex; align-items: center; gap: 12px; margin-top: 18px; }
+    .cl-action {
+      min-height: 44px; display: inline-flex; align-items: center; justify-content: center; gap: 8px;
+      padding: 9px 16px; border: 1px solid transparent; border-radius: var(--cl-radius-md); font-weight: 700; cursor: pointer;
+      transition: transform var(--cl-speed) ease, background var(--cl-speed) ease, border-color var(--cl-speed) ease;
+    }
+    .cl-action:hover:not(:disabled) { transform: translateY(-1px); }
+    .cl-action:active:not(:disabled) { transform: translateY(0); }
+    .cl-action-primary { color: var(--cl-on-primary); background: var(--cl-primary); }
+    .cl-action-secondary { color: var(--cl-text); background: var(--cl-surface); border-color: var(--cl-border-strong); }
+    .cl-action:disabled { color: var(--cl-text-muted); background: var(--cl-hover); border-color: var(--cl-border); cursor: not-allowed; opacity: .75; }
+    .cl-action-help { color: var(--cl-text-muted); font-size: 12px; }
+    .cl-field-label { display: block; margin-bottom: 7px; color: var(--cl-text-secondary); font-size: 12px; font-weight: 700; }
+    .cl-select { width: 100%; min-height: 44px; padding: 8px 36px 8px 12px; border: 1px solid var(--cl-border-strong); border-radius: var(--cl-radius-md); color: var(--cl-text); background: var(--cl-surface); }
+    .cl-demo-summary { margin: 12px 0 16px; padding: 13px; border-radius: var(--cl-radius-md); color: var(--cl-text-secondary); background: var(--cl-canvas); font-size: 12px; }
+    .cl-demo-summary strong { display: block; margin-bottom: 3px; color: var(--cl-text); }
+    .cl-demo-panel .cl-action { width: 100%; }
+    .cl-state-panel { margin-top: 14px; padding: 14px; border: 1px solid var(--cl-border); border-radius: var(--cl-radius-md); background: var(--cl-raised); }
+    .cl-state-panel h3 { margin: 0 0 4px; font-size: 13px; }
+    .cl-state-panel p { margin: 0; color: var(--cl-text-secondary); font-size: 12px; }
+    .cl-state-panel[data-tone="success"] { border-color: var(--cl-success-border); background: var(--cl-success-bg); color: var(--cl-success-fg); }
+    .cl-state-panel[data-tone="warning"] { border-color: var(--cl-warning-border); background: var(--cl-warning-bg); color: var(--cl-warning-fg); }
+    .cl-state-panel[data-tone="error"] { border-color: var(--cl-error-border); background: var(--cl-error-bg); color: var(--cl-error-fg); }
+    .cl-state-panel[data-tone] p { color: inherit; }
+    .cl-state-action { min-height: 36px; margin-top: 10px; padding: 6px 10px; border: 1px solid currentColor; border-radius: var(--cl-radius-md); color: inherit; background: transparent; font-weight: 600; cursor: pointer; }
+    .cl-progress { height: 7px; display: block; overflow: hidden; margin: 10px 0 7px; border-radius: 999px; background: var(--cl-border); }
+    .cl-progress span { display: block; width: 42%; height: 100%; border-radius: inherit; background: var(--cl-primary); animation: cl-progress 1.5s ease-in-out infinite alternate; }
+    .cl-help { margin-top: 18px; border-top: 1px solid var(--cl-border); padding-top: 14px; }
+    .cl-help summary { width: fit-content; color: var(--cl-primary); font-weight: 700; cursor: pointer; }
+    .cl-help p { max-width: 760px; color: var(--cl-text-secondary); font-size: 12px; }
+    .cl-scrim { display: none; }
+    @keyframes cl-progress { from { width: 26%; } to { width: 68%; } }
+    @media (prefers-reduced-motion: reduce) {
+      *, *::before, *::after { scroll-behavior: auto !important; transition-duration: 0ms !important; animation-duration: 0ms !important; animation-iteration-count: 1 !important; }
+    }
+    @media (max-width: 1439px) {
+      .cl-shell { grid-template-columns: 248px minmax(0, 1fr); }
+      .cl-main { padding: 28px 32px 40px; }
+      .cl-workflow { padding-inline: 18px; }
+      .cl-step { padding-right: 10px; gap: 8px; }
+      .cl-step-copy span { display: none; }
+    }
+    @media (min-width: 1024px) and (max-width: 1279px) {
+      .cl-shell { grid-template-columns: 72px minmax(0, 1fr); }
+      .cl-sidebar { padding-inline: 8px; }
+      .cl-nav-label, .cl-nav-footer { display: none; }
+      .cl-nav-section + .cl-nav-section { margin-top: 14px; padding-top: 14px; border-top: 1px solid var(--cl-border); }
+      .cl-nav-item { justify-content: center; padding-inline: 8px; font-size: 0; }
+      .cl-nav-icon { font-size: 16px; }
+      .cl-main { padding: 24px; }
+      .cl-workspace { gap: 20px; }
+    }
+    @media (max-width: 1023px) {
+      .cl-global-header { padding-inline: 16px; }
+      .cl-brand { flex: 1; width: auto; flex-basis: auto; }
+      .cl-header-status { display: none; }
+      .cl-header-actions { width: auto; }
+      .cl-menu-action { display: inline-grid; order: -1; }
+      .cl-shell { display: block; }
+      .cl-sidebar {
+        position: fixed; z-index: 100; top: 72px; bottom: 0; left: 0; width: min(320px, calc(100vw - 48px)); height: auto;
+        transform: translateX(-105%); box-shadow: var(--cl-shadow-md); transition: transform var(--cl-speed) ease;
+      }
+      .cl-app[data-drawer="open"] .cl-sidebar { transform: translateX(0); }
+      .cl-drawer-close {
+        width: 44px; height: 44px; display: grid; place-items: center; margin: 0 0 12px auto;
+        border: 1px solid var(--cl-border); border-radius: var(--cl-radius-md); color: var(--cl-text); background: var(--cl-surface); cursor: pointer;
+      }
+      .cl-scrim { position: fixed; inset: 72px 0 0; z-index: 90; border: 0; background: var(--cl-scrim); }
+      .cl-app[data-drawer="open"] .cl-scrim { display: block; }
+      .cl-main { padding: 24px; }
+      .cl-workspace { grid-template-columns: 1fr; gap: 20px; }
+      .cl-upload-panel, .cl-demo-panel { grid-column: auto; }
+    }
+    @media (max-width: 767px) {
+      .cl-prototype-bar { align-items: flex-start; flex-direction: column; padding: 10px; }
+      .cl-prototype-controls { width: 100%; }
+      .cl-prototype-bar.is-collapsed { align-items: center; flex-direction: row; }
+      .cl-app { min-height: 100vh; }
+      .cl-global-header { height: 64px; }
+      .cl-brand-name span { display: none; }
+      .cl-header-actions .cl-icon-action:not(.cl-menu-action) { display: none; }
+      .cl-sidebar { top: 64px; }
+      .cl-scrim { inset: 64px 0 0; }
+      .cl-main { padding: 18px 16px 28px; }
+      .cl-case-context { margin-bottom: 16px; }
+      .cl-page-heading { display: block; margin-bottom: 16px; }
+      .cl-page-heading h1 { font-size: 27px; }
+      .cl-page-heading p { font-size: 14px; }
+      .cl-page-heading .cl-badge { margin-top: 12px; }
+      .cl-notice { margin-bottom: 16px; padding: 12px; }
+      .cl-workspace { display: block; }
+      .cl-panel { padding: 18px 16px; }
+      .cl-demo-panel { margin-top: 16px; }
+      .cl-file-grid { grid-template-columns: 1fr; }
+      .cl-file-slot { min-height: 104px; }
+      .cl-upload-modes { width: 100%; }
+      .cl-upload-mode { flex: 1; min-height: 44px; }
+      .cl-panel-actions { align-items: stretch; flex-direction: column; }
+      .cl-panel-actions .cl-action { width: 100%; min-height: 48px; }
+      .cl-workflow { margin: 16px 0 0; padding: 16px; }
+      .cl-workflow-header { margin-bottom: 12px; }
+      .cl-step-list { grid-template-columns: 1fr; gap: 8px; }
+      .cl-step { min-height: 52px; padding: 5px 0; }
+      .cl-step:not(:last-child)::after { left: 15px; top: 37px; right: auto; width: 1px; height: 24px; }
+      .cl-step-copy span { display: block; white-space: normal; }
+      .cl-action:hover:not(:disabled) { transform: none; }
+      .cl-help { margin-top: 16px; }
+    }
+    @media (max-width: 399px) {
+      .cl-prototype-controls label { width: 100%; }
+      .cl-prototype-controls select { flex: 1; }
+      .cl-brand-mark { width: 34px; height: 34px; }
+      .cl-case-context { align-items: flex-start; flex-direction: column; gap: 2px; }
+    }
+  </style>
+</head>
+<body>
+  <a class="cl-skip" href="#main">Bỏ qua đến nội dung chính</a>
+  <div class="cl-prototype-bar is-collapsed" role="region" aria-label="Điều khiển prototype">
+    <div class="cl-prototype-note"><strong>CreditLens · Cụm 1</strong><br>Tham chiếu tĩnh — không gọi mạng hoặc mô hình</div>
+    <div class="cl-prototype-controls">
+      <label for="stateSelect">Trạng thái</label>
+      <select id="stateSelect">
+        <option value="empty">Trống / mặc định</option>
+        <option value="processing">Đang xử lý</option>
+        <option value="success">Thành công</option>
+        <option value="warning">Cảnh báo</option>
+        <option value="error">Lỗi</option>
+      </select>
+      <button class="cl-theme-toggle" type="button" data-theme-choice="light" aria-pressed="true">Sáng</button>
+      <button class="cl-theme-toggle" type="button" data-theme-choice="dark" aria-pressed="false">Tối</button>
+    </div>
+    <button class="cl-prototype-collapse" id="togglePrototype" type="button" aria-expanded="false">Prototype</button>
+  </div>
+  <div class="cl-app" id="creditlensApp" data-theme="light" data-drawer="closed">
+    <header class="cl-global-header">
+      <div class="cl-brand" aria-label="HUB và CreditLens">
+        <div class="cl-brand-mark" aria-hidden="true">CL</div>
+        <div class="cl-brand-name"><strong>HUB × CreditLens</strong><span>Thẩm định có thể kiểm chứng</span></div>
+      </div>
+      <div class="cl-header-status"><span class="cl-status-dot" aria-hidden="true"></span>Quy trình xác định · Không tự động phê duyệt</div>
+      <div class="cl-header-actions">
+        <button class="cl-icon-action cl-menu-action" id="menuAction" type="button" aria-label="Mở điều hướng" aria-expanded="false">☰</button>
+        <button class="cl-icon-action" type="button" aria-label="Trợ giúp">?</button>
+      </div>
+    </header>
+    <div class="cl-shell">
+      <aside class="cl-sidebar" id="sidebar" aria-label="Điều hướng chính">
+        <button class="cl-drawer-close" id="drawerClose" type="button" aria-label="Đóng điều hướng">×</button>
+        <nav>
+          <div class="cl-nav-section">
+            <p class="cl-nav-label">Hồ sơ</p>
+            <button class="cl-nav-item" type="button" aria-current="page"><span class="cl-nav-icon" aria-hidden="true">⌂</span>Tổng quan và hồ sơ</button>
+            <button class="cl-nav-item" type="button"><span class="cl-nav-icon" aria-hidden="true">▤</span>Trích xuất tài liệu</button>
+            <button class="cl-nav-item" type="button"><span class="cl-nav-icon" aria-hidden="true">⌁</span>Phân tích tín dụng</button>
+            <button class="cl-nav-item" type="button"><span class="cl-nav-icon" aria-hidden="true">△</span>Cảnh báo rủi ro</button>
+            <button class="cl-nav-item" type="button"><span class="cl-nav-icon" aria-hidden="true">▣</span>Tóm tắt thẩm định</button>
+          </div>
+          <div class="cl-nav-section">
+            <p class="cl-nav-label">Kiểm chứng</p>
+            <button class="cl-nav-item" type="button"><span class="cl-nav-icon" aria-hidden="true">◇</span>Phương pháp và giới hạn</button>
+            <button class="cl-nav-item" type="button"><span class="cl-nav-icon" aria-hidden="true">✓</span>Evaluation</button>
+          </div>
+          <div class="cl-nav-section">
+            <p class="cl-nav-label">Hệ thống</p>
+            <button class="cl-nav-item" type="button"><span class="cl-nav-icon" aria-hidden="true">⚙</span>Cài đặt</button>
+          </div>
+        </nav>
+        <div class="cl-nav-footer">Bản tham chiếu Cụm 1<br>Không phải giao diện production</div>
+      </aside>
+      <button class="cl-scrim" id="drawerScrim" type="button" aria-label="Đóng điều hướng"></button>
+      <main class="cl-main" id="main" tabindex="-1">
+        <div class="cl-content">
+          <div class="cl-case-context" id="caseContext"><span><strong>Chưa có hồ sơ đang mở</strong></span><a class="cl-context-link" href="#intake">Bắt đầu hồ sơ</a></div>
+          <div class="cl-page-heading">
+            <div><h1>Tổng quan và hồ sơ</h1><p>Bắt đầu từ bộ tài liệu hoặc mở một hồ sơ minh họa xác định.</p></div>
+            <span class="cl-badge">Không dùng LLM để mở trang</span>
+          </div>
+          <div class="cl-notice" role="note">
+            <span class="cl-notice-symbol" aria-hidden="true">ⓘ</span>
+            <div><p>Dữ liệu hồ sơ chỉ được dùng trong phiên làm việc hiện tại. CreditLens hỗ trợ thẩm định; quyết định cuối cùng thuộc cán bộ tín dụng.</p><details><summary>Xem nguyên tắc sử dụng</summary><p>Phần triển khai phải tái sử dụng nội dung pháp lý đã được phê duyệt trong sản phẩm hiện tại; prototype này không bổ sung cam kết chính sách mới.</p></details></div>
+          </div>
+          <section class="cl-workflow" id="workflow" aria-labelledby="workflowTitle">
+            <div class="cl-workflow-header"><h2 id="workflowTitle">Luồng thẩm định</h2><span>4 giai đoạn có thể kiểm chứng</span></div>
+            <ol class="cl-step-list">
+              <li class="cl-step" data-step="1" data-step-state="current" aria-current="step"><span class="cl-step-number">1</span><span class="cl-step-copy"><strong>Tiếp nhận</strong><span>Hiện tại · Chuẩn hóa tài liệu</span></span></li>
+              <li class="cl-step" data-step="2" data-step-state="upcoming"><span class="cl-step-number">2</span><span class="cl-step-copy"><strong>Tính toán</strong><span>Sắp tới · Python xác định</span></span></li>
+              <li class="cl-step" data-step="3" data-step-state="upcoming"><span class="cl-step-number">3</span><span class="cl-step-copy"><strong>Đối chiếu</strong><span>Sắp tới · Dữ kiện và bằng chứng</span></span></li>
+              <li class="cl-step" data-step="4" data-step-state="upcoming"><span class="cl-step-number">4</span><span class="cl-step-copy"><strong>Con người xem xét</strong><span>Sắp tới · Quyết định cuối cùng</span></span></li>
+            </ol>
+          </section>
+          <div class="cl-workspace" id="intake">
+            <section class="cl-panel cl-upload-panel" aria-labelledby="uploadTitle" tabindex="-1">
+              <h2 id="uploadTitle">Bộ hồ sơ tài liệu</h2>
+              <p>Tải lên các tài liệu hiện có. Có thể bổ sung tài liệu còn thiếu trước khi bắt đầu.</p>
+              <div class="cl-upload-modes" role="radiogroup" aria-label="Cách tải hồ sơ">
+                <button class="cl-upload-mode" type="button" role="radio" aria-checked="true" data-upload-mode="individual">Tải từng tài liệu</button>
+                <button class="cl-upload-mode" type="button" role="radio" aria-checked="false" data-upload-mode="folder">Tải một thư mục</button>
+              </div>
+              <div class="cl-upload-view" id="individualModePanel" data-upload-panel="individual">
+                <div class="cl-file-grid">
+                  <div class="cl-file-slot"><div><strong>Đơn đề nghị vay vốn</strong><br><small>PDF · tối đa 10 MB · bắt buộc để hồ sơ đầy đủ</small></div><input class="cl-file-input" id="fileA" type="file" accept=".pdf,application/pdf"><label class="cl-file-pick" for="fileA">Chọn PDF</label></div>
+                  <div class="cl-file-slot"><div><strong>Chứng từ thu nhập</strong><br><small>PDF · tối đa 10 MB · bắt buộc để hồ sơ đầy đủ</small></div><input class="cl-file-input" id="fileB" type="file" accept=".pdf,application/pdf"><label class="cl-file-pick" for="fileB">Chọn PDF</label></div>
+                  <div class="cl-file-slot"><div><strong>Sao kê ngân hàng</strong><br><small>PDF · tối đa 10 MB · bắt buộc để hồ sơ đầy đủ</small></div><input class="cl-file-input" id="fileC" type="file" accept=".pdf,application/pdf"><label class="cl-file-pick" for="fileC">Chọn PDF</label></div>
+                  <div class="cl-file-slot"><div><strong>Nghĩa vụ nợ · tùy chọn</strong><br><small>PDF · tối đa 10 MB · không bắt buộc</small></div><input class="cl-file-input" id="fileD" type="file" accept=".pdf,application/pdf"><label class="cl-file-pick" for="fileD">Chọn PDF</label></div>
+                </div>
+              </div>
+              <div class="cl-upload-view" id="folderModePanel" data-upload-panel="folder" hidden>
+                <div class="cl-file-slot"><div><strong>Thư mục hồ sơ PDF</strong><br><small>Chọn đúng 3–4 PDF của cùng một khách hàng; mỗi tệp tối đa 10 MB.</small></div><input class="cl-file-input" id="folderFiles" type="file" accept=".pdf,application/pdf" multiple webkitdirectory directory><label class="cl-file-pick" for="folderFiles">Chọn thư mục</label></div>
+              </div>
+              <div class="cl-panel-actions"><button class="cl-action cl-action-primary" id="runProcess" type="button" disabled>Chạy quy trình thẩm định</button><span class="cl-action-help" id="runHelp">Chọn ít nhất một PDF để tiếp tục; ba tài liệu đầu tạo thành hồ sơ đầy đủ.</span></div>
+            </section>
+            <section class="cl-panel cl-demo-panel" aria-labelledby="demoTitle">
+              <h2 id="demoTitle">Hồ sơ minh họa</h2>
+              <p>Dùng dữ liệu xác định để xem luồng sản phẩm mà không gọi mô hình.</p>
+              <label class="cl-field-label" for="demoSelect">Chọn hồ sơ</label>
+              <select class="cl-select" id="demoSelect">
+                <option>CASE-01 — Hồ sơ bình thường</option>
+                <option>CASE-02 — Thiếu thu nhập</option>
+                <option selected>CASE-03 — Thu nhập không nhất quán</option>
+                <option>CASE-04 — Đơn vị công tác không khớp</option>
+                <option>CASE-05 — Nghĩa vụ nợ không nhất quán</option>
+                <option>CASE-06 — DTI cao</option>
+                <option>CASE-07 — Sao kê không đọc được</option>
+                <option>CASE-08 — Đơn vay chưa đầy đủ</option>
+                <option>CASE-09 — Độ tin cậy thấp</option>
+                <option>CASE-10 — Nhiều cảnh báo đồng thời</option>
+              </select>
+              <div class="cl-demo-summary"><strong>Dữ liệu minh họa xác định</strong>Không phải hồ sơ production. Chi tiết lấy từ bộ demo hiện hữu khi triển khai.</div>
+              <button class="cl-action cl-action-secondary" id="openDemo" type="button">Mở hồ sơ minh họa</button>
+              <div class="cl-state-panel" id="statePanel" aria-live="polite"><h3>Chưa có hồ sơ đang mở</h3><p>Tải tài liệu hoặc chọn một hồ sơ minh họa để tiếp tục.</p></div>
+            </section>
+          </div>
+          <details class="cl-help"><summary>Điều gì xảy ra tiếp theo?</summary><p>CreditLens tiếp nhận dữ kiện, tính toán bằng mã xác định, đối chiếu bằng chứng và trình bày kết quả để chuyên viên xem xét. Giao diện không tự đưa ra quyết định tín dụng.</p></details>
+        </div>
+      </main>
+    </div>
+  </div>
+  <script>
+    (() => {
+      const app = document.getElementById('creditlensApp');
+      const prototypeBar = document.querySelector('.cl-prototype-bar');
+      const togglePrototype = document.getElementById('togglePrototype');
+      const stateSelect = document.getElementById('stateSelect');
+      const statePanel = document.getElementById('statePanel');
+      const runProcess = document.getElementById('runProcess');
+      const runHelp = document.getElementById('runHelp');
+      const caseContext = document.getElementById('caseContext');
+      const workflow = document.getElementById('workflow');
+      const workspace = document.getElementById('intake');
+      const steps = [...document.querySelectorAll('.cl-step')];
+      const menuAction = document.getElementById('menuAction');
+      const sidebar = document.getElementById('sidebar');
+      const drawerClose = document.getElementById('drawerClose');
+      const drawerScrim = document.getElementById('drawerScrim');
+      const mobileMedia = window.matchMedia('(max-width: 767px)');
+      const drawerMedia = window.matchMedia('(max-width: 1023px)');
+      let drawerReturnTarget = menuAction;
+      const views = {
+        empty: { tone: '', title: 'Chưa có hồ sơ đang mở', body: 'Tải tài liệu hoặc chọn một hồ sơ minh họa để tiếp tục.', context: '<span><strong>Chưa có hồ sơ đang mở</strong></span><a class="cl-context-link" href="#intake">Bắt đầu hồ sơ</a>', step: 1 },
+        processing: { tone: '', title: 'Đang chuẩn bị hồ sơ…', body: '<span class="cl-progress" aria-hidden="true"><span></span></span>Đang nạp dữ liệu minh họa xác định. Không gửi lại thao tác.', context: '<span><strong>CASE-03</strong> · Hồ sơ minh họa</span><span>Đang xử lý</span>', step: 1 },
+        success: { tone: 'success', title: 'Hồ sơ đã sẵn sàng', body: 'CASE-03 · Dữ liệu minh họa. Có thể chuyển đến Trích xuất tài liệu.', action: 'Đến Trích xuất tài liệu', actionKind: 'next', context: '<span><strong>CASE-03</strong> · Dữ liệu minh họa</span><span>Đã sẵn sàng</span>', step: 2 },
+        warning: { tone: 'warning', title: 'Cần kiểm tra tài liệu', body: 'Một tài liệu có cảnh báo định dạng. Kiểm tra mục bị ảnh hưởng trước khi tiếp tục.', action: 'Kiểm tra tài liệu', actionKind: 'review', context: '<span><strong>Hồ sơ đang chuẩn bị</strong></span><span>Có cảnh báo</span>', step: 1 },
+        error: { tone: 'error', title: 'Không thể chuẩn bị hồ sơ', body: 'Dữ liệu an toàn vẫn được giữ. Kiểm tra tệp hoặc thử lại thao tác rõ ràng.', action: 'Thử lại', actionKind: 'retry', context: '<span><strong>Hồ sơ chưa sẵn sàng</strong></span><span>Cần xử lý lỗi</span>', step: 1 }
+      };
+      function placeWorkflow() {
+        if (mobileMedia.matches) workspace.insertAdjacentElement('afterend', workflow);
+        else workspace.insertAdjacentElement('beforebegin', workflow);
+      }
+      function setState(name) {
+        const view = views[name] || views.empty;
+        statePanel.dataset.tone = view.tone;
+        statePanel.innerHTML = `<h3>${view.title}</h3><p>${view.body}</p>${view.action ? `<button class="cl-state-action" type="button" data-state-action="${view.actionKind}">${view.action}</button>` : ''}`;
+        caseContext.innerHTML = view.context;
+        steps.forEach((item, index) => {
+          const number = index + 1;
+          let stepState = number < view.step ? 'complete' : number === view.step ? (name === 'error' ? 'error' : name === 'warning' ? 'warning' : 'current') : 'upcoming';
+          item.dataset.stepState = stepState;
+          if (number === view.step) item.setAttribute('aria-current', 'step'); else item.removeAttribute('aria-current');
+          const copy = item.querySelector('.cl-step-copy span');
+          const prefix = stepState === 'complete' ? 'Hoàn tất' : stepState === 'current' ? 'Hiện tại' : stepState === 'warning' ? 'Cảnh báo' : stepState === 'error' ? 'Có lỗi' : 'Sắp tới';
+          const detail = copy.textContent.includes('·') ? copy.textContent.split('·').slice(1).join('·').trim() : copy.textContent;
+          copy.textContent = `${prefix} · ${detail}`;
+        });
+      }
+      function openDrawer() {
+        if (!drawerMedia.matches) return;
+        drawerReturnTarget = document.activeElement instanceof HTMLElement ? document.activeElement : menuAction;
+        app.dataset.drawer = 'open';
+        menuAction.setAttribute('aria-expanded', 'true');
+        menuAction.setAttribute('aria-label', 'Đóng điều hướng');
+        sidebar.setAttribute('role', 'dialog');
+        sidebar.setAttribute('aria-modal', 'true');
+        requestAnimationFrame(() => drawerClose.focus());
+      }
+      function closeDrawer(returnFocus = true) {
+        const wasOpen = app.dataset.drawer === 'open';
+        app.dataset.drawer = 'closed';
+        menuAction.setAttribute('aria-expanded', 'false');
+        menuAction.setAttribute('aria-label', 'Mở điều hướng');
+        sidebar.removeAttribute('role');
+        sidebar.removeAttribute('aria-modal');
+        if (wasOpen && returnFocus && drawerReturnTarget) drawerReturnTarget.focus();
+      }
+      document.querySelectorAll('[data-theme-choice]').forEach(button => {
+        button.addEventListener('click', () => {
+          app.dataset.theme = button.dataset.themeChoice;
+          document.querySelectorAll('[data-theme-choice]').forEach(item => item.setAttribute('aria-pressed', String(item === button)));
+        });
+      });
+      togglePrototype.addEventListener('click', () => {
+        const collapsed = prototypeBar.classList.toggle('is-collapsed');
+        togglePrototype.textContent = collapsed ? 'Prototype' : 'Thu gọn';
+        togglePrototype.setAttribute('aria-expanded', String(!collapsed));
+      });
+      document.querySelectorAll('.cl-nav-item').forEach(item => {
+        item.addEventListener('click', () => {
+          document.querySelectorAll('.cl-nav-item').forEach(nav => nav.removeAttribute('aria-current'));
+          item.setAttribute('aria-current', 'page');
+          closeDrawer();
+        });
+      });
+      stateSelect.addEventListener('change', () => setState(stateSelect.value));
+      document.getElementById('openDemo').addEventListener('click', () => { stateSelect.value = 'success'; setState('success'); });
+      const fileInputs = [...document.querySelectorAll('.cl-file-input')];
+      const uploadModeButtons = [...document.querySelectorAll('[data-upload-mode]')];
+      const uploadPanels = [...document.querySelectorAll('[data-upload-panel]')];
+      function currentUploadMode() {
+        return uploadModeButtons.find(item => item.getAttribute('aria-checked') === 'true').dataset.uploadMode;
+      }
+      function updateUploadReady() {
+        const mode = currentUploadMode();
+        const activePanel = document.querySelector(`[data-upload-panel="${mode}"]`);
+        const activeInputs = [...activePanel.querySelectorAll('.cl-file-input')];
+        const selectedCount = activeInputs.reduce((sum, item) => sum + item.files.length, 0);
+        const ready = mode === 'folder' ? selectedCount >= 3 && selectedCount <= 4 : selectedCount >= 1;
+        runProcess.disabled = !ready;
+        if (mode === 'folder') {
+          runHelp.textContent = selectedCount === 0 ? 'Chọn một thư mục chứa đúng 3–4 PDF của cùng hồ sơ.' : ready ? `Đã chọn ${selectedCount} PDF trong thư mục cục bộ.` : `Đã chọn ${selectedCount} PDF; cần đúng 3–4 PDF để tiếp tục.`;
+        } else {
+          runHelp.textContent = selectedCount ? `Đã chọn ${selectedCount} PDF trong phiên cục bộ.` : 'Chọn ít nhất một PDF để tiếp tục; ba tài liệu đầu tạo thành hồ sơ đầy đủ.';
+        }
+      }
+      uploadModeButtons.forEach(button => button.addEventListener('click', () => {
+        uploadModeButtons.forEach(item => item.setAttribute('aria-checked', String(item === button)));
+        uploadPanels.forEach(panel => { panel.hidden = panel.dataset.uploadPanel !== button.dataset.uploadMode; });
+        updateUploadReady();
+      }));
+      uploadModeButtons.forEach((button, index) => button.addEventListener('keydown', event => {
+        if (!['ArrowLeft', 'ArrowRight', 'ArrowUp', 'ArrowDown'].includes(event.key)) return;
+        event.preventDefault();
+        const direction = ['ArrowRight', 'ArrowDown'].includes(event.key) ? 1 : -1;
+        const next = uploadModeButtons[(index + direction + uploadModeButtons.length) % uploadModeButtons.length];
+        next.click();
+        next.focus();
+      }));
+      fileInputs.forEach(input => input.addEventListener('change', () => {
+        const label = document.querySelector(`label[for="${input.id}"]`);
+        label.textContent = input.files.length ? (input.id === 'folderFiles' ? `Đã chọn ${input.files.length} tệp` : `Đã chọn: ${input.files[0].name}`) : (input.id === 'folderFiles' ? 'Chọn thư mục' : 'Chọn PDF');
+        updateUploadReady();
+      }));
+      runProcess.addEventListener('click', () => { stateSelect.value = 'processing'; setState('processing'); });
+      statePanel.addEventListener('click', event => {
+        const action = event.target.closest('[data-state-action]');
+        if (!action) return;
+        if (action.dataset.stateAction === 'retry') { stateSelect.value = 'processing'; setState('processing'); }
+        if (action.dataset.stateAction === 'review') document.querySelector('.cl-upload-panel').focus();
+        if (action.dataset.stateAction === 'next') {
+          const extraction = document.querySelectorAll('.cl-nav-item')[1];
+          document.querySelectorAll('.cl-nav-item').forEach(nav => nav.removeAttribute('aria-current'));
+          extraction.setAttribute('aria-current', 'page');
+          extraction.focus();
+        }
+      });
+      menuAction.addEventListener('click', () => {
+        if (app.dataset.drawer === 'open') closeDrawer(); else openDrawer();
+      });
+      drawerClose.addEventListener('click', () => closeDrawer());
+      drawerScrim.addEventListener('click', closeDrawer);
+      mobileMedia.addEventListener('change', placeWorkflow);
+      drawerMedia.addEventListener('change', event => { if (!event.matches) closeDrawer(false); });
+      document.addEventListener('keydown', event => {
+        if (app.dataset.drawer !== 'open') return;
+        if (event.key === 'Escape') { event.preventDefault(); closeDrawer(); return; }
+        if (event.key !== 'Tab') return;
+        const focusable = [...sidebar.querySelectorAll('button:not([disabled]), a[href], select:not([disabled]), input:not([disabled])')].filter(item => item.getClientRects().length);
+        if (!focusable.length) return;
+        const first = focusable[0];
+        const last = focusable[focusable.length - 1];
+        if (event.shiftKey && document.activeElement === first) { event.preventDefault(); last.focus(); }
+        else if (!event.shiftKey && document.activeElement === last) { event.preventDefault(); first.focus(); }
+      });
+      placeWorkflow();
+      setState('empty');
+      if (mobileMedia.matches) {
+        prototypeBar.classList.add('is-collapsed');
+        togglePrototype.textContent = 'Prototype';
+        togglePrototype.setAttribute('aria-expanded', 'false');
+      }
+    })();
+  </script>
+</body>
+</html>

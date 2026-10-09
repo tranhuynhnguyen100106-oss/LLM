@@ -2850,6 +2850,156 @@ def hien_thi_luoi_chi_so(st, metrics: list[ChiSoTinDung]) -> None:
     st.markdown("<div class='credit-metric-grid'>" + "".join(cards) + "</div>", unsafe_allow_html=True)
 
 
+def cap_nhat_ho_so_phien(st, result: KetQuaThamDinh, docs: dict[str, TaiLieu]) -> None:
+    """Cập nhật đúng các khóa phiên hiện hành sau một domain action hợp lệ."""
+
+    st.session_state.result = result
+    st.session_state.docs = docs
+    st.session_state.ai_summary = ""
+    st.session_state.ai_summary_context = {}
+
+
+def mo_ho_so_minh_hoa(st, demo_choice: str, thresholds: Mapping[str, Any]) -> KetQuaThamDinh:
+    """Dùng lại đường xử lý demo xác định cho legacy và UI v2."""
+
+    result, docs = du_lieu_demo(demo_choice, thresholds)
+    cap_nhat_ho_so_phien(st, result, docs)
+    return result
+
+
+def hien_thi_uploader_ho_so(st, thresholds: Mapping[str, Any], *, v2_mode: bool = False) -> bool:
+    """Render uploader Streamlit native; trả True khi một action đã hoàn tất."""
+
+    case_id = st.text_input("Mã hồ sơ", value=f"CASE-{datetime.now():%Y%m%d}-01", max_chars=80)
+    upload_mode = st.radio(
+        "Cách tải hồ sơ",
+        ["Tải từng tài liệu", "Tải một thư mục"],
+        horizontal=True,
+        key="credit_upload_mode",
+        help="Chế độ thư mục dành cho 3–4 PDF của cùng một khách hàng, không phải nhiều khách hàng.",
+    )
+    application = income = statement = debt = None
+    folder_files: list[Any] = []
+    with st.container(border=not v2_mode):
+        if upload_mode == "Tải từng tài liệu":
+            st.caption("Tải riêng từng tài liệu. Ba tài liệu đầu là bắt buộc để hồ sơ đầy đủ.")
+            if v2_mode:
+                first_row = st.columns(2, gap="medium", wrap=True)
+                second_row = st.columns(2, gap="medium", wrap=True)
+                application = first_row[0].file_uploader(
+                    "Đơn đề nghị vay vốn", type=["pdf"], key="application_pdf"
+                )
+                income = first_row[1].file_uploader(
+                    "Chứng từ thu nhập", type=["pdf"], key="income_pdf"
+                )
+                statement = second_row[0].file_uploader(
+                    "Sao kê ngân hàng", type=["pdf"], key="statement_pdf"
+                )
+                debt = second_row[1].file_uploader(
+                    "Nghĩa vụ nợ · tùy chọn", type=["pdf"], key="debt_pdf"
+                )
+            else:
+                cols = st.columns(4)
+                application = cols[0].file_uploader("Đơn đề nghị vay vốn", type=["pdf"], key="application_pdf")
+                income = cols[1].file_uploader("Chứng từ thu nhập", type=["pdf"], key="income_pdf")
+                statement = cols[2].file_uploader("Sao kê ngân hàng", type=["pdf"], key="statement_pdf")
+                debt = cols[3].file_uploader("Nghĩa vụ nợ · tùy chọn", type=["pdf"], key="debt_pdf")
+        else:
+            st.caption(
+                "Chọn một thư mục chứa 3–4 PDF của cùng hồ sơ. Hệ thống tự phân loại đơn vay, chứng từ thu nhập, "
+                "sao kê và nghĩa vụ nợ dựa trên tên tệp + nội dung."
+            )
+            folder_files = st.file_uploader(
+                "Thư mục hồ sơ PDF",
+                type=["pdf"],
+                accept_multiple_files="directory",
+                key="credit_folder_pdfs",
+                help="Khuyến nghị đặt tên rõ nghĩa, ví dụ 01_Don_de_nghi_vay.pdf, 02_Chung_tu_thu_nhap.pdf.",
+            ) or []
+            if folder_files:
+                st.caption(f"Đã chọn {len(folder_files)} tệp PDF. Chỉ dữ liệu trong phiên hiện tại được sử dụng.")
+    no_files = not folder_files if upload_mode == "Tải một thư mục" else not any(
+        [application, income, statement, debt]
+    )
+    folder_count_invalid = upload_mode == "Tải một thư mục" and len(folder_files) not in {3, 4}
+    missing_case_id = not case_id.strip()
+    processing = bool(st.session_state.get("ui_v2_processing", False)) if v2_mode else False
+
+    if v2_mode:
+        if missing_case_id:
+            disabled_reason = "Nhập mã hồ sơ trước khi bắt đầu."
+        elif folder_count_invalid:
+            disabled_reason = "Chọn đúng 3–4 PDF của cùng một hồ sơ để bắt đầu."
+        elif no_files:
+            disabled_reason = "Tải lên ít nhất một PDF để bật hành động chính."
+        elif processing:
+            disabled_reason = "Hồ sơ đang được xử lý; vui lòng không gửi lại."
+        else:
+            disabled_reason = ""
+        if disabled_reason:
+            st.caption(disabled_reason)
+        from creditlens_ui_v2 import queue_v2_upload_action
+
+        st.button(
+            "Chạy quy trình thẩm định",
+            type="primary",
+            width="stretch",
+            disabled=bool(disabled_reason),
+            on_click=queue_v2_upload_action,
+            args=(st.session_state,),
+            key="ui_v2_run_underwriting",
+        )
+        run_requested = bool(st.session_state.pop("ui_v2_upload_requested", False))
+    else:
+        run_requested = st.button("Chạy quy trình thẩm định", type="primary", width="stretch")
+
+    if not run_requested:
+        return False
+
+    if no_files or (v2_mode and (folder_count_invalid or missing_case_id)):
+        message = "Hãy tải lên ít nhất một PDF hoặc chọn hồ sơ minh họa."
+        if v2_mode:
+            st.session_state.ui_v2_processing = False
+            st.session_state.ui_v2_error = message
+        else:
+            st.error(message)
+        return True
+
+    try:
+        with st.status("Đang xử lý hồ sơ", expanded=True) as process_status:
+            st.write("Kiểm tra định dạng, dung lượng và phân loại tài liệu…")
+            if upload_mode == "Tải một thư mục":
+                result, docs, errors = xu_ly_thu_muc_tai_lieu(case_id, folder_files, thresholds)
+            else:
+                result, docs, errors = xu_ly_tai_lieu_tai_len(
+                    case_id,
+                    {"application": application, "income": income, "statement": statement, "debt": debt},
+                    thresholds,
+                )
+            st.write("Chuẩn hóa dữ kiện, tính chỉ số và liên kết cảnh báo với bằng chứng…")
+            process_status.update(label="Đã hoàn tất quy trình thẩm định", state="complete", expanded=False)
+        cap_nhat_ho_so_phien(st, result, docs)
+        if v2_mode:
+            st.session_state.ui_v2_case_source = "Tài liệu"
+            st.session_state.ui_v2_error = ""
+            st.session_state.ui_v2_warning = " · ".join(errors) if errors else ""
+            st.session_state.ui_v2_notice = "Đã hoàn tất. Các trang phân tích và bằng chứng đã sẵn sàng."
+        else:
+            if errors:
+                st.warning("Một số tệp không xử lý được: " + " · ".join(errors))
+            st.success("Đã hoàn tất. Các trang phân tích và bằng chứng đã sẵn sàng.")
+    except ValueError as exc:
+        if v2_mode:
+            st.session_state.ui_v2_error = str(exc)
+            st.session_state.ui_v2_notice = ""
+        else:
+            st.error(str(exc))
+    finally:
+        if v2_mode:
+            st.session_state.ui_v2_processing = False
+    return True
+
+
 def trang_ho_so(st, thresholds: Mapping[str, Any]) -> None:
     st.header("Tạo hồ sơ thẩm định mới")
     st.markdown(
@@ -2874,75 +3024,13 @@ def trang_ho_so(st, thresholds: Mapping[str, Any]) -> None:
         "Tệp tạm được xóa ngay sau khi đọc; kết quả chỉ giữ trong phiên Streamlit.</div>",
         unsafe_allow_html=True,
     )
-    case_id = st.text_input("Mã hồ sơ", value=f"CASE-{datetime.now():%Y%m%d}-01", max_chars=80)
-    upload_mode = st.radio(
-        "Cách tải hồ sơ",
-        ["Tải từng tài liệu", "Tải một thư mục"],
-        horizontal=True,
-        key="credit_upload_mode",
-        help="Chế độ thư mục dành cho 3–4 PDF của cùng một khách hàng, không phải nhiều khách hàng.",
-    )
-    application = income = statement = debt = None
-    folder_files: list[Any] = []
-    with st.container(border=True):
-        if upload_mode == "Tải từng tài liệu":
-            st.caption("Tải riêng từng tài liệu. Ba tài liệu đầu là bắt buộc để hồ sơ đầy đủ.")
-            cols = st.columns(4)
-            application = cols[0].file_uploader("Đơn đề nghị vay vốn", type=["pdf"], key="application_pdf")
-            income = cols[1].file_uploader("Chứng từ thu nhập", type=["pdf"], key="income_pdf")
-            statement = cols[2].file_uploader("Sao kê ngân hàng", type=["pdf"], key="statement_pdf")
-            debt = cols[3].file_uploader("Nghĩa vụ nợ · tùy chọn", type=["pdf"], key="debt_pdf")
-        else:
-            st.caption(
-                "Chọn một thư mục chứa 3–4 PDF của cùng hồ sơ. Hệ thống tự phân loại đơn vay, chứng từ thu nhập, "
-                "sao kê và nghĩa vụ nợ dựa trên tên tệp + nội dung."
-            )
-            folder_files = st.file_uploader(
-                "Thư mục hồ sơ PDF",
-                type=["pdf"],
-                accept_multiple_files="directory",
-                key="credit_folder_pdfs",
-                help="Khuyến nghị đặt tên rõ nghĩa, ví dụ 01_Don_de_nghi_vay.pdf, 02_Chung_tu_thu_nhap.pdf.",
-            ) or []
-            if folder_files:
-                st.caption(f"Đã chọn {len(folder_files)} tệp PDF. Chỉ dữ liệu trong phiên hiện tại được sử dụng.")
-    if st.button("Chạy quy trình thẩm định", type="primary", width="stretch"):
-        no_files = not folder_files if upload_mode == "Tải một thư mục" else not any([application, income, statement, debt])
-        if no_files:
-            st.error("Hãy tải lên ít nhất một PDF hoặc chọn hồ sơ minh họa.")
-        else:
-            try:
-                with st.status("Đang xử lý hồ sơ", expanded=True) as process_status:
-                    st.write("Kiểm tra định dạng, dung lượng và phân loại tài liệu…")
-                    if upload_mode == "Tải một thư mục":
-                        result, docs, errors = xu_ly_thu_muc_tai_lieu(case_id, folder_files, thresholds)
-                    else:
-                        result, docs, errors = xu_ly_tai_lieu_tai_len(
-                            case_id,
-                            {"application": application, "income": income, "statement": statement, "debt": debt},
-                            thresholds,
-                        )
-                    st.write("Chuẩn hóa dữ kiện, tính chỉ số và liên kết cảnh báo với bằng chứng…")
-                    process_status.update(label="Đã hoàn tất quy trình thẩm định", state="complete", expanded=False)
-                st.session_state.result = result
-                st.session_state.docs = docs
-                st.session_state.ai_summary = ""
-                st.session_state.ai_summary_context = {}
-                if errors:
-                    st.warning("Một số tệp không xử lý được: " + " · ".join(errors))
-                st.success("Đã hoàn tất. Các trang phân tích và bằng chứng đã sẵn sàng.")
-            except ValueError as exc:
-                st.error(str(exc))
+    hien_thi_uploader_ho_so(st, thresholds)
 
     st.divider()
     st.subheader("Hồ sơ tổng hợp minh họa")
     demo_choice = st.selectbox("Chọn tình huống", list(DEMO_CASES), index=2)
     if st.button("Mở hồ sơ minh họa", width="stretch"):
-        result, docs = du_lieu_demo(demo_choice, thresholds)
-        st.session_state.result = result
-        st.session_state.docs = docs
-        st.session_state.ai_summary = ""
-        st.session_state.ai_summary_context = {}
+        mo_ho_so_minh_hoa(st, demo_choice, thresholds)
         st.success(f"Đã mở {demo_choice}.")
     hien_thi_trang_thai(st, st.session_state.result)
 
@@ -3499,9 +3587,12 @@ def hien_thi_chat_ai(st, connection: Mapping[str, Any] | None) -> None:
     st.session_state.llm_chat_messages = messages
 
 
-def trang_cai_dat(st, settings: dict[str, Any]) -> None:
-    st.header("Cài đặt")
-    st.caption("Kết nối AI, giao diện, ngưỡng và guardrails chỉ có hiệu lực trong phiên trình duyệt hiện tại.")
+def trang_cai_dat(st, settings: dict[str, Any], *, v2_mode: bool = False) -> None:
+    """Render native secure controls; v2_mode only removes the duplicated page heading."""
+
+    if not v2_mode:
+        st.header("Cài đặt")
+        st.caption("Kết nối AI, giao diện, ngưỡng và guardrails chỉ có hiệu lực trong phiên trình duyệt hiện tại.")
     tab_ai, tab_ui, tab_thresholds, tab_guardrails = st.tabs(
         ["Kết nối AI", "Giao diện", "Ngưỡng minh họa", "Guardrails và cấu hình"]
     )
@@ -3778,15 +3869,9 @@ def trang_cai_dat(st, settings: dict[str, Any]) -> None:
         )
 
 
-def chay_ung_dung_streamlit() -> None:
-    import streamlit as st
+def khoi_tao_trang_thai_phien(st) -> None:
+    """Khởi tạo các khóa phiên dùng chung mà không thay đổi giá trị đã có."""
 
-    page_icon: str = (
-        str(LOGO_ICON_PATH)
-        if LOGO_ICON_PATH.exists()
-        else (str(LOGO_PATH) if LOGO_PATH.exists() else "🏦")
-    )
-    st.set_page_config(page_title="CreditLens", page_icon=page_icon, layout="wide", initial_sidebar_state="auto")
     if "settings" not in st.session_state:
         st.session_state.settings = cau_hinh_mac_dinh()
     if "result" not in st.session_state:
@@ -3807,6 +3892,46 @@ def chay_ung_dung_streamlit() -> None:
         st.session_state.llm_connection_error = ""
     if "llm_chat_messages" not in st.session_state:
         st.session_state.llm_chat_messages = []
+
+
+def hien_thi_noi_dung_trang(
+    st,
+    page: str,
+    thresholds: Mapping[str, Any],
+    settings: dict[str, Any],
+) -> None:
+    """Điều phối nội dung trang hiện hành để legacy và shell v2 cùng tái sử dụng."""
+
+    result = st.session_state.result
+    docs = st.session_state.docs
+    if page == "Trang chủ & hồ sơ":
+        trang_ho_so(st, thresholds)
+    elif page == "Trích xuất tài liệu":
+        trang_trich_xuat(st, result, docs, thresholds)
+    elif page == "Phân tích tín dụng":
+        trang_phan_tich(st, result, thresholds)
+    elif page == "Cảnh báo rủi ro":
+        trang_rui_ro(st, result)
+    elif page == "Tóm tắt thẩm định":
+        trang_tom_tat(st, result, settings)
+    elif page == "Đánh giá & phương pháp":
+        trang_danh_gia(st)
+    elif page == "Evaluation":
+        trang_evaluation(st, settings)
+    else:
+        trang_cai_dat(st, settings)
+
+
+def chay_ung_dung_streamlit() -> None:
+    import streamlit as st
+
+    page_icon: str = (
+        str(LOGO_ICON_PATH)
+        if LOGO_ICON_PATH.exists()
+        else (str(LOGO_PATH) if LOGO_PATH.exists() else "🏦")
+    )
+    st.set_page_config(page_title="CreditLens", page_icon=page_icon, layout="wide", initial_sidebar_state="auto")
+    khoi_tao_trang_thai_phien(st)
 
     settings = st.session_state.settings
     if LOGO_PATH.exists():
@@ -3849,24 +3974,7 @@ def chay_ung_dung_streamlit() -> None:
         st.rerun()
     st.sidebar.caption("Ngưỡng minh họa · Không phải chính sách ngân hàng · Bắt buộc con người xem xét")
 
-    result = st.session_state.result
-    docs = st.session_state.docs
-    if page == "Trang chủ & hồ sơ":
-        trang_ho_so(st, thresholds)
-    elif page == "Trích xuất tài liệu":
-        trang_trich_xuat(st, result, docs, thresholds)
-    elif page == "Phân tích tín dụng":
-        trang_phan_tich(st, result, thresholds)
-    elif page == "Cảnh báo rủi ro":
-        trang_rui_ro(st, result)
-    elif page == "Tóm tắt thẩm định":
-        trang_tom_tat(st, result, settings)
-    elif page == "Đánh giá & phương pháp":
-        trang_danh_gia(st)
-    elif page == "Evaluation":
-        trang_evaluation(st, settings)
-    else:
-        trang_cai_dat(st, settings)
+    hien_thi_noi_dung_trang(st, page, thresholds, settings)
 
 
 # ==========================================================

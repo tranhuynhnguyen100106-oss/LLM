@@ -1,0 +1,197 @@
+{
+  "$description": "CreditLens UI v2 Cluster 1 design-only token handoff. Not connected to runtime code.",
+  "meta": {
+    "version": "cluster-1.0.0",
+    "sourceRevision": "664fac53f4516a614149364c3298ca8e0e2d27d9",
+    "status": "specification-only",
+    "baseUnit": "4px"
+  },
+  "brand": {
+    "navy": {
+      "900": "#0B1734",
+      "800": "#101D40",
+      "700": "#172A59",
+      "600": "#203469",
+      "300": "#8FA6EE",
+      "200": "#B4C5FF"
+    },
+    "crimson": {
+      "800": "#7A111C",
+      "700": "#8C1622",
+      "600": "#A71B28",
+      "300": "#FF8B98"
+    }
+  },
+  "color": {
+    "light": {
+      "surface": {
+        "canvas": "#F6F8FC",
+        "subtle": "#F1F5F9",
+        "muted": "#E8EEF7",
+        "default": "#FFFFFF",
+        "raised": "#FFFFFF",
+        "inverse": "#0F172A"
+      },
+      "text": {
+        "primary": "#0F172A",
+        "secondary": "#334155",
+        "muted": "#526071",
+        "inverse": "#F8FAFC",
+        "disabled": "#7C899F"
+      },
+      "border": {
+        "subtle": "#D8E0EC",
+        "strong": "#7C899F"
+      },
+      "interactive": {
+        "primary": "#203469",
+        "primaryHover": "#172A59",
+        "primaryPressed": "#101D40",
+        "onPrimary": "#FFFFFF",
+        "accent": "#A71B28",
+        "accentHover": "#8C1622",
+        "link": "#1D4ED8",
+        "focus": "#2563EB",
+        "disabled": "#E8EEF7"
+      },
+      "state": {
+        "success": {"foreground": "#166534", "background": "#F0FDF4", "border": "#86EFAC", "icon": "#15803D"},
+        "warning": {"foreground": "#92400E", "background": "#FFFBEB", "border": "#FCD34D", "icon": "#B45309"},
+        "danger": {"foreground": "#991B1B", "background": "#FEF2F2", "border": "#FCA5A5", "icon": "#B91C1C"},
+        "information": {"foreground": "#1E40AF", "background": "#EFF6FF", "border": "#93C5FD", "icon": "#1D4ED8"},
+        "neutral": {"foreground": "#475569", "background": "#F8FAFC", "border": "#CBD5E1", "icon": "#64748B"}
+      },
+      "overlay": {"scrim": "rgba(15, 23, 42, 0.52)"}
+    },
+    "dark": {
+      "surface": {
+        "canvas": "#081226",
+        "subtle": "#0D1931",
+        "muted": "#182746",
+        "default": "#101D39",
+        "raised": "#142342",
+        "inverse": "#F8FAFC"
+      },
+      "text": {
+        "primary": "#F8FAFC",
+        "secondary": "#D5DCEC",
+        "muted": "#AEB8CB",
+        "inverse": "#0F172A",
+        "disabled": "#7C899F"
+      },
+      "border": {
+        "subtle": "#33435F",
+        "strong": "#64748B"
+      },
+      "interactive": {
+        "primary": "#B4C5FF",
+        "primaryHover": "#C7D3FF",
+        "primaryPressed": "#8FA6EE",
+        "onPrimary": "#0B1734",
+        "accent": "#FF8B98",
+        "accentHover": "#FFA6B0",
+        "link": "#93C5FD",
+        "focus": "#93C5FD",
+        "disabled": "#182746"
+      },
+      "state": {
+        "success": {"foreground": "#86EFAC", "background": "#052E1A", "border": "#166534", "icon": "#4ADE80"},
+        "warning": {"foreground": "#FDE68A", "background": "#3B2305", "border": "#92400E", "icon": "#FBBF24"},
+        "danger": {"foreground": "#FCA5A5", "background": "#3B0A0A", "border": "#991B1B", "icon": "#F87171"},
+        "information": {"foreground": "#BFDBFE", "background": "#0B254A", "border": "#1D4ED8", "icon": "#60A5FA"},
+        "neutral": {"foreground": "#CBD5E1", "background": "#1E293B", "border": "#475569", "icon": "#94A3B8"}
+      },
+      "overlay": {"scrim": "rgba(2, 6, 23, 0.72)"}
+    }
+  },
+  "font": {
+    "family": {
+      "sans": "\"Be Vietnam Pro\", Inter, \"Segoe UI\", Arial, sans-serif",
+      "mono": "\"JetBrains Mono\", \"SFMono-Regular\", Consolas, monospace"
+    },
+    "weight": {"regular": 400, "medium": 500, "semibold": 600, "bold": 700},
+    "style": {
+      "display": {"desktop": {"size": "32px", "lineHeight": "40px"}, "mobile": {"size": "26px", "lineHeight": "34px"}, "weight": 700, "letterSpacing": "-0.02em"},
+      "pageTitle": {"desktop": {"size": "28px", "lineHeight": "36px"}, "mobile": {"size": "24px", "lineHeight": "32px"}, "weight": 700, "letterSpacing": "-0.015em"},
+      "sectionTitle": {"desktop": {"size": "22px", "lineHeight": "30px"}, "mobile": {"size": "20px", "lineHeight": "28px"}, "weight": 700, "letterSpacing": "-0.01em"},
+      "subsectionTitle": {"size": "18px", "lineHeight": "26px", "weight": 600, "letterSpacing": "0"},
+      "metric": {"desktop": {"size": "32px", "lineHeight": "40px"}, "mobile": {"size": "26px", "lineHeight": "34px"}, "weight": 700, "letterSpacing": "-0.02em", "numeric": "tabular-nums lining-nums"},
+      "bodyLarge": {"size": "16px", "lineHeight": "24px", "weight": 400, "letterSpacing": "0"},
+      "body": {"size": "14px", "lineHeight": "22px", "weight": 400, "letterSpacing": "0"},
+      "bodySmall": {"size": "13px", "lineHeight": "20px", "weight": 400, "letterSpacing": "0"},
+      "label": {"size": "14px", "lineHeight": "20px", "weight": 600, "letterSpacing": "0"},
+      "labelSmall": {"size": "12px", "lineHeight": "16px", "weight": 600, "letterSpacing": "0.04em"},
+      "caption": {"size": "12px", "lineHeight": "18px", "weight": 400, "letterSpacing": "0"},
+      "code": {"size": "13px", "lineHeight": "20px", "weight": 500, "letterSpacing": "0", "numeric": "tabular-nums lining-nums"}
+    }
+  },
+  "space": {"0": "0", "0_5": "2px", "1": "4px", "1_5": "6px", "2": "8px", "3": "12px", "4": "16px", "5": "20px", "6": "24px", "8": "32px", "10": "40px", "12": "48px", "16": "64px", "20": "80px"},
+  "size": {
+    "control": {"compact": "36px", "default": "44px", "large": "48px"},
+    "icon": {"small": "16px", "default": "20px", "large": "24px"},
+    "sidebar": {"lgRail": "72px", "xl": "248px", "2xl": "256px"},
+    "contentMax": "1104px"
+  },
+  "radius": {"none": "0", "small": "4px", "medium": "8px", "large": "12px", "xlarge": "16px", "full": "999px"},
+  "border": {"width": {"hairline": "1px", "focus": "2px", "emphasis": "3px"}, "style": {"default": "solid", "upload": "dashed"}, "focusOffset": "2px"},
+  "shadow": {
+    "light": {"none": "none", "xs": "0 1px 2px rgba(15,23,42,.06)", "sm": "0 4px 10px rgba(15,23,42,.08)", "md": "0 12px 28px rgba(15,23,42,.12)", "overlay": "0 24px 56px rgba(15,23,42,.18)"},
+    "dark": {"none": "none", "xs": "0 1px 2px rgba(0,0,0,.28)", "sm": "0 4px 12px rgba(0,0,0,.32)", "md": "0 14px 32px rgba(0,0,0,.40)", "overlay": "0 24px 64px rgba(0,0,0,.52)"}
+  },
+  "motion": {
+    "duration": {"instant": "0ms", "fast": "100ms", "normal": "160ms", "slow": "220ms", "emphasis": "320ms"},
+    "easing": {"standard": "cubic-bezier(.2,0,0,1)", "enter": "cubic-bezier(0,0,.2,1)", "exit": "cubic-bezier(.4,0,1,1)"},
+    "translationMax": "4px",
+    "reducedMotion": {"duration": "0ms", "translation": "0", "ambientAnimation": "none"}
+  },
+  "breakpoint": {"xs": "0px", "sm": "480px", "md": "768px", "lg": "1024px", "xl": "1280px", "2xl": "1440px"},
+  "grid": {
+    "xs": {"columns": 4, "margin": "16px", "gutter": "16px"},
+    "sm": {"columns": 4, "margin": "20px", "gutter": "16px"},
+    "md": {"columns": 8, "margin": "24px", "gutter": "20px"},
+    "lg": {"columns": 12, "margin": "24px", "gutter": "20px"},
+    "xl": {"columns": 12, "margin": "32px", "gutter": "24px"},
+    "2xl": {"columns": 12, "margin": "40px", "gutter": "24px"}
+  },
+  "zIndex": {"base": 0, "sticky": 100, "dropdown": 300, "drawer": 400, "modal": 500, "toast": 600, "tooltip": 700, "skipLink": 800},
+  "canonicalPathMap": {
+    "type.page-title": "font.style.pageTitle",
+    "type.body-sm": "font.style.bodySmall",
+    "radius.sm": "radius.small",
+    "radius.md": "radius.medium",
+    "radius.lg": "radius.large",
+    "radius.xl": "radius.xlarge",
+    "motion.ease.standard": "motion.easing.standard",
+    "z.sticky": "zIndex.sticky",
+    "z.skip-link": "zIndex.skipLink",
+    "color.{theme}.state.error": "color.{theme}.state.danger"
+  },
+  "component": {
+    "panel": {
+      "background": "{color.{theme}.surface.default}",
+      "border": "{border.width.hairline} solid {color.{theme}.border.subtle}",
+      "hoverBackground": "{color.{theme}.surface.subtle}",
+      "hoverShadow": "{shadow.{theme}.sm}"
+    },
+    "button": {"primaryBackground": "{color.{theme}.interactive.primary}", "primaryForeground": "{color.{theme}.interactive.onPrimary}"},
+    "input": {"background": "{color.{theme}.surface.default}", "border": "{color.{theme}.border.strong}"},
+    "navigation": {"selectedBackground": "{color.{theme}.surface.muted}", "selectedMarker": "{color.{theme}.interactive.accent}"},
+    "alert": {"information": "{color.{theme}.state.information}", "error": "{color.{theme}.state.danger}"},
+    "focus": {"ringColor": "{color.{theme}.interactive.focus}", "ringWidth": "{border.width.focus}", "offset": "{border.focusOffset}"},
+    "upload": {"borderColor": "{color.{theme}.border.strong}", "borderStyle": "{border.style.upload}", "borderWidth": "{border.width.hairline}"},
+    "badge": {"radius": "{radius.full}"}
+  },
+  "domainState": {
+    "reviewReady": {"semantic": "success", "label": "SẴN SÀNG ĐỂ XEM XÉT"},
+    "humanReviewRequired": {"semantic": "warning", "label": "CẦN CON NGƯỜI XEM XÉT"},
+    "insufficientInformation": {"semantic": "neutral", "label": "CHƯA ĐỦ THÔNG TIN"},
+    "riskHigh": {"semantic": "danger", "label": "RỦI RO CAO"},
+    "riskMedium": {"semantic": "warning", "label": "RỦI RO TRUNG BÌNH"},
+    "riskLow": {"semantic": "information", "label": "RỦI RO THẤP"},
+    "riskInfo": {"semantic": "neutral", "label": "THÔNG TIN"},
+    "confidenceHigh": {"semantic": "success", "label": "TIN CẬY CAO"},
+    "confidenceReview": {"semantic": "warning", "label": "CẦN ĐỐI CHIẾU"},
+    "confidenceVerify": {"semantic": "danger", "label": "CẦN XÁC MINH"},
+    "missing": {"semantic": "neutral", "label": "THIẾU DỮ LIỆU"}
+  }
+}
