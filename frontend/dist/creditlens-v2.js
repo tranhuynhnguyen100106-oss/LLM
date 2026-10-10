@@ -52,10 +52,10 @@ var e = (e, t) => () => (t || (e((t = { exports: {} }).exports, t), e = null), t
 	}
 	function ee(e) {
 		if (h = !1, b(e), !m) {
-			if (n(c) !== null) m = !0, te || (te = !0, C());
+			if (n(c) !== null) m = !0, te || (te = !0, ae());
 			else {
 				var t = n(l);
-				t !== null && w(ee, t.startTime - e);
+				t !== null && T(ee, t.startTime - e);
 			}
 		}
 	}
@@ -90,7 +90,7 @@ var e = (e, t) => () => (t || (e((t = { exports: {} }).exports, t), e = null), t
 							if (d !== null) i = !0;
 							else {
 								var u = n(l);
-								u !== null && w(ee, u.startTime - t), i = !1;
+								u !== null && T(ee, u.startTime - t), i = !1;
 							}
 						}
 						break a;
@@ -100,23 +100,23 @@ var e = (e, t) => () => (t || (e((t = { exports: {} }).exports, t), e = null), t
 					i = void 0;
 				}
 			} finally {
-				i ? C() : te = !1;
+				i ? ae() : te = !1;
 			}
 		}
 	}
-	var C;
-	if (typeof y == "function") C = function() {
+	var ae;
+	if (typeof y == "function") ae = function() {
 		y(S);
 	};
 	else if (typeof MessageChannel < "u") {
-		var ae = new MessageChannel(), oe = ae.port2;
-		ae.port1.onmessage = S, C = function() {
-			oe.postMessage(null);
+		var C = new MessageChannel(), w = C.port2;
+		C.port1.onmessage = S, ae = function() {
+			w.postMessage(null);
 		};
-	} else C = function() {
+	} else ae = function() {
 		_(S, 0);
 	};
-	function w(t, n) {
+	function T(t, n) {
 		ne = _(function() {
 			t(e.unstable_now());
 		}, n);
@@ -185,7 +185,7 @@ var e = (e, t) => () => (t || (e((t = { exports: {} }).exports, t), e = null), t
 			startTime: a,
 			expirationTime: s,
 			sortIndex: -1
-		}, a > o ? (r.sortIndex = a, t(l, r), n(c) === null && r === n(l) && (h ? (v(ne), ne = -1) : h = !0, w(ee, a - o))) : (r.sortIndex = s, t(c, r), m || p || (m = !0, te || (te = !0, C()))), r;
+		}, a > o ? (r.sortIndex = a, t(l, r), n(c) === null && r === n(l) && (h ? (v(ne), ne = -1) : h = !0, T(ee, a - o))) : (r.sortIndex = s, t(c, r), m || p || (m = !0, te || (te = !0, ae()))), r;
 	}, e.unstable_shouldYield = ie, e.unstable_wrapCallback = function(e) {
 		var t = f;
 		return function() {
@@ -247,13 +247,13 @@ var e = (e, t) => () => (t || (e((t = { exports: {} }).exports, t), e = null), t
 			props: r
 		};
 	}
-	function C(e, t) {
+	function ae(e, t) {
 		return S(e.type, t, e.props);
 	}
-	function ae(e) {
+	function C(e) {
 		return typeof e == "object" && !!e && e.$$typeof === t;
 	}
-	function oe(e) {
+	function w(e) {
 		var t = {
 			"=": "=0",
 			":": "=2"
@@ -262,11 +262,11 @@ var e = (e, t) => () => (t || (e((t = { exports: {} }).exports, t), e = null), t
 			return t[e];
 		});
 	}
-	var w = /\/+/g;
-	function se(e, t) {
-		return typeof e == "object" && e && e.key != null ? oe("" + e.key) : t.toString(36);
+	var T = /\/+/g;
+	function oe(e, t) {
+		return typeof e == "object" && e && e.key != null ? w("" + e.key) : t.toString(36);
 	}
-	function ce(e) {
+	function se(e) {
 		switch (e.status) {
 			case "fulfilled": return e.value;
 			case "rejected": throw e.reason;
@@ -281,7 +281,7 @@ var e = (e, t) => () => (t || (e((t = { exports: {} }).exports, t), e = null), t
 		}
 		throw e;
 	}
-	function le(e, r, i, a, o) {
+	function ce(e, r, i, a, o) {
 		var s = typeof e;
 		(s === "undefined" || s === "boolean") && (e = null);
 		var c = !1;
@@ -297,30 +297,30 @@ var e = (e, t) => () => (t || (e((t = { exports: {} }).exports, t), e = null), t
 				case n:
 					c = !0;
 					break;
-				case d: return c = e._init, le(c(e._payload), r, i, a, o);
+				case d: return c = e._init, ce(c(e._payload), r, i, a, o);
 			}
 		}
-		if (c) return o = o(e), c = a === "" ? "." + se(e, 0) : a, ne(o) ? (i = "", c != null && (i = c.replace(w, "$&/") + "/"), le(o, r, i, "", function(e) {
+		if (c) return o = o(e), c = a === "" ? "." + oe(e, 0) : a, ne(o) ? (i = "", c != null && (i = c.replace(T, "$&/") + "/"), ce(o, r, i, "", function(e) {
 			return e;
-		})) : o != null && (ae(o) && (o = C(o, i + (o.key == null || e && e.key === o.key ? "" : ("" + o.key).replace(w, "$&/") + "/") + c)), r.push(o)), 1;
+		})) : o != null && (C(o) && (o = ae(o, i + (o.key == null || e && e.key === o.key ? "" : ("" + o.key).replace(T, "$&/") + "/") + c)), r.push(o)), 1;
 		c = 0;
 		var l = a === "" ? "." : a + ":";
-		if (ne(e)) for (var u = 0; u < e.length; u++) a = e[u], s = l + se(a, u), c += le(a, r, i, s, o);
-		else if (u = h(e), typeof u == "function") for (e = u.call(e), u = 0; !(a = e.next()).done;) a = a.value, s = l + se(a, u++), c += le(a, r, i, s, o);
+		if (ne(e)) for (var u = 0; u < e.length; u++) a = e[u], s = l + oe(a, u), c += ce(a, r, i, s, o);
+		else if (u = h(e), typeof u == "function") for (e = u.call(e), u = 0; !(a = e.next()).done;) a = a.value, s = l + oe(a, u++), c += ce(a, r, i, s, o);
 		else if (s === "object") {
-			if (typeof e.then == "function") return le(ce(e), r, i, a, o);
+			if (typeof e.then == "function") return ce(se(e), r, i, a, o);
 			throw r = String(e), Error("Objects are not valid as a React child (found: " + (r === "[object Object]" ? "object with keys {" + Object.keys(e).join(", ") + "}" : r) + "). If you meant to render a collection of children, use an array instead.");
 		}
 		return c;
 	}
-	function ue(e, t, n) {
+	function le(e, t, n) {
 		if (e == null) return e;
 		var r = [], i = 0;
-		return le(e, r, "", "", function(e) {
+		return ce(e, r, "", "", function(e) {
 			return t.call(n, e, i++);
 		}), r;
 	}
-	function de(e) {
+	function ue(e) {
 		if (e._status === -1) {
 			var t = e._result, n = t();
 			n.then(function(t) {
@@ -332,7 +332,7 @@ var e = (e, t) => () => (t || (e((t = { exports: {} }).exports, t), e = null), t
 		if (e._status === 1) return e._result.default;
 		throw e._result;
 	}
-	var fe = typeof reportError == "function" ? reportError : function(e) {
+	var de = typeof reportError == "function" ? reportError : function(e) {
 		if (typeof window == "object" && typeof window.ErrorEvent == "function") {
 			var t = new window.ErrorEvent("error", {
 				bubbles: !0,
@@ -347,54 +347,54 @@ var e = (e, t) => () => (t || (e((t = { exports: {} }).exports, t), e = null), t
 		}
 		console.error(e);
 	};
-	function pe(e) {
+	function fe(e) {
 		var t = x.T, n = {};
 		n.types = t === null ? null : t.types, x.T = n;
 		try {
 			var r = e(), i = x.S;
-			i !== null && i(n, r), typeof r == "object" && r && typeof r.then == "function" && r.then(re, fe);
+			i !== null && i(n, r), typeof r == "object" && r && typeof r.then == "function" && r.then(re, de);
 		} catch (e) {
-			fe(e);
+			de(e);
 		} finally {
 			t !== null && n.types !== null && (t.types = n.types), x.T = t;
 		}
 	}
-	function me(e) {
+	function pe(e) {
 		var t = x.T;
 		if (t !== null) {
 			var n = t.types;
 			n === null ? t.types = [e] : n.indexOf(e) === -1 && n.push(e);
-		} else pe(me.bind(null, e));
+		} else fe(pe.bind(null, e));
 	}
-	var he = {
-		map: ue,
+	var me = {
+		map: le,
 		forEach: function(e, t, n) {
-			ue(e, function() {
+			le(e, function() {
 				t.apply(this, arguments);
 			}, n);
 		},
 		count: function(e) {
 			var t = 0;
-			return ue(e, function() {
+			return le(e, function() {
 				t++;
 			}), t;
 		},
 		toArray: function(e) {
-			return ue(e, function(e) {
+			return le(e, function(e) {
 				return e;
 			}) || [];
 		},
 		only: function(e) {
-			if (!ae(e)) throw Error("React.Children.only expected to receive a single React element child.");
+			if (!C(e)) throw Error("React.Children.only expected to receive a single React element child.");
 			return e;
 		}
 	};
-	e.Activity = f, e.Children = he, e.Component = y, e.Fragment = r, e.Profiler = a, e.PureComponent = ee, e.StrictMode = i, e.Suspense = l, e.ViewTransition = p, e.__CLIENT_INTERNALS_DO_NOT_USE_OR_WARN_USERS_THEY_CANNOT_UPGRADE = x, e.__COMPILER_RUNTIME = {
+	e.Activity = f, e.Children = me, e.Component = y, e.Fragment = r, e.Profiler = a, e.PureComponent = ee, e.StrictMode = i, e.Suspense = l, e.ViewTransition = p, e.__CLIENT_INTERNALS_DO_NOT_USE_OR_WARN_USERS_THEY_CANNOT_UPGRADE = x, e.__COMPILER_RUNTIME = {
 		__proto__: null,
 		c: function(e) {
 			return x.H.useMemoCache(e);
 		}
-	}, e.addTransitionType = me, e.cache = function(e) {
+	}, e.addTransitionType = pe, e.cache = function(e) {
 		return function() {
 			return e.apply(null, arguments);
 		};
@@ -441,14 +441,14 @@ var e = (e, t) => () => (t || (e((t = { exports: {} }).exports, t), e = null), t
 			$$typeof: c,
 			render: e
 		};
-	}, e.isValidElement = ae, e.lazy = function(e) {
+	}, e.isValidElement = C, e.lazy = function(e) {
 		return {
 			$$typeof: d,
 			_payload: {
 				_status: -1,
 				_result: e
 			},
-			_init: de
+			_init: ue
 		};
 	}, e.memo = function(e, t) {
 		return {
@@ -456,7 +456,7 @@ var e = (e, t) => () => (t || (e((t = { exports: {} }).exports, t), e = null), t
 			type: e,
 			compare: t === void 0 ? null : t
 		};
-	}, e.startTransition = pe, e.unstable_useCacheRefresh = function() {
+	}, e.startTransition = fe, e.unstable_useCacheRefresh = function() {
 		return x.H.useCacheRefresh();
 	}, e.use = function(e) {
 		return x.H.use(e);
@@ -805,58 +805,58 @@ var e = (e, t) => () => (t || (e((t = { exports: {} }).exports, t), e = null), t
 		}
 		return null;
 	}
-	var S = Object.assign, C = Symbol.for("react.element"), ae = Symbol.for("react.transitional.element"), oe = Symbol.for("react.portal"), w = Symbol.for("react.fragment"), se = Symbol.for("react.strict_mode"), ce = Symbol.for("react.profiler"), le = Symbol.for("react.consumer"), ue = Symbol.for("react.context"), de = Symbol.for("react.forward_ref"), fe = Symbol.for("react.suspense"), pe = Symbol.for("react.suspense_list"), me = Symbol.for("react.memo"), he = Symbol.for("react.lazy"), ge = Symbol.for("react.activity"), _e = Symbol.for("react.legacy_hidden"), ve = Symbol.for("react.memo_cache_sentinel"), ye = Symbol.for("react.view_transition"), be = Symbol.for("react.recoverable"), xe = Symbol.iterator;
-	function Se(e) {
-		return typeof e != "object" || !e ? null : (e = xe && e[xe] || e["@@iterator"], typeof e == "function" ? e : null);
+	var S = Object.assign, ae = Symbol.for("react.element"), C = Symbol.for("react.transitional.element"), w = Symbol.for("react.portal"), T = Symbol.for("react.fragment"), oe = Symbol.for("react.strict_mode"), se = Symbol.for("react.profiler"), ce = Symbol.for("react.consumer"), le = Symbol.for("react.context"), ue = Symbol.for("react.forward_ref"), de = Symbol.for("react.suspense"), fe = Symbol.for("react.suspense_list"), pe = Symbol.for("react.memo"), me = Symbol.for("react.lazy"), he = Symbol.for("react.activity"), ge = Symbol.for("react.legacy_hidden"), _e = Symbol.for("react.memo_cache_sentinel"), ve = Symbol.for("react.view_transition"), ye = Symbol.for("react.recoverable"), be = Symbol.iterator;
+	function xe(e) {
+		return typeof e != "object" || !e ? null : (e = be && e[be] || e["@@iterator"], typeof e == "function" ? e : null);
 	}
-	var Ce = Symbol.for("react.client.reference");
-	function we(e) {
+	var Se = Symbol.for("react.client.reference");
+	function Ce(e) {
 		if (e == null) return null;
-		if (typeof e == "function") return e.$$typeof === Ce ? null : e.displayName || e.name || null;
+		if (typeof e == "function") return e.$$typeof === Se ? null : e.displayName || e.name || null;
 		if (typeof e == "string") return e;
 		switch (e) {
-			case w: return "Fragment";
-			case ce: return "Profiler";
-			case se: return "StrictMode";
-			case fe: return "Suspense";
-			case pe: return "SuspenseList";
-			case ge: return "Activity";
-			case ye: return "ViewTransition";
+			case T: return "Fragment";
+			case se: return "Profiler";
+			case oe: return "StrictMode";
+			case de: return "Suspense";
+			case fe: return "SuspenseList";
+			case he: return "Activity";
+			case ve: return "ViewTransition";
 		}
 		if (typeof e == "object") switch (e.$$typeof) {
-			case oe: return "Portal";
-			case ue: return e.displayName || "Context";
-			case le: return (e._context.displayName || "Context") + ".Consumer";
-			case de:
+			case w: return "Portal";
+			case le: return e.displayName || "Context";
+			case ce: return (e._context.displayName || "Context") + ".Consumer";
+			case ue:
 				var t = e.render;
 				return e = e.displayName, e ||= (e = t.displayName || t.name || "", e === "" ? "ForwardRef" : "ForwardRef(" + e + ")"), e;
-			case me: return t = e.displayName || null, t === null ? we(e.type) || "Memo" : t;
-			case he:
+			case pe: return t = e.displayName || null, t === null ? Ce(e.type) || "Memo" : t;
+			case me:
 				t = e._payload, e = e._init;
 				try {
-					return we(e(t));
+					return Ce(e(t));
 				} catch {}
 		}
 		return null;
 	}
-	var Te = Array.isArray, T = r.__CLIENT_INTERNALS_DO_NOT_USE_OR_WARN_USERS_THEY_CANNOT_UPGRADE, E = a.__DOM_INTERNALS_DO_NOT_USE_OR_WARN_USERS_THEY_CANNOT_UPGRADE, Ee = {
+	var we = Array.isArray, E = r.__CLIENT_INTERNALS_DO_NOT_USE_OR_WARN_USERS_THEY_CANNOT_UPGRADE, D = a.__DOM_INTERNALS_DO_NOT_USE_OR_WARN_USERS_THEY_CANNOT_UPGRADE, Te = {
 		pending: !1,
 		data: null,
 		method: null,
 		action: null
-	}, De = [], Oe = -1;
-	function ke(e) {
+	}, Ee = [], De = -1;
+	function Oe(e) {
 		return { current: e };
 	}
-	function Ae(e) {
-		0 > Oe || (e.current = De[Oe], De[Oe] = null, Oe--);
+	function ke(e) {
+		0 > De || (e.current = Ee[De], Ee[De] = null, De--);
 	}
-	function D(e, t) {
-		Oe++, De[Oe] = e.current, e.current = t;
+	function O(e, t) {
+		De++, Ee[De] = e.current, e.current = t;
 	}
-	var je = ke(null), Me = ke(null), Ne = ke(null), O = ke(null);
-	function Pe(e, t) {
-		switch (D(Ne, t), D(Me, e), D(je, null), t.nodeType) {
+	var k = Oe(null), Ae = Oe(null), je = Oe(null), Me = Oe(null);
+	function Ne(e, t) {
+		switch (O(je, t), O(Ae, e), O(k, null), t.nodeType) {
 			case 9:
 			case 11:
 				e = (e = t.documentElement) && (e = e.namespaceURI) ? up(e) : 0;
@@ -872,29 +872,29 @@ var e = (e, t) => () => (t || (e((t = { exports: {} }).exports, t), e = null), t
 				default: e = 0;
 			}
 		}
-		Ae(je), D(je, e);
+		ke(k), O(k, e);
 	}
-	function Fe() {
-		Ae(je), Ae(Me), Ae(Ne);
+	function Pe() {
+		ke(k), ke(Ae), ke(je);
+	}
+	function Fe(e) {
+		var t = e.memoizedState;
+		t !== null && (sh._currentValue = t.memoizedState, O(Me, e)), t = k.current;
+		var n = dp(t, e.type);
+		t !== n && (O(Ae, e), O(k, n));
 	}
 	function Ie(e) {
-		var t = e.memoizedState;
-		t !== null && (sh._currentValue = t.memoizedState, D(O, e)), t = je.current;
-		var n = dp(t, e.type);
-		t !== n && (D(Me, e), D(je, n));
+		Ae.current === e && (ke(k), ke(Ae)), Me.current === e && (ke(Me), sh._currentValue = Te);
 	}
-	function Le(e) {
-		Me.current === e && (Ae(je), Ae(Me)), O.current === e && (Ae(O), sh._currentValue = Ee);
-	}
-	var Re, ze;
-	function k(e) {
-		if (Re === void 0) try {
+	var Le, Re;
+	function ze(e) {
+		if (Le === void 0) try {
 			throw Error();
 		} catch (e) {
 			var t = e.stack.trim().match(/\n( *(at )?)/);
-			Re = t && t[1] || "", ze = -1 < e.stack.indexOf("\n    at") ? " (<anonymous>)" : -1 < e.stack.indexOf("@") ? "@unknown:0:0" : "";
+			Le = t && t[1] || "", Re = -1 < e.stack.indexOf("\n    at") ? " (<anonymous>)" : -1 < e.stack.indexOf("@") ? "@unknown:0:0" : "";
 		}
-		return "\n" + Re + e + ze;
+		return "\n" + Le + e + Re;
 	}
 	var Be = !1;
 	function Ve(e, t) {
@@ -972,22 +972,22 @@ var e = (e, t) => () => (t || (e((t = { exports: {} }).exports, t), e = null), t
 		} finally {
 			Be = !1, Error.prepareStackTrace = n;
 		}
-		return (n = e ? e.displayName || e.name : "") ? k(n) : "";
+		return (n = e ? e.displayName || e.name : "") ? ze(n) : "";
 	}
 	function He(e, t) {
 		switch (e.tag) {
 			case 26:
 			case 27:
-			case 5: return k(e.type);
-			case 16: return k("Lazy");
-			case 13: return e.child !== t && t !== null ? k("Suspense Fallback") : k("Suspense");
-			case 19: return k("SuspenseList");
+			case 5: return ze(e.type);
+			case 16: return ze("Lazy");
+			case 13: return e.child !== t && t !== null ? ze("Suspense Fallback") : ze("Suspense");
+			case 19: return ze("SuspenseList");
 			case 0:
 			case 15: return Ve(e.type, !1);
 			case 11: return Ve(e.type.render, !1);
 			case 1: return Ve(e.type, !0);
-			case 31: return k("Activity");
-			case 30: return k("ViewTransition");
+			case 31: return ze("Activity");
+			case 30: return ze("ViewTransition");
 			default: return "";
 		}
 	}
@@ -1192,15 +1192,15 @@ var e = (e, t) => () => (t || (e((t = { exports: {} }).exports, t), e = null), t
 		return e &= -e, 2 < e ? 8 < e ? e & 134217727 ? 32 : 268435456 : 8 : 2;
 	}
 	function Ot() {
-		var e = E.p;
+		var e = D.p;
 		return e === 0 ? (e = window.event, e === void 0 ? 32 : Ch(e.type)) : e;
 	}
 	function kt(e, t) {
-		var n = E.p;
+		var n = D.p;
 		try {
-			return E.p = e, t();
+			return D.p = e, t();
 		} finally {
-			E.p = n;
+			D.p = n;
 		}
 	}
 	var At = Math.random().toString(36).slice(2), jt = "__reactFiber$" + At, Mt = "__reactProps$" + At, Nt = "__reactContainer$" + At, Pt = "__reactEvents$" + At, Ft = "__reactListeners$" + At, It = "__reactHandles$" + At, Lt = "__reactResources$" + At, Rt = "__reactMarker$" + At, zt = "__reactLoad$" + At;
@@ -1410,7 +1410,7 @@ var e = (e, t) => () => (t || (e((t = { exports: {} }).exports, t), e = null), t
 		if (t == null) {
 			if (r != null) {
 				if (n != null) throw Error(s(92));
-				if (Te(r)) {
+				if (we(r)) {
 					if (1 < r.length) throw Error(s(93));
 					r = r[0];
 				}
@@ -2154,18 +2154,18 @@ var e = (e, t) => () => (t || (e((t = { exports: {} }).exports, t), e = null), t
 	function Gi(e, t, n, r, i, a) {
 		var o = 0;
 		if (r = e, typeof r == "function") Hi(r) && (o = 1);
-		else if (typeof r == "string") o = qm(e, n, je.current) ? 26 : e === "html" || e === "head" || e === "body" ? 27 : 5;
+		else if (typeof r == "string") o = qm(e, n, k.current) ? 26 : e === "html" || e === "head" || e === "body" ? 27 : 5;
 		else a: switch (r) {
-			case ge: return e = Vi(31, n, t, i), e.elementType = ge, e.lanes = a, e;
-			case w: return Ki(n.children, i, a, t);
-			case se:
+			case he: return e = Vi(31, n, t, i), e.elementType = he, e.lanes = a, e;
+			case T: return Ki(n.children, i, a, t);
+			case oe:
 				o = 8, i |= 24;
 				break;
-			case ce: return e = Vi(12, n, t, i | 2), e.elementType = ce, e.lanes = a, e;
-			case fe: return e = Vi(13, n, t, i), e.elementType = fe, e.lanes = a, e;
-			case pe: return e = Vi(19, n, t, i), e.elementType = pe, e.lanes = a, e;
-			case _e:
-			case ye: return e = i | 32, e = Vi(30, n, t, e), e.elementType = ye, e.lanes = a, e.stateNode = {
+			case se: return e = Vi(12, n, t, i | 2), e.elementType = se, e.lanes = a, e;
+			case de: return e = Vi(13, n, t, i), e.elementType = de, e.lanes = a, e;
+			case fe: return e = Vi(19, n, t, i), e.elementType = fe, e.lanes = a, e;
+			case ge:
+			case ve: return e = i | 32, e = Vi(30, n, t, e), e.elementType = ve, e.lanes = a, e.stateNode = {
 				autoName: null,
 				paired: null,
 				clones: null,
@@ -2173,19 +2173,19 @@ var e = (e, t) => () => (t || (e((t = { exports: {} }).exports, t), e = null), t
 			}, e;
 			default:
 				if (typeof r == "object" && r) switch (r.$$typeof) {
-					case ue:
+					case le:
 						o = 10;
 						break a;
-					case le:
+					case ce:
 						o = 9;
 						break a;
-					case de:
+					case ue:
 						o = 11;
 						break a;
-					case me:
+					case pe:
 						o = 14;
 						break a;
-					case he:
+					case me:
 						o = 16, r = null;
 						break a;
 				}
@@ -2329,12 +2329,12 @@ var e = (e, t) => () => (t || (e((t = { exports: {} }).exports, t), e = null), t
 	function Sa(e) {
 		pa === null ? pa = [e] : pa.push(e);
 	}
-	var Ca = ke(null), wa = null, Ta = null;
+	var Ca = Oe(null), wa = null, Ta = null;
 	function Ea(e, t, n) {
-		D(Ca, t._currentValue), t._currentValue = n;
+		O(Ca, t._currentValue), t._currentValue = n;
 	}
 	function Da(e) {
-		e._currentValue = Ca.current, Ae(Ca);
+		e._currentValue = Ca.current, ke(Ca);
 	}
 	function Oa(e, t, n) {
 		for (; e !== null;) {
@@ -2392,7 +2392,7 @@ var e = (e, t) => () => (t || (e((t = { exports: {} }).exports, t), e = null), t
 					var c = i.type;
 					Xr(i.pendingProps.value, o.value) || (e === null ? e = [c] : e.push(c));
 				}
-			} else if (i === O.current) {
+			} else if (i === Me.current) {
 				if (o = i.alternate, o === null) throw Error(s(387));
 				o.memoizedState.memoizedState !== i.memoizedState.memoizedState && (e === null ? e = [sh] : e.push(sh));
 			}
@@ -2444,7 +2444,7 @@ var e = (e, t) => () => (t || (e((t = { exports: {} }).exports, t), e = null), t
 			});
 		};
 	}, La = t.unstable_scheduleCallback, Ra = t.unstable_NormalPriority, N = {
-		$$typeof: ue,
+		$$typeof: le,
 		Consumer: null,
 		Provider: null,
 		_currentValue: null,
@@ -2515,8 +2515,8 @@ var e = (e, t) => () => (t || (e((t = { exports: {} }).exports, t), e = null), t
 			for (r.status = "rejected", r.reason = e, e = 0; e < n.length; e++) (0, n[e])(void 0);
 		}), r;
 	}
-	var Za = T.S;
-	T.S = function(e, t) {
+	var Za = E.S;
+	E.S = function(e, t) {
 		if (gd = Ye(), typeof t == "object" && t && typeof t.then == "function" && Ja(e, t), Ha !== null) for (var n = bf; n !== null;) Va(n, Ha), n = n.next;
 		if (n = e.types, n !== null) {
 			for (var r = bf; r !== null;) Va(r, n), r = r.next;
@@ -2530,13 +2530,13 @@ var e = (e, t) => () => (t || (e((t = { exports: {} }).exports, t), e = null), t
 		}
 		Za !== null && Za(e, t);
 	};
-	var Qa = ke(null);
+	var Qa = Oe(null);
 	function $a() {
 		var e = Qa.current;
 		return e === null ? G.pooledCache : e;
 	}
 	function eo(e, t) {
-		t === null ? D(Qa, Qa.current) : D(Qa, t.pool);
+		t === null ? O(Qa, Qa.current) : O(Qa, t.pool);
 	}
 	function to() {
 		var e = $a();
@@ -2602,7 +2602,7 @@ var e = (e, t) => () => (t || (e((t = { exports: {} }).exports, t), e = null), t
 		t = t.props.ref, e.ref = t === void 0 ? null : t;
 	}
 	function _o(e, t) {
-		throw t.$$typeof === C ? Error(s(525)) : (e = Object.prototype.toString.call(t), Error(s(31, e === "[object Object]" ? "object with keys {" + Object.keys(t).join(", ") + "}" : e)));
+		throw t.$$typeof === ae ? Error(s(525)) : (e = Object.prototype.toString.call(t), Error(s(31, e === "[object Object]" ? "object with keys {" + Object.keys(t).join(", ") + "}" : e)));
 	}
 	function vo(e) {
 		function t(t, n) {
@@ -2634,7 +2634,7 @@ var e = (e, t) => () => (t || (e((t = { exports: {} }).exports, t), e = null), t
 		}
 		function l(e, t, n, r) {
 			var a = n.type;
-			return a === w ? (e = d(e, t, n.props.children, r, n.key), go(e, n), e) : t !== null && (t.elementType === a || typeof a == "object" && a && a.$$typeof === he && co(a) === t.type) ? (t = i(t, n.props), go(t, n), t.return = e, t) : (t = Gi(n.type, n.key, n.props, null, e.mode, r), go(t, n), t.return = e, t);
+			return a === T ? (e = d(e, t, n.props.children, r, n.key), go(e, n), e) : t !== null && (t.elementType === a || typeof a == "object" && a && a.$$typeof === me && co(a) === t.type) ? (t = i(t, n.props), go(t, n), t.return = e, t) : (t = Gi(n.type, n.key, n.props, null, e.mode, r), go(t, n), t.return = e, t);
 		}
 		function u(e, t, n, r) {
 			return t === null || t.tag !== 4 || t.stateNode.containerInfo !== n.containerInfo || t.stateNode.implementation !== n.implementation ? (t = Yi(n, e.mode, r), t.return = e, t) : (t = i(t, n.children || []), t.return = e, t);
@@ -2646,13 +2646,13 @@ var e = (e, t) => () => (t || (e((t = { exports: {} }).exports, t), e = null), t
 			if (typeof t == "string" && t !== "" || typeof t == "number" || typeof t == "bigint") return t = qi("" + t, e.mode, n), t.return = e, t;
 			if (typeof t == "object" && t) {
 				switch (t.$$typeof) {
-					case ae: return n = Gi(t.type, t.key, t.props, null, e.mode, n), go(n, t), n.return = e, n;
-					case oe: return t = Yi(t, e.mode, n), t.return = e, t;
-					case he: return t = co(t), f(e, t, n);
+					case C: return n = Gi(t.type, t.key, t.props, null, e.mode, n), go(n, t), n.return = e, n;
+					case w: return t = Yi(t, e.mode, n), t.return = e, t;
+					case me: return t = co(t), f(e, t, n);
 				}
-				if (Te(t) || Se(t)) return t = Ki(t, e.mode, n, null), t.return = e, t;
+				if (we(t) || xe(t)) return t = Ki(t, e.mode, n, null), t.return = e, t;
 				if (typeof t.then == "function") return f(e, ho(t), n);
-				if (t.$$typeof === ue) return f(e, Pa(e, t), n);
+				if (t.$$typeof === le) return f(e, Pa(e, t), n);
 				_o(e, t);
 			}
 			return null;
@@ -2662,13 +2662,13 @@ var e = (e, t) => () => (t || (e((t = { exports: {} }).exports, t), e = null), t
 			if (typeof n == "string" && n !== "" || typeof n == "number" || typeof n == "bigint") return i === null ? c(e, t, "" + n, r) : null;
 			if (typeof n == "object" && n) {
 				switch (n.$$typeof) {
-					case ae: return n.key === i ? l(e, t, n, r) : null;
-					case oe: return n.key === i ? u(e, t, n, r) : null;
-					case he: return n = co(n), p(e, t, n, r);
+					case C: return n.key === i ? l(e, t, n, r) : null;
+					case w: return n.key === i ? u(e, t, n, r) : null;
+					case me: return n = co(n), p(e, t, n, r);
 				}
-				if (Te(n) || Se(n)) return i === null ? d(e, t, n, r, null) : null;
+				if (we(n) || xe(n)) return i === null ? d(e, t, n, r, null) : null;
 				if (typeof n.then == "function") return p(e, t, ho(n), r);
-				if (n.$$typeof === ue) return p(e, t, Pa(e, n), r);
+				if (n.$$typeof === le) return p(e, t, Pa(e, n), r);
 				_o(e, n);
 			}
 			return null;
@@ -2677,13 +2677,13 @@ var e = (e, t) => () => (t || (e((t = { exports: {} }).exports, t), e = null), t
 			if (typeof r == "string" && r !== "" || typeof r == "number" || typeof r == "bigint") return e = e.get(n) || null, c(t, e, "" + r, i);
 			if (typeof r == "object" && r) {
 				switch (r.$$typeof) {
-					case ae: return e = e.get(r.key === null ? n : r.key) || null, l(t, e, r, i);
-					case oe: return e = e.get(r.key === null ? n : r.key) || null, u(t, e, r, i);
-					case he: return r = co(r), m(e, t, n, r, i);
+					case C: return e = e.get(r.key === null ? n : r.key) || null, l(t, e, r, i);
+					case w: return e = e.get(r.key === null ? n : r.key) || null, u(t, e, r, i);
+					case me: return r = co(r), m(e, t, n, r, i);
 				}
-				if (Te(r) || Se(r)) return e = e.get(n) || null, d(t, e, r, i, null);
+				if (we(r) || xe(r)) return e = e.get(n) || null, d(t, e, r, i, null);
 				if (typeof r.then == "function") return m(e, t, n, ho(r), i);
-				if (r.$$typeof === ue) return m(e, t, n, Pa(t, r), i);
+				if (r.$$typeof === le) return m(e, t, n, Pa(t, r), i);
 				_o(t, r);
 			}
 			return null;
@@ -2730,18 +2730,18 @@ var e = (e, t) => () => (t || (e((t = { exports: {} }).exports, t), e = null), t
 			}), M && sa(i, g), u;
 		}
 		function _(e, r, a, c) {
-			if (typeof a == "object" && a && a.type === w && a.key === null && a.props.ref === void 0 && (a = a.props.children), typeof a == "object" && a) {
+			if (typeof a == "object" && a && a.type === T && a.key === null && a.props.ref === void 0 && (a = a.props.children), typeof a == "object" && a) {
 				switch (a.$$typeof) {
-					case ae:
+					case C:
 						a: {
 							for (var l = a.key; r !== null;) {
 								if (r.key === l) {
-									if (l = a.type, l === w) {
+									if (l = a.type, l === T) {
 										if (r.tag === 7) {
 											n(e, r.sibling), c = i(r, a.props.children), go(c, a), c.return = e, e = c;
 											break a;
 										}
-									} else if (r.elementType === l || typeof l == "object" && l && l.$$typeof === he && co(l) === r.type) {
+									} else if (r.elementType === l || typeof l == "object" && l && l.$$typeof === me && co(l) === r.type) {
 										n(e, r.sibling), c = i(r, a.props), go(c, a), c.return = e, e = c;
 										break a;
 									}
@@ -2750,10 +2750,10 @@ var e = (e, t) => () => (t || (e((t = { exports: {} }).exports, t), e = null), t
 								}
 								t(e, r), r = r.sibling;
 							}
-							a.type === w ? (c = Ki(a.props.children, e.mode, c, a.key), go(c, a), c.return = e, e = c) : (c = Gi(a.type, a.key, a.props, null, e.mode, c), go(c, a), c.return = e, e = c);
+							a.type === T ? (c = Ki(a.props.children, e.mode, c, a.key), go(c, a), c.return = e, e = c) : (c = Gi(a.type, a.key, a.props, null, e.mode, c), go(c, a), c.return = e, e = c);
 						}
 						return o(e);
-					case oe:
+					case w:
 						a: {
 							for (l = a.key; r !== null;) {
 								if (r.key === l) {
@@ -2769,15 +2769,15 @@ var e = (e, t) => () => (t || (e((t = { exports: {} }).exports, t), e = null), t
 							c = Yi(a, e.mode, c), c.return = e, e = c;
 						}
 						return o(e);
-					case he: return a = co(a), _(e, r, a, c);
+					case me: return a = co(a), _(e, r, a, c);
 				}
-				if (Te(a)) return h(e, r, a, c);
-				if (Se(a)) {
-					if (l = Se(a), typeof l != "function") throw Error(s(150));
+				if (we(a)) return h(e, r, a, c);
+				if (xe(a)) {
+					if (l = xe(a), typeof l != "function") throw Error(s(150));
 					return a = l.call(a), g(e, r, a, c);
 				}
 				if (typeof a.then == "function") return _(e, r, ho(a), c);
-				if (a.$$typeof === ue) return _(e, r, Pa(e, a), c);
+				if (a.$$typeof === le) return _(e, r, Pa(e, a), c);
 				_o(e, a);
 			}
 			return typeof a == "string" && a !== "" || typeof a == "number" || typeof a == "bigint" ? (a = "" + a, r !== null && r.tag === 6 ? (n(e, r.sibling), c = i(r, a), c.return = e, e = c) : (n(e, r), c = qi(a, e.mode, c), c.return = e, e = c), o(e)) : n(e, r);
@@ -2943,39 +2943,39 @@ var e = (e, t) => () => (t || (e((t = { exports: {} }).exports, t), e = null), t
 		var n = e.callbacks;
 		if (n !== null) for (e.callbacks = null, e = 0; e < n.length; e++) jo(n[e], t);
 	}
-	var No = ke(null), Po = ke(0);
+	var No = Oe(null), Po = Oe(0);
 	function Fo(e, t) {
-		e = od, D(Po, e), D(No, t), od = e | t.baseLanes;
+		e = od, O(Po, e), O(No, t), od = e | t.baseLanes;
 	}
 	function Io() {
-		D(Po, od), D(No, No.current);
+		O(Po, od), O(No, No.current);
 	}
 	function Lo() {
-		od = Po.current, Ae(No), Ae(Po);
+		od = Po.current, ke(No), ke(Po);
 	}
-	var Ro = ke(null), zo = null;
+	var Ro = Oe(null), zo = null;
 	function Bo(e) {
 		var t = e.alternate;
-		D(Go, Go.current & 1), D(Ro, e), zo === null && (t === null || No.current !== null || t.memoizedState !== null) && (zo = e);
+		O(Go, Go.current & 1), O(Ro, e), zo === null && (t === null || No.current !== null || t.memoizedState !== null) && (zo = e);
 	}
 	function Vo(e) {
-		D(Go, Go.current), D(Ro, e), zo === null && (zo = e);
+		O(Go, Go.current), O(Ro, e), zo === null && (zo = e);
 	}
 	function Ho(e) {
-		e.tag === 22 ? (D(Go, Go.current), D(Ro, e), zo === null && (zo = e)) : Uo();
+		e.tag === 22 ? (O(Go, Go.current), O(Ro, e), zo === null && (zo = e)) : Uo();
 	}
 	function Uo() {
-		D(Go, Go.current), D(Ro, Ro.current);
+		O(Go, Go.current), O(Ro, Ro.current);
 	}
 	function Wo(e) {
-		Ae(Ro), zo === e && (zo = null), Ae(Go);
+		ke(Ro), zo === e && (zo = null), ke(Go);
 	}
-	var Go = ke(0);
+	var Go = Oe(0);
 	function Ko(e, t) {
-		D(Ro, Ro.current), D(Go, t);
+		O(Ro, Ro.current), O(Go, t);
 	}
 	function qo(e) {
-		Ae(Go), Ae(Ro), zo === e && (zo = null);
+		ke(Go), ke(Ro), zo === e && (zo = null);
 	}
 	function Jo(e) {
 		for (var t = e; t !== null;) {
@@ -3007,10 +3007,10 @@ var e = (e, t) => () => (t || (e((t = { exports: {} }).exports, t), e = null), t
 		return !0;
 	}
 	function is(e, t, n, r, i, a) {
-		return Yo = a, P = t, t.memoizedState = null, t.updateQueue = null, t.lanes = 0, T.H = e === null || e.memoizedState === null ? bc : xc, Qo = !1, a = n(r, i), Qo = !1, Zo && (a = os(t, n, r, i)), as(e), a;
+		return Yo = a, P = t, t.memoizedState = null, t.updateQueue = null, t.lanes = 0, E.H = e === null || e.memoizedState === null ? bc : xc, Qo = !1, a = n(r, i), Qo = !1, Zo && (a = os(t, n, r, i)), as(e), a;
 	}
 	function as(e) {
-		T.H = yc;
+		E.H = yc;
 		var t = F !== null && F.next !== null;
 		if (Yo = 0, I = F = P = null, Xo = !1, es = 0, ts = null, t) throw Error(s(300));
 		e === null || z || (e = e.dependencies, e !== null && ja(e) && (z = !0));
@@ -3024,12 +3024,12 @@ var e = (e, t) => () => (t || (e((t = { exports: {} }).exports, t), e = null), t
 				var a = e.updateQueue;
 				a.lastEffect = null, a.events = null, a.stores = null, a.memoCache != null && (a.memoCache.index = 0);
 			}
-			T.H = Sc, a = t(n, r);
+			E.H = Sc, a = t(n, r);
 		} while (Zo);
 		return a;
 	}
 	function ss() {
-		var e = T.H, t = e.useState()[0];
+		var e = E.H, t = e.useState()[0];
 		return t = typeof t.then == "function" ? ps(t) : t, e = e.useState()[0], (F === null ? null : F.memoizedState) !== e && (P.flags |= 1024), t;
 	}
 	function cs() {
@@ -3088,13 +3088,13 @@ var e = (e, t) => () => (t || (e((t = { exports: {} }).exports, t), e = null), t
 	}
 	function ps(e) {
 		var t = es;
-		return es += 1, ts === null && (ts = []), e = so(ts, e, t), t = P, (I === null ? t.memoizedState : I.next) === null && (t = t.alternate, T.H = t === null || t.memoizedState === null ? bc : xc), e;
+		return es += 1, ts === null && (ts = []), e = so(ts, e, t), t = P, (I === null ? t.memoizedState : I.next) === null && (t = t.alternate, E.H = t === null || t.memoizedState === null ? bc : xc), e;
 	}
 	function ms(e) {
 		if (typeof e == "object" && e) {
 			if (typeof e.then == "function") return ps(e);
-			if (e.$$typeof === be) return;
-			if (e.$$typeof === ue) return Na(e);
+			if (e.$$typeof === ye) return;
+			if (e.$$typeof === le) return Na(e);
 		}
 		throw Error(s(438, String(e)));
 	}
@@ -3112,7 +3112,7 @@ var e = (e, t) => () => (t || (e((t = { exports: {} }).exports, t), e = null), t
 		if (t ??= {
 			data: [],
 			index: 0
-		}, n === null && (n = fs(), P.updateQueue = n), n.memoCache = t, n = t.data[t.index], n === void 0) for (n = t.data[t.index] = Array(e), r = 0; r < e; r++) n[r] = ve;
+		}, n === null && (n = fs(), P.updateQueue = n), n.memoCache = t, n = t.data[t.index], n === void 0) for (n = t.data[t.index] = Array(e), r = 0; r < e; r++) n[r] = _e;
 		return t.index++, n;
 	}
 	function gs(e, t) {
@@ -3275,21 +3275,21 @@ var e = (e, t) => () => (t || (e((t = { exports: {} }).exports, t), e = null), t
 					a.listeners.push(e);
 				}
 			};
-			T.T === null ? a.isTransition = !1 : n(!0), r(a), n = t.pending, n === null ? (a.next = t.pending = a, ks(t, a)) : (a.next = n.next, t.pending = n.next = a);
+			E.T === null ? a.isTransition = !1 : n(!0), r(a), n = t.pending, n === null ? (a.next = t.pending = a, ks(t, a)) : (a.next = n.next, t.pending = n.next = a);
 		}
 	}
 	function ks(e, t) {
 		var n = t.action, r = t.payload, i = e.state;
 		if (t.isTransition) {
-			var a = T.T, o = {};
-			o.types = a === null ? null : a.types, T.T = o;
+			var a = E.T, o = {};
+			o.types = a === null ? null : a.types, E.T = o;
 			try {
-				var s = n(i, r), c = T.S;
+				var s = n(i, r), c = E.S;
 				c !== null && c(o, s), As(e, t, s);
 			} catch (n) {
 				Ms(e, t, n);
 			} finally {
-				a !== null && o.types !== null && (a.types = o.types), T.T = a;
+				a !== null && o.types !== null && (a.types = o.types), E.T = a;
 			}
 		} else try {
 			a = n(i, r), As(e, t, a);
@@ -3497,12 +3497,12 @@ var e = (e, t) => () => (t || (e((t = { exports: {} }).exports, t), e = null), t
 		return Xr(n, t) ? n : No.current === null ? !(Yo & 106) || Yo & 1073741824 && !(q & 261930) ? (z = !0, e.memoizedState = n) : (e = Md(), P.lanes |= e, sd |= e, t) : (e = tc(e, n, r), Xr(e, t) || (z = !0), e);
 	}
 	function rc(e, t, n, r, i) {
-		var a = E.p;
-		E.p = a !== 0 && 8 > a ? a : 8;
-		var o = T.T, s = {};
-		s.types = o === null ? null : o.types, T.T = s, hc(e, !1, t, n);
+		var a = D.p;
+		D.p = a !== 0 && 8 > a ? a : 8;
+		var o = E.T, s = {};
+		s.types = o === null ? null : o.types, E.T = s, hc(e, !1, t, n);
 		try {
-			var c = i(), l = T.S;
+			var c = i(), l = E.S;
 			l !== null && l(s, c), typeof c == "object" && c && typeof c.then == "function" ? mc(e, t, Xa(c, r), jd(e)) : mc(e, t, r, jd(e));
 		} catch (n) {
 			mc(e, t, {
@@ -3511,14 +3511,14 @@ var e = (e, t) => () => (t || (e((t = { exports: {} }).exports, t), e = null), t
 				reason: n
 			}, jd());
 		} finally {
-			E.p = a, o !== null && s.types !== null && (o.types = s.types), T.T = o;
+			D.p = a, o !== null && s.types !== null && (o.types = s.types), E.T = o;
 		}
 	}
 	function ic() {}
 	function ac(e, t, n, r) {
 		if (e.tag !== 5) throw Error(s(476));
 		var i = oc(e).queue;
-		rc(e, i, t, Ee, n === null ? ic : function() {
+		rc(e, i, t, Te, n === null ? ic : function() {
 			return sc(e), n(r);
 		});
 	}
@@ -3526,15 +3526,15 @@ var e = (e, t) => () => (t || (e((t = { exports: {} }).exports, t), e = null), t
 		var t = e.memoizedState;
 		if (t !== null) return t;
 		t = {
-			memoizedState: Ee,
-			baseState: Ee,
+			memoizedState: Te,
+			baseState: Te,
 			baseQueue: null,
 			queue: {
 				pending: null,
 				lanes: 0,
 				dispatch: null,
 				lastRenderedReducer: gs,
-				lastRenderedState: Ee
+				lastRenderedState: Te
 			},
 			next: null
 		};
@@ -4329,14 +4329,14 @@ var e = (e, t) => () => (t || (e((t = { exports: {} }).exports, t), e = null), t
 	function ml(e, t, n) {
 		switch (t.tag) {
 			case 3:
-				Pe(t, t.stateNode.containerInfo), Ea(t, N, e.memoizedState.cache), ba();
+				Ne(t, t.stateNode.containerInfo), Ea(t, N, e.memoizedState.cache), ba();
 				break;
 			case 27:
 			case 5:
-				Ie(t);
+				Fe(t);
 				break;
 			case 4:
-				Pe(t, t.stateNode.containerInfo);
+				Ne(t, t.stateNode.containerInfo);
 				break;
 			case 10:
 				Ea(t, t.type, t.memoizedProps.value);
@@ -4383,20 +4383,20 @@ var e = (e, t) => () => (t || (e((t = { exports: {} }).exports, t), e = null), t
 					else {
 						if (e != null) {
 							var i = e.$$typeof;
-							if (i === de) {
+							if (i === ue) {
 								t.tag = 11, t = Rc(null, t, e, r, n);
 								break a;
 							}
-							if (i === me) {
+							if (i === pe) {
 								t.tag = 14, t = zc(null, t, e, r, n);
 								break a;
 							}
-							if (i === ue) {
+							if (i === le) {
 								t.tag = 10, t.type = e, t = dl(null, t, n);
 								break a;
 							}
 						}
-						throw t = we(e) || e, Error(s(306, t, ""));
+						throw t = Ce(e) || e, Error(s(306, t, ""));
 					}
 				}
 				return t;
@@ -4404,7 +4404,7 @@ var e = (e, t) => () => (t || (e((t = { exports: {} }).exports, t), e = null), t
 			case 1: return r = t.type, i = Dc(r, t.pendingProps), Xc(e, t, r, i, n);
 			case 3:
 				a: {
-					if (Pe(t, t.stateNode.containerInfo), e === null) throw Error(s(387));
+					if (Ne(t, t.stateNode.containerInfo), e === null) throw Error(s(387));
 					r = t.pendingProps;
 					var a = t.memoizedState;
 					i = a.element, Co(e, t), Ao(t, r, null, n);
@@ -4439,12 +4439,12 @@ var e = (e, t) => () => (t || (e((t = { exports: {} }).exports, t), e = null), t
 					t = t.child;
 				}
 				return t;
-			case 26: return qc(e, t), e === null ? (n = Nm(t.type, null, t.pendingProps, null)) ? t.memoizedState = n : M || (t.stateNode = fp(t.type, t.pendingProps, Ne.current, t)) : t.memoizedState = Nm(t.type, e.memoizedProps, t.pendingProps, e.memoizedState), null;
-			case 27: return Ie(t), e === null && M && (r = t.stateNode = hm(t.type, t.pendingProps, Ne.current), fa = t, ma = !0, i = j, Sp(t.type) ? (um = i, j = lm(r.firstChild)) : j = i), B(e, t, t.pendingProps.children, n), qc(e, t), e === null && (t.flags |= 4194304), t.child;
-			case 5: return e === null && M && ((i = r = j) && (r = rm(r, t.type, t.pendingProps, ma), r === null ? i = !1 : (t.stateNode = r, fa = t, j = lm(r.firstChild), ma = !1, i = !0)), i || ga(t)), Ie(t), i = t.type, a = t.pendingProps, o = e === null ? null : e.memoizedProps, r = a.children, pp(i, a) ? r = null : o !== null && pp(i, o) && (t.flags |= 32), t.memoizedState !== null && (i = is(e, t, ss, null, null, n), sh._currentValue = i), qc(e, t), B(e, t, r, n), t.child;
+			case 26: return qc(e, t), e === null ? (n = Nm(t.type, null, t.pendingProps, null)) ? t.memoizedState = n : M || (t.stateNode = fp(t.type, t.pendingProps, je.current, t)) : t.memoizedState = Nm(t.type, e.memoizedProps, t.pendingProps, e.memoizedState), null;
+			case 27: return Fe(t), e === null && M && (r = t.stateNode = hm(t.type, t.pendingProps, je.current), fa = t, ma = !0, i = j, Sp(t.type) ? (um = i, j = lm(r.firstChild)) : j = i), B(e, t, t.pendingProps.children, n), qc(e, t), e === null && (t.flags |= 4194304), t.child;
+			case 5: return e === null && M && ((i = r = j) && (r = rm(r, t.type, t.pendingProps, ma), r === null ? i = !1 : (t.stateNode = r, fa = t, j = lm(r.firstChild), ma = !1, i = !0)), i || ga(t)), Fe(t), i = t.type, a = t.pendingProps, o = e === null ? null : e.memoizedProps, r = a.children, pp(i, a) ? r = null : o !== null && pp(i, o) && (t.flags |= 32), t.memoizedState !== null && (i = is(e, t, ss, null, null, n), sh._currentValue = i), qc(e, t), B(e, t, r, n), t.child;
 			case 6: return e === null && M && ((e = n = j) && (n = im(n, t.pendingProps, ma), n === null ? e = !1 : (t.stateNode = n, fa = t, j = null, e = !0)), e || ga(t)), null;
 			case 13: return tl(e, t, n);
-			case 4: return Pe(t, t.stateNode.containerInfo), r = t.pendingProps, e === null ? t.child = yo(t, null, r, n) : B(e, t, r, n), t.child;
+			case 4: return Ne(t, t.stateNode.containerInfo), r = t.pendingProps, e === null ? t.child = yo(t, null, r, n) : B(e, t, r, n), t.child;
 			case 11: return Rc(e, t, t.type, t.pendingProps, n);
 			case 7: return r = t.pendingProps, qc(e, t), B(e, t, r, n), t.child;
 			case 8: return B(e, t, t.pendingProps.children, n), t.child;
@@ -4527,30 +4527,30 @@ var e = (e, t) => () => (t || (e((t = { exports: {} }).exports, t), e = null), t
 			case 9:
 			case 14: return V(t), null;
 			case 1: return V(t), null;
-			case 3: return n = t.stateNode, r = null, e !== null && (r = e.memoizedState.cache), t.memoizedState.cache !== r && (t.flags |= 2048), Da(N), Fe(), n.pendingContext && (n.context = n.pendingContext, n.pendingContext = null), (e === null || e.child === null) && (ya(t) ? gl(t) : e === null || e.memoizedState.isDehydrated && !(t.flags & 256) || (t.flags |= 1024, xa())), V(t), null;
+			case 3: return n = t.stateNode, r = null, e !== null && (r = e.memoizedState.cache), t.memoizedState.cache !== r && (t.flags |= 2048), Da(N), Pe(), n.pendingContext && (n.context = n.pendingContext, n.pendingContext = null), (e === null || e.child === null) && (ya(t) ? gl(t) : e === null || e.memoizedState.isDehydrated && !(t.flags & 256) || (t.flags |= 1024, xa())), V(t), null;
 			case 26:
 				var i = t.type, a = t.memoizedState;
 				return e === null ? (gl(t), a === null ? (V(t), _l(t, i, null, r, n)) : (V(t), vl(t, a))) : a ? a === e.memoizedState ? (V(t), t.flags &= -16777217) : (gl(t), V(t), vl(t, a)) : (e = e.memoizedProps, e !== r && gl(t), V(t), _l(t, i, e, r, n)), null;
 			case 27:
-				if (Le(t), n = Ne.current, i = t.type, e !== null && t.stateNode != null) e.memoizedProps !== r && gl(t);
+				if (Ie(t), n = je.current, i = t.type, e !== null && t.stateNode != null) e.memoizedProps !== r && gl(t);
 				else {
 					if (!r) {
 						if (t.stateNode === null) throw Error(s(166));
 						return V(t), t.subtreeFlags &= -33554433, null;
 					}
-					e = je.current, ya(t) ? _a(t, e) : (e = hm(i, r, n), t.stateNode = e, gl(t));
+					e = k.current, ya(t) ? _a(t, e) : (e = hm(i, r, n), t.stateNode = e, gl(t));
 				}
 				return V(t), t.subtreeFlags &= -33554433, null;
 			case 5:
-				if (Le(t), i = t.type, e !== null && t.stateNode != null) e.memoizedProps !== r && gl(t);
+				if (Ie(t), i = t.type, e !== null && t.stateNode != null) e.memoizedProps !== r && gl(t);
 				else {
 					if (!r) {
 						if (t.stateNode === null) throw Error(s(166));
 						return V(t), t.subtreeFlags &= -33554433, null;
 					}
-					if (a = je.current, ya(t)) _a(t, a);
+					if (a = k.current, ya(t)) _a(t, a);
 					else {
-						var o = lp(Ne.current);
+						var o = lp(je.current);
 						switch (a) {
 							case 1:
 								a = o.createElementNS("http://www.w3.org/2000/svg", i);
@@ -4609,7 +4609,7 @@ var e = (e, t) => () => (t || (e((t = { exports: {} }).exports, t), e = null), t
 				if (e && t.stateNode != null) e.memoizedProps !== r && gl(t);
 				else {
 					if (typeof r != "string" && t.stateNode === null) throw Error(s(166));
-					if (e = Ne.current, ya(t)) {
+					if (e = je.current, ya(t)) {
 						if (e = t.stateNode, n = t.memoizedProps, r = null, i = fa, i !== null) switch (i.tag) {
 							case 27:
 							case 5: r = i.memoizedProps;
@@ -4645,7 +4645,7 @@ var e = (e, t) => () => (t || (e((t = { exports: {} }).exports, t), e = null), t
 					if (!i) return t.flags & 256 ? (Wo(t), t) : (Wo(t), null);
 				}
 				return Wo(t), t.flags & 128 ? (t.lanes = n, t) : (n = r !== null, e = e !== null && e.memoizedState !== null, n && (r = t.child, i = null, r.alternate !== null && r.alternate.memoizedState !== null && r.alternate.memoizedState.cachePool !== null && (i = r.alternate.memoizedState.cachePool.pool), a = null, r.memoizedState !== null && r.memoizedState.cachePool !== null && (a = r.memoizedState.cachePool.pool), a !== i && (r.flags |= 2048)), n !== e && n && (t.child.flags |= 8192), yl(t, t.updateQueue), V(t), null);
-			case 4: return Fe(), e === null && Wf(t.stateNode.containerInfo), t.flags |= 67108864, V(t), null;
+			case 4: return Pe(), e === null && Wf(t.stateNode.containerInfo), t.flags |= 67108864, V(t), null;
 			case 10: return Da(t.type), V(t), null;
 			case 19:
 				if (qo(t), r = t.memoizedState, r === null) return V(t), null;
@@ -4681,11 +4681,11 @@ var e = (e, t) => () => (t || (e((t = { exports: {} }).exports, t), e = null), t
 						}
 						n = !0;
 					}
-					return r.rendering = e, r.tail = e.sibling, r.renderingStartTime = Ye(), e.sibling = null, a = Go.current, a = i ? a & 1 | 2 : a & 1, r.tailMode === "visible" || r.tailMode === "collapsed" || !n || M ? Ko(t, a) : (n = a, D(Ro, t), D(Go, n), zo === null && (zo = t)), M && sa(t, r.treeForkCount), e;
+					return r.rendering = e, r.tail = e.sibling, r.renderingStartTime = Ye(), e.sibling = null, a = Go.current, a = i ? a & 1 | 2 : a & 1, r.tailMode === "visible" || r.tailMode === "collapsed" || !n || M ? Ko(t, a) : (n = a, O(Ro, t), O(Go, n), zo === null && (zo = t)), M && sa(t, r.treeForkCount), e;
 				}
 				return V(t), null;
 			case 22:
-			case 23: return Wo(t), Lo(), r = t.memoizedState !== null, e === null ? r && (t.flags |= 8192) : e.memoizedState !== null !== r && (t.flags |= 8192), r ? n & 536870912 && !(t.flags & 128) && (V(t), t.subtreeFlags & 6 && (t.flags |= 8192)) : V(t), n = t.updateQueue, n !== null && yl(t, n.retryQueue), n = null, e !== null && e.memoizedState !== null && e.memoizedState.cachePool !== null && (n = e.memoizedState.cachePool.pool), r = null, t.memoizedState !== null && t.memoizedState.cachePool !== null && (r = t.memoizedState.cachePool.pool), r !== n && (t.flags |= 2048), e !== null && Ae(Qa), null;
+			case 23: return Wo(t), Lo(), r = t.memoizedState !== null, e === null ? r && (t.flags |= 8192) : e.memoizedState !== null !== r && (t.flags |= 8192), r ? n & 536870912 && !(t.flags & 128) && (V(t), t.subtreeFlags & 6 && (t.flags |= 8192)) : V(t), n = t.updateQueue, n !== null && yl(t, n.retryQueue), n = null, e !== null && e.memoizedState !== null && e.memoizedState.cachePool !== null && (n = e.memoizedState.cachePool.pool), r = null, t.memoizedState !== null && t.memoizedState.cachePool !== null && (r = t.memoizedState.cachePool.pool), r !== n && (t.flags |= 2048), e !== null && ke(Qa), null;
 			case 24: return n = null, e !== null && (n = e.memoizedState.cache), t.memoizedState.cache !== n && (t.flags |= 2048), Da(N), V(t), null;
 			case 25: return null;
 			case 30: return t.flags |= 33554432, V(t), null;
@@ -4695,10 +4695,10 @@ var e = (e, t) => () => (t || (e((t = { exports: {} }).exports, t), e = null), t
 	function Sl(e, t) {
 		switch (ua(t), t.tag) {
 			case 1: return e = t.flags, e & 65536 ? (t.flags = e & -65537 | 128, t) : null;
-			case 3: return Da(N), Fe(), e = t.flags, e & 65536 && !(e & 128) ? (t.flags = e & -65537 | 128, t) : null;
+			case 3: return Da(N), Pe(), e = t.flags, e & 65536 && !(e & 128) ? (t.flags = e & -65537 | 128, t) : null;
 			case 26:
 			case 27:
-			case 5: return Le(t), null;
+			case 5: return Ie(t), null;
 			case 31:
 				if (t.memoizedState !== null) {
 					if (Wo(t), t.alternate === null) throw Error(s(340));
@@ -4712,10 +4712,10 @@ var e = (e, t) => () => (t || (e((t = { exports: {} }).exports, t), e = null), t
 				}
 				return e = t.flags, e & 65536 ? (t.flags = e & -65537 | 128, t) : null;
 			case 19: return qo(t), e = t.flags, e & 65536 ? (t.flags = e & -65537 | 128, e = t.memoizedState, e !== null && (e.rendering = null, e.tail = null), t.flags |= 4, t) : null;
-			case 4: return Fe(), null;
+			case 4: return Pe(), null;
 			case 10: return Da(t.type), null;
 			case 22:
-			case 23: return Wo(t), Lo(), e !== null && Ae(Qa), e = t.flags, e & 65536 ? (t.flags = e & -65537 | 128, t) : null;
+			case 23: return Wo(t), Lo(), e !== null && ke(Qa), e = t.flags, e & 65536 ? (t.flags = e & -65537 | 128, t) : null;
 			case 24: return Da(N), null;
 			case 25: return null;
 			default: return null;
@@ -4724,15 +4724,15 @@ var e = (e, t) => () => (t || (e((t = { exports: {} }).exports, t), e = null), t
 	function Cl(e, t) {
 		switch (ua(t), t.tag) {
 			case 3:
-				Da(N), Fe();
+				Da(N), Pe();
 				break;
 			case 26:
 			case 27:
 			case 5:
-				Le(t);
+				Ie(t);
 				break;
 			case 4:
-				Fe();
+				Pe();
 				break;
 			case 31:
 				t.memoizedState !== null && Wo(t);
@@ -4748,7 +4748,7 @@ var e = (e, t) => () => (t || (e((t = { exports: {} }).exports, t), e = null), t
 				break;
 			case 22:
 			case 23:
-				Wo(t), Lo(), e !== null && Ae(Qa);
+				Wo(t), Lo(), e !== null && ke(Qa);
 				break;
 			case 24: Da(N);
 		}
@@ -6016,7 +6016,7 @@ var e = (e, t) => () => (t || (e((t = { exports: {} }).exports, t), e = null), t
 		}
 	}, td = typeof WeakMap == "function" ? WeakMap : Map, W = 0, G = null, K = null, q = 0, J = 0, nd = null, rd = !1, id = !1, ad = !1, od = 0, Y = 0, sd = 0, cd = 0, ld = 0, ud = 0, dd = 0, fd = null, pd = null, md = !1, hd = 0, gd = 0, _d = Infinity, vd = null, yd = null, X = 0, bd = null, xd = null, Sd = 0, Cd = 0, wd = null, Td = null, Ed = null, Dd = null, Od = null, kd = 0, Ad = null;
 	function jd() {
-		return W & 2 && q !== 0 ? q & -q : T.T === null ? Ot() : Pf();
+		return W & 2 && q !== 0 ? q & -q : E.T === null ? Ot() : Pf();
 	}
 	function Md() {
 		if (ud === 0) {
@@ -6160,19 +6160,19 @@ var e = (e, t) => () => (t || (e((t = { exports: {} }).exports, t), e = null), t
 		return n !== -1 && (e.timeoutHandle = -1, _p(n)), n = e.cancelPendingCommit, n !== null && (e.cancelPendingCommit = null, n()), Sd = 0, Bd(), G = e, K = n = Ui(e.current, null), q = t, J = 0, nd = null, rd = !1, id = gt(e, t), ad = !1, dd = ud = ld = cd = sd = Y = 0, pd = fd = null, md = !1, od = _t(e, t), Ni(), n;
 	}
 	function Hd(e, t) {
-		P = null, T.H = yc, t === no || t === io ? (t = uo(), J = 3) : t === ro ? (t = uo(), J = 4) : J = t === Lc ? 8 : typeof t == "object" && t && typeof t.then == "function" ? 6 : 1, nd = t, K === null && (Y = 1, jc(e, Zi(t, e.current)));
+		P = null, E.H = yc, t === no || t === io ? (t = uo(), J = 3) : t === ro ? (t = uo(), J = 4) : J = t === Lc ? 8 : typeof t == "object" && t && typeof t.then == "function" ? 6 : 1, nd = t, K === null && (Y = 1, jc(e, Zi(t, e.current)));
 	}
 	function Ud() {
 		var e = Ro.current;
 		return e === null ? !0 : (q & 4194048) === q ? zo === null : (q & 62914560) === q || q & 536870912 ? e === zo : !1;
 	}
 	function Wd() {
-		var e = T.H;
-		return T.H = yc, e === null ? yc : e;
+		var e = E.H;
+		return E.H = yc, e === null ? yc : e;
 	}
 	function Gd() {
-		var e = T.A;
-		return T.A = ed, e;
+		var e = E.A;
+		return E.A = ed, e;
 	}
 	function Kd() {
 		Y = 4, rd || (q & 4194048) !== q && Ro.current !== null || (id = !0), !(sd & 134217727) && !(cd & 134217727) || G === null || Rd(G, q, ud, !1);
@@ -6211,7 +6211,7 @@ var e = (e, t) => () => (t || (e((t = { exports: {} }).exports, t), e = null), t
 				Hd(e, t);
 			}
 		while (1);
-		return t && e.shellSuspendCounter++, Ta = wa = null, W = r, T.H = i, T.A = a, K === null && (G = null, q = 0, Ni()), o;
+		return t && e.shellSuspendCounter++, Ta = wa = null, W = r, E.H = i, E.A = a, K === null && (G = null, q = 0, Ni()), o;
 	}
 	function Jd() {
 		for (; K !== null;) Zd(K);
@@ -6284,7 +6284,7 @@ var e = (e, t) => () => (t || (e((t = { exports: {} }).exports, t), e = null), t
 				Hd(e, t);
 			}
 		while (1);
-		return Ta = wa = null, T.H = r, T.A = i, W = n, K === null ? (G = null, q = 0, Ni(), Y) : 0;
+		return Ta = wa = null, E.H = r, E.A = i, W = n, K === null ? (G = null, q = 0, Ni(), Y) : 0;
 	}
 	function Xd() {
 		for (; K !== null && !qe();) Zd(K);
@@ -6378,11 +6378,11 @@ var e = (e, t) => () => (t || (e((t = { exports: {} }).exports, t), e = null), t
 		if (Cd = s, s |= Mi, St(e, n, s, r, i, a), Dd = null, (n & 335544064) === n ? (Od = Ua(e), r = 10262) : (Od = null, r = 10256), (t.subtreeFlags & r) !== 0 || (t.flags & r) !== 0 ? (e.callbackNode = null, e.callbackPriority = 0, yf($e, function() {
 			return ff(), null;
 		})) : (e.callbackNode = null, e.callbackPriority = 0), Hl = !1, r = !!(t.flags & 13878), t.subtreeFlags & 13878 || r) {
-			r = T.T, T.T = null, i = E.p, E.p = 2, a = W, W |= 4;
+			r = E.T, E.T = null, i = D.p, D.p = 2, a = W, W |= 4;
 			try {
 				gu(e, t, n);
 			} finally {
-				W = a, E.p = i, T.T = r;
+				W = a, D.p = i, E.T = r;
 			}
 		}
 		X = 1, Hl ? Ed = Mp(o, e.containerInfo, Od, sf, cf, of, lf, ff, af, null, null) : (sf(), cf(), lf());
@@ -6401,9 +6401,9 @@ var e = (e, t) => () => (t || (e((t = { exports: {} }).exports, t), e = null), t
 			X = 0;
 			var e = bd, t = xd, n = Sd, r = !!(t.flags & 13878);
 			if (t.subtreeFlags & 13878 || r) {
-				r = T.T, T.T = null;
-				var i = E.p;
-				E.p = 2;
+				r = E.T, E.T = null;
+				var i = D.p;
+				D.p = 2;
 				var a = W;
 				W |= 4;
 				try {
@@ -6438,7 +6438,7 @@ var e = (e, t) => () => (t || (e((t = { exports: {} }).exports, t), e = null), t
 					}
 					gh = !!sp, cp = sp = null;
 				} finally {
-					W = a, E.p = i, T.T = r;
+					W = a, D.p = i, E.T = r;
 				}
 			}
 			e.current = t, X = 2;
@@ -6449,15 +6449,15 @@ var e = (e, t) => () => (t || (e((t = { exports: {} }).exports, t), e = null), t
 			X = 0;
 			var e = bd, t = xd, n = !!(t.flags & 8772);
 			if (t.subtreeFlags & 8772 || n) {
-				n = T.T, T.T = null;
-				var r = E.p;
-				E.p = 2;
+				n = E.T, E.T = null;
+				var r = D.p;
+				D.p = 2;
 				var i = W;
 				W |= 4;
 				try {
 					vu(e, t.alternate, t);
 				} finally {
-					W = i, E.p = r, T.T = n;
+					W = i, D.p = r, E.T = n;
 				}
 			}
 			X = 3;
@@ -6473,14 +6473,14 @@ var e = (e, t) => () => (t || (e((t = { exports: {} }).exports, t), e = null), t
 				at.onCommitFiberRoot(it, n, void 0, (n.current.flags & 128) == 128);
 			} catch {}
 			if (i !== null) {
-				n = T.T, a = E.p, E.p = 2, T.T = null;
+				n = E.T, a = D.p, D.p = 2, E.T = null;
 				try {
 					for (var o = t.onRecoverableError, s = 0; s < i.length; s++) {
 						var c = i[s];
 						o(c.value, { componentStack: c.stack });
 					}
 				} finally {
-					T.T = n, E.p = a;
+					E.T = n, D.p = a;
 				}
 			}
 			if (i = Dd, o = Od, Od = null, i !== null && (Dd = null, o === null && (o = []), e !== null)) for (c = 0; c < i.length; c++) n = (0, i[c])(o), n !== void 0 && e.finished.finally(n);
@@ -6497,9 +6497,9 @@ var e = (e, t) => () => (t || (e((t = { exports: {} }).exports, t), e = null), t
 		if (X !== 5) return !1;
 		var e = bd, t = Cd;
 		Cd = 0;
-		var n = Dt(Sd), r = T.T, i = E.p;
+		var n = Dt(Sd), r = E.T, i = D.p;
 		try {
-			E.p = 32 > n ? 32 : n, T.T = null, n = wd, wd = null;
+			D.p = 32 > n ? 32 : n, E.T = null, n = wd, wd = null;
 			var a = bd, o = Sd;
 			if (X = 0, xd = bd = null, Sd = 0, W & 6) throw Error(s(331));
 			var c = W;
@@ -6508,7 +6508,7 @@ var e = (e, t) => () => (t || (e((t = { exports: {} }).exports, t), e = null), t
 			} catch {}
 			return !0;
 		} finally {
-			E.p = i, T.T = r, uf(e, t);
+			D.p = i, E.T = r, uf(e, t);
 		}
 	}
 	function pf(e, t, n) {
@@ -8176,8 +8176,8 @@ var e = (e, t) => () => (t || (e((t = { exports: {} }).exports, t), e = null), t
 		}
 		return e.nodeType === 9 ? e : e.ownerDocument;
 	}
-	var xm = E.d;
-	E.d = {
+	var xm = D.d;
+	D.d = {
 		f: Sm,
 		r: Cm,
 		D: Em,
@@ -8339,7 +8339,7 @@ var e = (e, t) => () => (t || (e((t = { exports: {} }).exports, t), e = null), t
 		}
 	}
 	function Nm(e, t, n, r) {
-		var i = (i = Ne.current) ? bm(i) : null;
+		var i = (i = je.current) ? bm(i) : null;
 		if (!i) throw Error(s(446));
 		switch (e) {
 			case "meta":
@@ -8592,11 +8592,11 @@ var e = (e, t) => () => (t || (e((t = { exports: {} }).exports, t), e = null), t
 		}
 	}
 	var sh = {
-		$$typeof: ue,
+		$$typeof: le,
 		Provider: null,
 		Consumer: null,
-		_currentValue: Ee,
-		_currentValue2: Ee,
+		_currentValue: Te,
+		_currentValue2: Te,
 		_threadCount: 0
 	};
 	function ch(e, t, n, r, i, a, o, s, c) {
@@ -8640,23 +8640,23 @@ var e = (e, t) => () => (t || (e((t = { exports: {} }).exports, t), e = null), t
 	}
 	var gh = !0;
 	function _h(e, t, n, r) {
-		var i = T.T;
-		T.T = null;
-		var a = E.p;
+		var i = E.T;
+		E.T = null;
+		var a = D.p;
 		try {
-			E.p = 2, yh(e, t, n, r);
+			D.p = 2, yh(e, t, n, r);
 		} finally {
-			E.p = a, T.T = i;
+			D.p = a, E.T = i;
 		}
 	}
 	function vh(e, t, n, r) {
-		var i = T.T;
-		T.T = null;
-		var a = E.p;
+		var i = E.T;
+		E.T = null;
+		var a = D.p;
 		try {
-			E.p = 8, yh(e, t, n, r);
+			D.p = 8, yh(e, t, n, r);
 		} finally {
-			E.p = a, T.T = i;
+			D.p = a, E.T = i;
 		}
 	}
 	function yh(e, t, n, r) {
@@ -9001,7 +9001,7 @@ var e = (e, t) => () => (t || (e((t = { exports: {} }).exports, t), e = null), t
 	};
 	var Kh = r.version;
 	if (Kh !== "19.3.0") throw Error(s(527, Kh, "19.3.0"));
-	E.findDOMNode = function(e) {
+	D.findDOMNode = function(e) {
 		var t = e._reactInternals;
 		if (t === void 0) throw typeof e.render == "function" ? Error(s(188)) : (e = Object.keys(e).join(","), Error(s(268, e)));
 		return e = p(t), e = e === null ? null : m(e), e = e === null ? null : e.stateNode, e;
@@ -9010,7 +9010,7 @@ var e = (e, t) => () => (t || (e((t = { exports: {} }).exports, t), e = null), t
 		bundleType: 0,
 		version: "19.3.0",
 		rendererPackageName: "react-dom",
-		currentDispatcherRef: T,
+		currentDispatcherRef: E,
 		reconcilerVersion: "19.3.0"
 	};
 	if (typeof __REACT_DEVTOOLS_GLOBAL_HOOK__ < "u") {
@@ -9033,23 +9033,23 @@ var e = (e, t) => () => (t || (e((t = { exports: {} }).exports, t), e = null), t
 		}
 	}
 	n(), t.exports = s();
-})), l = i(), u = c(), d = "0.5.0", f = "v2_status_card", p = "app_shell", m = "demo_panel", h = "workflow_panel", g = "core_business_page", _ = "summary_page", v = "methodology_page", y = "evaluation_page", b = "settings_page", ee = /* @__PURE__ */ new Set([
+})), l = i(), u = c(), d = "0.5.0", f = "app_shell", p = "demo_panel", m = "workflow_panel", h = "core_business_page", g = "summary_page", _ = "methodology_page", v = "evaluation_page", y = "settings_page", b = /* @__PURE__ */ new Set([
 	"system",
 	"light",
 	"dark"
-]), te = /* @__PURE__ */ new Set([
+]), ee = /* @__PURE__ */ new Set([
 	"neutral",
 	"info",
 	"success",
 	"warning",
 	"danger"
-]), ne = /* @__PURE__ */ new Set([
+]), te = /* @__PURE__ */ new Set([
 	"upcoming",
 	"current",
 	"complete",
 	"warning",
 	"error"
-]), re = /* @__PURE__ */ new Set([
+]), ne = /* @__PURE__ */ new Set([
 	"empty",
 	"ready",
 	"processing",
@@ -9057,18 +9057,18 @@ var e = (e, t) => () => (t || (e((t = { exports: {} }).exports, t), e = null), t
 	"warning",
 	"error",
 	"disabled"
-]), x = /* @__PURE__ */ new Set([
+]), re = /* @__PURE__ */ new Set([
 	"empty",
 	"loading",
 	"success",
 	"partial",
 	"error"
-]), ie = /* @__PURE__ */ new Set([
+]), x = /* @__PURE__ */ new Set([
 	"declared",
 	"observed",
 	"calculated",
 	"other"
-]), S = /* @__PURE__ */ new Set([
+]), ie = /* @__PURE__ */ new Set([
 	"api_key",
 	"apikey",
 	"authorization",
@@ -9079,17 +9079,17 @@ var e = (e, t) => () => (t || (e((t = { exports: {} }).exports, t), e = null), t
 	"secret",
 	"token"
 ]);
-function C(e) {
+function S(e) {
 	return typeof e == "object" && !!e && !Array.isArray(e);
 }
 function ae(e) {
 	return e.toLowerCase().replace(/[^a-z0-9]+/g, "_").replace(/^_+|_+$/g, "");
 }
-function oe(e) {
-	if (Array.isArray(e)) e.forEach(oe);
-	else if (C(e)) for (let [t, n] of Object.entries(e)) {
-		if (S.has(ae(t))) throw Error("Payload contains a prohibited field.");
-		oe(n);
+function C(e) {
+	if (Array.isArray(e)) e.forEach(C);
+	else if (S(e)) for (let [t, n] of Object.entries(e)) {
+		if (ie.has(ae(t))) throw Error("Payload contains a prohibited field.");
+		C(n);
 	}
 }
 function w(e, t, n, r = !1) {
@@ -9099,15 +9099,15 @@ function w(e, t, n, r = !1) {
 	if (!i || i.length > n) throw Error(`${t} is invalid.`);
 	return i;
 }
-function se(e) {
+function T(e) {
 	if (e.schema_version !== "1.0") throw Error("Unsupported schema version.");
 	if (e.component_version !== "0.5.0") throw Error("Unsupported component version.");
-	if (typeof e.theme != "string" || !ee.has(e.theme)) throw Error("Invalid theme.");
+	if (typeof e.theme != "string" || !b.has(e.theme)) throw Error("Invalid theme.");
 	return { theme: e.theme };
 }
-function ce(e) {
-	if (!C(e)) throw Error("Invalid case context.");
-	if (typeof e.status_tone != "string" || !te.has(e.status_tone)) throw Error("Invalid case status tone.");
+function oe(e) {
+	if (!S(e)) throw Error("Invalid case context.");
+	if (typeof e.status_tone != "string" || !ee.has(e.status_tone)) throw Error("Invalid case status tone.");
 	return {
 		case_id: w(e.case_id, "case_id", 80, !0),
 		source: w(e.source, "source", 60, !0),
@@ -9116,39 +9116,18 @@ function ce(e) {
 		summary: w(e.summary, "summary", 180)
 	};
 }
-function le(e) {
-	if (oe(e), !C(e)) throw Error("View model must be an object.");
-	let t = se(e);
-	if (e.component !== "v2_status_card") throw Error("Unexpected component kind.");
-	if (typeof e.status != "string" || !te.has(e.status)) throw Error("Invalid status.");
-	if (!Array.isArray(e.details) || e.details.length > 6) throw Error("Invalid details.");
-	if (typeof e.loading != "boolean") throw Error("Invalid loading state.");
-	return {
-		schema_version: "1.0",
-		component_version: d,
-		component: f,
-		theme: t.theme,
-		status: e.status,
-		title: w(e.title, "title", 120),
-		message: w(e.message, "message", 500),
-		details: e.details.map((e, t) => w(e, `details[${t}]`, 180)),
-		action_label: w(e.action_label, "action_label", 60, !0),
-		loading: e.loading,
-		error: w(e.error, "error", 300, !0)
-	};
-}
-function ue(e) {
-	if (oe(e), !C(e)) throw Error("App Shell view model must be an object.");
-	let t = se(e);
+function se(e) {
+	if (C(e), !S(e)) throw Error("App Shell view model must be an object.");
+	let t = T(e);
 	if (e.component !== "app_shell") throw Error("Unexpected component kind.");
 	if (!Array.isArray(e.navigation) || e.navigation.length !== 8) throw Error("Invalid navigation.");
 	if (!Array.isArray(e.workflow) || e.workflow.length !== 4) throw Error("Invalid workflow.");
 	if (!Array.isArray(e.process_cards) || e.process_cards.length !== 4) throw Error("Invalid process cards.");
-	if (typeof e.page_state != "string" || !re.has(e.page_state)) throw Error("Invalid page state.");
+	if (typeof e.page_state != "string" || !ne.has(e.page_state)) throw Error("Invalid page state.");
 	if (typeof e.overview != "boolean") throw Error("Invalid overview flag.");
 	if (typeof e.logo_data_uri != "string" || !e.logo_data_uri.startsWith("data:image/png;base64,")) throw Error("Invalid logo.");
 	let n = e.navigation.map((e) => {
-		if (!C(e)) throw Error("Invalid navigation item.");
+		if (!S(e)) throw Error("Invalid navigation item.");
 		let t = w(e.group, "navigation.group", 20);
 		if (![
 			"Hồ sơ",
@@ -9165,8 +9144,8 @@ function ue(e) {
 	}), r = w(e.active_page, "active_page", 100);
 	if (!n.some((e) => e.page === r)) throw Error("Active page is not in navigation.");
 	let i = e.workflow.map((e) => {
-		if (!C(e)) throw Error("Invalid workflow step.");
-		if (typeof e.state != "string" || !ne.has(e.state)) throw Error("Invalid workflow state.");
+		if (!S(e)) throw Error("Invalid workflow step.");
+		if (typeof e.state != "string" || !te.has(e.state)) throw Error("Invalid workflow state.");
 		return {
 			key: w(e.key, "workflow.key", 40),
 			label: w(e.label, "workflow.label", 80),
@@ -9175,8 +9154,8 @@ function ue(e) {
 			status_label: w(e.status_label, "workflow.status_label", 60)
 		};
 	}), a = e.process_cards.map((e) => {
-		if (!C(e)) throw Error("Invalid process card.");
-		if (typeof e.state != "string" || !ne.has(e.state)) throw Error("Invalid process-card state.");
+		if (!S(e)) throw Error("Invalid process card.");
+		if (typeof e.state != "string" || !te.has(e.state)) throw Error("Invalid process-card state.");
 		return {
 			key: w(e.key, "process_card.key", 40),
 			label: w(e.label, "process_card.label", 80),
@@ -9187,27 +9166,27 @@ function ue(e) {
 	return {
 		schema_version: "1.0",
 		component_version: d,
-		component: p,
+		component: f,
 		theme: t.theme,
 		active_page: r,
 		navigation: n,
 		workflow: i,
 		process_cards: a,
-		case_context: ce(e.case_context),
+		case_context: oe(e.case_context),
 		logo_data_uri: e.logo_data_uri,
 		overview: e.overview,
 		page_state: e.page_state,
 		state_message: w(e.state_message, "state_message", 300)
 	};
 }
-function de(e) {
-	if (oe(e), !C(e)) throw Error("Demo Panel view model must be an object.");
-	let t = se(e);
+function ce(e) {
+	if (C(e), !S(e)) throw Error("Demo Panel view model must be an object.");
+	let t = T(e);
 	if (e.component !== "demo_panel") throw Error("Unexpected component kind.");
 	if (!Array.isArray(e.cases) || e.cases.length !== 10) throw Error("Invalid demo cases.");
 	if (typeof e.loading != "boolean") throw Error("Invalid loading state.");
 	let n = e.cases.map((e) => {
-		if (!C(e)) throw Error("Invalid demo case.");
+		if (!S(e)) throw Error("Invalid demo case.");
 		return {
 			case_name: w(e.case_name, "case_name", 120),
 			case_code: w(e.case_code, "case_code", 20),
@@ -9219,20 +9198,20 @@ function de(e) {
 	return {
 		schema_version: "1.0",
 		component_version: d,
-		component: m,
+		component: p,
 		theme: t.theme,
 		cases: n,
 		selected_case: r,
-		case_context: ce(e.case_context),
+		case_context: oe(e.case_context),
 		loading: e.loading,
 		error: w(e.error, "demo_error", 300, !0)
 	};
 }
-function fe(e) {
+function le(e) {
 	if (!Array.isArray(e) || e.length !== 4) throw Error("Invalid workflow.");
 	return e.map((e) => {
-		if (!C(e)) throw Error("Invalid workflow step.");
-		if (typeof e.state != "string" || !ne.has(e.state)) throw Error("Invalid workflow state.");
+		if (!S(e)) throw Error("Invalid workflow step.");
+		if (typeof e.state != "string" || !te.has(e.state)) throw Error("Invalid workflow state.");
 		return {
 			key: w(e.key, "workflow.key", 40),
 			label: w(e.label, "workflow.label", 80),
@@ -9242,11 +9221,11 @@ function fe(e) {
 		};
 	});
 }
-function pe(e) {
+function ue(e) {
 	if (!Array.isArray(e) || e.length !== 4) throw Error("Invalid process cards.");
 	return e.map((e) => {
-		if (!C(e)) throw Error("Invalid process card.");
-		if (typeof e.state != "string" || !ne.has(e.state)) throw Error("Invalid process-card state.");
+		if (!S(e)) throw Error("Invalid process card.");
+		if (typeof e.state != "string" || !te.has(e.state)) throw Error("Invalid process-card state.");
 		return {
 			key: w(e.key, "process_card.key", 40),
 			label: w(e.label, "process_card.label", 80),
@@ -9255,65 +9234,65 @@ function pe(e) {
 		};
 	});
 }
-function me(e) {
-	if (oe(e), !C(e)) throw Error("Workflow Panel view model must be an object.");
-	let t = se(e);
+function de(e) {
+	if (C(e), !S(e)) throw Error("Workflow Panel view model must be an object.");
+	let t = T(e);
 	if (e.component !== "workflow_panel") throw Error("Unexpected component kind.");
 	return {
 		schema_version: "1.0",
 		component_version: d,
-		component: h,
+		component: m,
 		theme: t.theme,
-		workflow: fe(e.workflow),
-		process_cards: pe(e.process_cards)
+		workflow: le(e.workflow),
+		process_cards: ue(e.process_cards)
 	};
 }
-function he(e, t) {
-	if (typeof e != "string" || !te.has(e)) throw Error(`${t} is invalid.`);
+function fe(e, t) {
+	if (typeof e != "string" || !ee.has(e)) throw Error(`${t} is invalid.`);
 	return e;
 }
-function ge(e, t) {
+function pe(e, t) {
 	if (e === null || typeof e == "string" || typeof e == "boolean" || typeof e == "number" && Number.isFinite(e)) return e;
 	throw Error(`${t} must be a finite JSON scalar.`);
 }
-function _e(e, t) {
+function me(e, t) {
 	if (e === null) return null;
 	if (!Number.isInteger(e) || Number(e) < 1) throw Error(`${t} is invalid.`);
 	return Number(e);
 }
-function ve(e) {
-	if (!C(e)) throw Error("Invalid evidence reference.");
+function he(e) {
+	if (!S(e)) throw Error("Invalid evidence reference.");
 	return {
 		document: w(e.document, "evidence.document", 180),
 		field: w(e.field, "evidence.field", 120),
 		value: w(e.value, "evidence.value", 300),
-		page: _e(e.page, "evidence.page"),
+		page: me(e.page, "evidence.page"),
 		excerpt: w(e.excerpt, "evidence.excerpt", 1e3, !0)
 	};
 }
-function ye(e) {
-	if (!C(e) || e.source_role !== "calculated") throw Error("Invalid metric.");
+function ge(e) {
+	if (!S(e) || e.source_role !== "calculated") throw Error("Invalid metric.");
 	return {
 		key: w(e.key, "metric.key", 80),
 		label: w(e.label, "metric.label", 140),
 		value_display: w(e.value_display, "metric.value_display", 120),
-		raw_value: ge(e.raw_value, "metric.raw_value"),
+		raw_value: pe(e.raw_value, "metric.raw_value"),
 		reference: w(e.reference, "metric.reference", 220),
 		status: w(e.status, "metric.status", 100),
-		status_tone: he(e.status_tone, "metric.status_tone"),
+		status_tone: fe(e.status_tone, "metric.status_tone"),
 		formula: w(e.formula, "metric.formula", 300),
 		note: w(e.note, "metric.note", 400),
 		source_role: "calculated"
 	};
 }
-function be(e) {
-	if (!C(e) || ![
+function _e(e) {
+	if (!S(e) || ![
 		"HIGH",
 		"MEDIUM",
 		"LOW",
 		"INFO"
 	].includes(String(e.severity))) throw Error("Invalid risk item.");
-	let t = he(e.severity_tone, "risk.severity_tone");
+	let t = fe(e.severity_tone, "risk.severity_tone");
 	if (t === "success") throw Error("Invalid risk severity tone.");
 	if (!Array.isArray(e.evidence)) throw Error("Invalid risk evidence.");
 	return {
@@ -9324,47 +9303,47 @@ function be(e) {
 		severity_tone: t,
 		description: w(e.description, "risk.description", 1e3),
 		difference: w(e.difference, "risk.difference", 120, !0),
-		evidence: e.evidence.map(ve)
+		evidence: e.evidence.map(he)
 	};
 }
-function xe(e, t) {
+function ve(e, t) {
 	if (!Array.isArray(e)) throw Error(`${t} must be an array.`);
 	return e.map((e) => {
-		if (!C(e)) throw Error(`Invalid ${t} item.`);
+		if (!S(e)) throw Error(`Invalid ${t} item.`);
 		return {
 			label: w(e.label, `${t}.label`, 160),
 			value: w(e.value, `${t}.value`, 500)
 		};
 	});
 }
-function Se(e, t) {
+function ye(e, t) {
 	if (!Number.isInteger(e) || Number(e) < 0) throw Error(`${t} is invalid.`);
 	return Number(e);
 }
-function Ce(e, t) {
-	if (!C(e)) throw Error(`Invalid ${t}.`);
+function be(e, t) {
+	if (!S(e)) throw Error(`Invalid ${t}.`);
 	return {
 		name: w(e.name, `${t}.name`, 180),
-		tp: Se(e.tp, `${t}.tp`),
-		fp: Se(e.fp, `${t}.fp`),
-		fn: Se(e.fn, `${t}.fn`),
-		tn: e.tn === null ? null : Se(e.tn, `${t}.tn`),
+		tp: ye(e.tp, `${t}.tp`),
+		fp: ye(e.fp, `${t}.fp`),
+		fn: ye(e.fn, `${t}.fn`),
+		tn: e.tn === null ? null : ye(e.tn, `${t}.tn`),
 		precision: w(e.precision, `${t}.precision`, 40),
 		recall: w(e.recall, `${t}.recall`, 40),
 		f1: w(e.f1, `${t}.f1`, 40),
 		detail: w(e.detail, `${t}.detail`, 300, !0)
 	};
 }
-function we(e) {
-	if (oe(e), !C(e)) throw Error("Core page view model must be an object.");
-	let t = se(e);
+function xe(e) {
+	if (C(e), !S(e)) throw Error("Core page view model must be an object.");
+	let t = T(e);
 	if (e.component !== "core_business_page") throw Error("Unexpected component kind.");
 	if (![
 		"extraction",
 		"analysis",
 		"risk"
 	].includes(String(e.page))) throw Error("Invalid core page.");
-	if (typeof e.state != "string" || !x.has(e.state)) throw Error("Invalid core page state.");
+	if (typeof e.state != "string" || !re.has(e.state)) throw Error("Invalid core page state.");
 	if (!Array.isArray(e.documents) || e.documents.length > 20) throw Error("Invalid documents.");
 	if (!Array.isArray(e.fields) || e.fields.length > 100) throw Error("Invalid fields.");
 	if (!Array.isArray(e.comparisons) || e.comparisons.length > 8) throw Error("Invalid comparisons.");
@@ -9372,7 +9351,7 @@ function we(e) {
 	if (!Array.isArray(e.thresholds) || e.thresholds.length > 12) throw Error("Invalid thresholds.");
 	if (!Array.isArray(e.risks) || e.risks.length > 100) throw Error("Invalid risks.");
 	let n = e.documents.map((e) => {
-		if (!C(e)) throw Error("Invalid document item.");
+		if (!S(e)) throw Error("Invalid document item.");
 		if (!Number.isInteger(e.pages) || Number(e.pages) < 0) throw Error("Invalid document pages.");
 		if (typeof e.confidence != "number" || !Number.isFinite(e.confidence) || e.confidence < 0 || e.confidence > 1) throw Error("Invalid document confidence.");
 		if (typeof e.type_mismatch != "boolean") throw Error("Invalid type mismatch flag.");
@@ -9385,32 +9364,32 @@ function we(e) {
 			confidence: e.confidence,
 			confidence_display: w(e.confidence_display, "document.confidence_display", 40),
 			confidence_label: w(e.confidence_label, "document.confidence_label", 80),
-			confidence_tone: he(e.confidence_tone, "document.confidence_tone"),
+			confidence_tone: fe(e.confidence_tone, "document.confidence_tone"),
 			type_mismatch: e.type_mismatch
 		};
 	}), r = e.fields.map((e) => {
-		if (!C(e)) throw Error("Invalid extracted field.");
-		if (typeof e.source_role != "string" || !ie.has(e.source_role)) throw Error("Invalid source role.");
+		if (!S(e)) throw Error("Invalid extracted field.");
+		if (typeof e.source_role != "string" || !x.has(e.source_role)) throw Error("Invalid source role.");
 		if (typeof e.confidence != "number" || !Number.isFinite(e.confidence) || e.confidence < 0 || e.confidence > 1) throw Error("Invalid field confidence.");
 		return {
 			key: w(e.key, "field.key", 80),
 			label: w(e.label, "field.label", 160),
 			value_display: w(e.value_display, "field.value_display", 300),
-			raw_value: ge(e.raw_value, "field.raw_value"),
+			raw_value: pe(e.raw_value, "field.raw_value"),
 			source: w(e.source, "field.source", 180),
 			source_role: e.source_role,
-			page: _e(e.page, "field.page"),
+			page: me(e.page, "field.page"),
 			confidence: e.confidence,
 			confidence_display: w(e.confidence_display, "field.confidence_display", 40),
 			confidence_label: w(e.confidence_label, "field.confidence_label", 80),
-			confidence_tone: he(e.confidence_tone, "field.confidence_tone"),
+			confidence_tone: fe(e.confidence_tone, "field.confidence_tone"),
 			status: w(e.status, "field.status", 100),
-			evidence: e.evidence === null ? null : ve(e.evidence)
+			evidence: e.evidence === null ? null : he(e.evidence)
 		};
 	}), i = e.comparisons.map((e) => {
-		if (!C(e) || !Array.isArray(e.values) || e.values.length < 2 || e.values.length > 6) throw Error("Invalid comparison.");
+		if (!S(e) || !Array.isArray(e.values) || e.values.length < 2 || e.values.length > 6) throw Error("Invalid comparison.");
 		let t = e.values.map((e) => {
-			if (!C(e) || ![
+			if (!S(e) || ![
 				"declared",
 				"observed",
 				"calculated"
@@ -9427,10 +9406,10 @@ function we(e) {
 			values: t,
 			difference_display: w(e.difference_display, "comparison.difference_display", 100),
 			status: w(e.status, "comparison.status", 100),
-			status_tone: he(e.status_tone, "comparison.status_tone")
+			status_tone: fe(e.status_tone, "comparison.status_tone")
 		};
-	}), a = e.metrics.map(ye), o = e.thresholds.map((e) => {
-		if (!C(e) || !["above", "below"].includes(String(e.relation))) throw Error("Invalid threshold.");
+	}), a = e.metrics.map(ge), o = e.thresholds.map((e) => {
+		if (!S(e) || !["above", "below"].includes(String(e.relation))) throw Error("Invalid threshold.");
 		if (typeof e.value != "number" || !Number.isFinite(e.value)) throw Error("Invalid threshold value.");
 		return {
 			key: w(e.key, "threshold.key", 80),
@@ -9439,11 +9418,11 @@ function we(e) {
 			value_display: w(e.value_display, "threshold.value_display", 80),
 			relation: e.relation
 		};
-	}), s = e.risks.map(be);
+	}), s = e.risks.map(_e);
 	return {
 		schema_version: "1.0",
 		component_version: d,
-		component: g,
+		component: h,
 		theme: t.theme,
 		page: e.page,
 		title: w(e.title, "core_page.title", 160),
@@ -9459,9 +9438,9 @@ function we(e) {
 		case_status: w(e.case_status, "core_page.case_status", 120, !0)
 	};
 }
-function Te(e) {
-	if (oe(e), !C(e)) throw Error("Summary page view model must be an object.");
-	let t = se(e);
+function Se(e) {
+	if (C(e), !S(e)) throw Error("Summary page view model must be an object.");
+	let t = T(e);
 	if (e.component !== "summary_page") throw Error("Unexpected component kind.");
 	if (![
 		"empty",
@@ -9473,10 +9452,10 @@ function Te(e) {
 	if (!Array.isArray(e.top_risks) || e.top_risks.length > 10) throw Error("Invalid top risks.");
 	if (!Array.isArray(e.findings) || e.findings.length > 60) throw Error("Invalid findings.");
 	if (!Array.isArray(e.evidence) || e.evidence.length > 300) throw Error("Invalid summary evidence.");
-	let n = he(e.highest_alert_tone, "summary.highest_alert_tone");
+	let n = fe(e.highest_alert_tone, "summary.highest_alert_tone");
 	if (n === "success") throw Error("Invalid highest alert tone.");
 	let r = e.findings.map((e) => {
-		if (!C(e) || ![
+		if (!S(e) || ![
 			"finding",
 			"missing",
 			"verification"
@@ -9485,13 +9464,13 @@ function Te(e) {
 			category: e.category,
 			title: w(e.title, "finding.title", 160),
 			detail: w(e.detail, "finding.detail", 1e3),
-			tone: he(e.tone, "finding.tone")
+			tone: fe(e.tone, "finding.tone")
 		};
 	});
 	return {
 		schema_version: "1.0",
 		component_version: d,
-		component: _,
+		component: g,
 		theme: t.theme,
 		state: e.state,
 		state_message: w(e.state_message, "summary.state_message", 300),
@@ -9502,36 +9481,36 @@ function Te(e) {
 		loan_term: w(e.loan_term, "summary.loan_term", 120),
 		loan_purpose: w(e.loan_purpose, "summary.loan_purpose", 300),
 		review_status: w(e.review_status, "summary.review_status", 120),
-		review_status_tone: he(e.review_status_tone, "summary.review_status_tone"),
+		review_status_tone: fe(e.review_status_tone, "summary.review_status_tone"),
 		highest_alert: w(e.highest_alert, "summary.highest_alert", 100),
 		highest_alert_tone: n,
-		metrics: e.metrics.map(ye),
-		top_risks: e.top_risks.map(be),
-		total_risk_count: Se(e.total_risk_count, "summary.total_risk_count"),
+		metrics: e.metrics.map(ge),
+		top_risks: e.top_risks.map(_e),
+		total_risk_count: ye(e.total_risk_count, "summary.total_risk_count"),
 		findings: r,
-		evidence: e.evidence.map(ve),
-		document_count: Se(e.document_count, "summary.document_count"),
-		extracted_field_count: Se(e.extracted_field_count, "summary.extracted_field_count"),
+		evidence: e.evidence.map(he),
+		document_count: ye(e.document_count, "summary.document_count"),
+		extracted_field_count: ye(e.extracted_field_count, "summary.extracted_field_count"),
 		ai_explanation: w(e.ai_explanation, "summary.ai_explanation", 2e4, !0)
 	};
 }
-function T(e) {
-	if (oe(e), !C(e)) throw Error("Methodology view model must be an object.");
-	let t = se(e);
+function Ce(e) {
+	if (C(e), !S(e)) throw Error("Methodology view model must be an object.");
+	let t = T(e);
 	if (e.component !== "methodology_page") throw Error("Unexpected component kind.");
 	if (!Array.isArray(e.layers) || e.layers.length !== 3) throw Error("Invalid methodology layers.");
 	if (!Array.isArray(e.formulas) || e.formulas.length !== 6) throw Error("Invalid formula cards.");
 	if (!Array.isArray(e.capabilities) || e.capabilities.length !== 5) throw Error("Invalid capability rows.");
 	if (!Array.isArray(e.limitations) || e.limitations.length < 1 || e.limitations.length > 8) throw Error("Invalid limitation groups.");
 	let n = e.layers.map((e) => {
-		if (!C(e)) throw Error("Invalid methodology layer.");
+		if (!S(e)) throw Error("Invalid methodology layer.");
 		return {
 			key: w(e.key, "methodology.layer.key", 40),
 			label: w(e.label, "methodology.layer.label", 120),
 			description: w(e.description, "methodology.layer.description", 1e3)
 		};
 	}), r = e.formulas.map((e) => {
-		if (!C(e)) throw Error("Invalid formula card.");
+		if (!S(e)) throw Error("Invalid formula card.");
 		return {
 			key: w(e.key, "formula.key", 60),
 			name: w(e.name, "formula.name", 140),
@@ -9540,14 +9519,14 @@ function T(e) {
 			limitation: w(e.limitation, "formula.limitation", 800)
 		};
 	}), i = e.capabilities.map((e) => {
-		if (!C(e)) throw Error("Invalid capability row.");
+		if (!S(e)) throw Error("Invalid capability row.");
 		return {
 			document_type: w(e.document_type, "capability.document_type", 120),
 			support_level: w(e.support_level, "capability.support_level", 80),
 			limitation: w(e.limitation, "capability.limitation", 500)
 		};
 	}), a = e.limitations.map((e) => {
-		if (!C(e) || !Array.isArray(e.items) || e.items.length < 1 || e.items.length > 12) throw Error("Invalid limitation group.");
+		if (!S(e) || !Array.isArray(e.items) || e.items.length < 1 || e.items.length > 12) throw Error("Invalid limitation group.");
 		return {
 			title: w(e.title, "limitation.title", 140),
 			items: e.items.map((e) => w(e, "limitation.item", 800))
@@ -9556,7 +9535,7 @@ function T(e) {
 	return {
 		schema_version: "1.0",
 		component_version: d,
-		component: v,
+		component: _,
 		theme: t.theme,
 		layers: n,
 		formulas: r,
@@ -9566,9 +9545,9 @@ function T(e) {
 		evaluation_definition: w(e.evaluation_definition, "evaluation_definition", 800)
 	};
 }
-function E(e) {
-	if (oe(e), !C(e)) throw Error("Evaluation view model must be an object.");
-	let t = se(e);
+function we(e) {
+	if (C(e), !S(e)) throw Error("Evaluation view model must be an object.");
+	let t = T(e);
 	if (e.component !== "evaluation_page") throw Error("Unexpected component kind.");
 	if (![
 		"idle",
@@ -9581,22 +9560,22 @@ function E(e) {
 	let n = e.confusion_labels.map((e) => w(e, "confusion.label", 120));
 	if (!Array.isArray(e.confusion_rows)) throw Error("Invalid confusion rows.");
 	let r = e.confusion_rows.map((e) => {
-		if (!C(e) || !Array.isArray(e.predicted) || e.predicted.length !== n.length) throw Error("Invalid confusion row.");
+		if (!S(e) || !Array.isArray(e.predicted) || e.predicted.length !== n.length) throw Error("Invalid confusion row.");
 		return {
 			actual: w(e.actual, "confusion.actual", 120),
-			predicted: e.predicted.map((e) => Se(e, "confusion.value"))
+			predicted: e.predicted.map((e) => ye(e, "confusion.value"))
 		};
 	}), i = e.scorecards.map((e) => {
-		if (!C(e)) throw Error("Invalid scorecard.");
+		if (!S(e)) throw Error("Invalid scorecard.");
 		return {
 			key: w(e.key, "scorecard.key", 80),
 			label: w(e.label, "scorecard.label", 160),
-			raw_value: ge(e.raw_value, "scorecard.raw_value"),
+			raw_value: pe(e.raw_value, "scorecard.raw_value"),
 			value_display: w(e.value_display, "scorecard.value_display", 80)
 		};
 	}), a = e.field_metrics.map((e) => {
-		if (!C(e)) throw Error("Invalid field metric.");
-		let t = Se(e.correct, "field_metric.correct"), n = Se(e.total, "field_metric.total");
+		if (!S(e)) throw Error("Invalid field metric.");
+		let t = ye(e.correct, "field_metric.correct"), n = ye(e.total, "field_metric.total");
 		if (t > n) throw Error("Invalid field metric counts.");
 		return {
 			name: w(e.name, "field_metric.name", 180),
@@ -9608,7 +9587,7 @@ function E(e) {
 	});
 	if (!Array.isArray(e.grounding) || !Array.isArray(e.baselines)) throw Error("Invalid evaluation comparisons.");
 	let o = e.grounding.map((e) => {
-		if (!C(e)) throw Error("Invalid grounding row.");
+		if (!S(e)) throw Error("Invalid grounding row.");
 		return {
 			variant: w(e.variant, "grounding.variant", 160),
 			evidence_coverage: w(e.evidence_coverage, "grounding.coverage", 40),
@@ -9616,16 +9595,16 @@ function E(e) {
 			factual_consistency: w(e.factual_consistency, "grounding.consistency", 40)
 		};
 	}), s = e.baselines.map((e) => {
-		if (!C(e)) throw Error("Invalid baseline row.");
+		if (!S(e)) throw Error("Invalid baseline row.");
 		return {
 			baseline: w(e.baseline, "baseline.name", 220),
 			variant: w(e.variant, "baseline.variant", 180),
-			values: xe(e.values, "baseline.values")
+			values: ve(e.values, "baseline.values")
 		};
 	});
 	if (!Array.isArray(e.failure_cases) || e.failure_cases.length > 100) throw Error("Invalid failure cases.");
 	let c = e.failure_cases.map((e) => {
-		if (!C(e)) throw Error("Invalid failure case.");
+		if (!S(e)) throw Error("Invalid failure case.");
 		return {
 			case_id: w(e.case_id, "failure.case_id", 80),
 			scenario: w(e.scenario, "failure.scenario", 800),
@@ -9642,30 +9621,30 @@ function E(e) {
 	return {
 		schema_version: "1.0",
 		component_version: d,
-		component: y,
+		component: v,
 		theme: t.theme,
 		state: e.state,
 		state_message: w(e.state_message, "evaluation.state_message", 500),
 		run_id: w(e.run_id, "evaluation.run_id", 120, !0),
-		metadata: xe(e.metadata, "evaluation.metadata"),
-		dataset: xe(e.dataset, "evaluation.dataset"),
+		metadata: ve(e.metadata, "evaluation.metadata"),
+		dataset: ve(e.dataset, "evaluation.dataset"),
 		scorecards: i,
 		field_metrics: a,
-		risk_metrics: e.risk_metrics.map((e) => Ce(e, "risk_metric")),
-		status_metrics: e.status_metrics.map((e) => Ce(e, "status_metric")),
+		risk_metrics: e.risk_metrics.map((e) => be(e, "risk_metric")),
+		status_metrics: e.status_metrics.map((e) => be(e, "status_metric")),
 		confusion_labels: n,
 		confusion_rows: r,
 		grounding: o,
 		baselines: s,
-		processing: xe(e.processing, "evaluation.processing"),
+		processing: ve(e.processing, "evaluation.processing"),
 		failure_cases: c,
 		limitations: e.limitations.map((e) => w(e, "evaluation.limitation", 1e3)),
 		llm_api_calls: e.llm_api_calls === null ? null : Number(e.llm_api_calls)
 	};
 }
-function Ee(e) {
-	if (oe(e), !C(e)) throw Error("Settings view model must be an object.");
-	let t = se(e);
+function E(e) {
+	if (C(e), !S(e)) throw Error("Settings view model must be an object.");
+	let t = T(e);
 	if (e.component !== "settings_page") throw Error("Unexpected component kind.");
 	if (![
 		"connected",
@@ -9681,7 +9660,7 @@ function Ee(e) {
 	].includes(String(e.chat_state))) throw Error("Invalid chat state.");
 	if (typeof e.has_result != "boolean" || typeof e.evaluation_ready != "boolean") throw Error("Invalid session state.");
 	let n = e.providers.map((e) => {
-		if (!C(e)) throw Error("Invalid provider status.");
+		if (!S(e)) throw Error("Invalid provider status.");
 		if (typeof e.connected != "boolean" || typeof e.active != "boolean") throw Error("Invalid provider flags.");
 		return {
 			provider: w(e.provider, "settings.provider", 40),
@@ -9690,14 +9669,14 @@ function Ee(e) {
 			connected: e.connected,
 			active: e.active,
 			model: w(e.model, "settings.provider.model", 160, !0),
-			model_count: Se(e.model_count, "settings.provider.model_count"),
+			model_count: ye(e.model_count, "settings.provider.model_count"),
 			status_label: w(e.status_label, "settings.provider.status_label", 80),
-			status_tone: he(e.status_tone, "settings.provider.status_tone")
+			status_tone: fe(e.status_tone, "settings.provider.status_tone")
 		};
 	}), r = n.filter((e) => e.active);
 	if (r.length > 1 || r.some((e) => !e.connected)) throw Error("Invalid active provider state.");
 	let i = e.thresholds.map((e) => {
-		if (!C(e) || typeof e.value != "number" || !Number.isFinite(e.value)) throw Error("Invalid session threshold.");
+		if (!S(e) || typeof e.value != "number" || !Number.isFinite(e.value)) throw Error("Invalid session threshold.");
 		return {
 			key: w(e.key, "settings.threshold.key", 80),
 			label: w(e.label, "settings.threshold.label", 160),
@@ -9708,7 +9687,7 @@ function Ee(e) {
 	return {
 		schema_version: "1.0",
 		component_version: d,
-		component: b,
+		component: y,
 		theme: t.theme,
 		connection_state: e.connection_state,
 		connection_status_label: w(e.connection_status_label, "settings.connection_status_label", 80),
@@ -9717,79 +9696,68 @@ function Ee(e) {
 		providers: n,
 		thresholds: i,
 		chat_state: e.chat_state,
-		chat_message_count: Se(e.chat_message_count, "settings.chat_message_count"),
+		chat_message_count: ye(e.chat_message_count, "settings.chat_message_count"),
 		current_case: w(e.current_case, "settings.current_case", 80, !0),
 		has_result: e.has_result,
 		evaluation_ready: e.evaluation_ready,
 		error_message: w(e.error_message, "settings.error_message", 300, !0)
 	};
 }
-function De(e) {
-	if (!C(e)) throw Error("View model must be an object.");
-	if (e.component === "v2_status_card") return le(e);
-	if (e.component === "app_shell") return ue(e);
-	if (e.component === "demo_panel") return de(e);
-	if (e.component === "workflow_panel") return me(e);
-	if (e.component === "core_business_page") return we(e);
-	if (e.component === "summary_page") return Te(e);
-	if (e.component === "methodology_page") return T(e);
-	if (e.component === "evaluation_page") return E(e);
-	if (e.component === "settings_page") return Ee(e);
+function D(e) {
+	if (!S(e)) throw Error("View model must be an object.");
+	if (e.component === "app_shell") return se(e);
+	if (e.component === "demo_panel") return ce(e);
+	if (e.component === "workflow_panel") return de(e);
+	if (e.component === "core_business_page") return xe(e);
+	if (e.component === "summary_page") return Se(e);
+	if (e.component === "methodology_page") return Ce(e);
+	if (e.component === "evaluation_page") return we(e);
+	if (e.component === "settings_page") return E(e);
 	throw Error("Unknown component kind.");
 }
-function Oe() {
+function Te() {
 	return typeof globalThis.crypto?.randomUUID == "function" ? globalThis.crypto.randomUUID() : `evt_${Date.now().toString(36)}_${Math.random().toString(36).slice(2, 12)}`;
 }
-function ke(e) {
+function Ee(e) {
 	let t = e();
 	if (!/^[A-Za-z0-9_-]{8,96}$/.test(t)) throw Error("Invalid event id.");
 	return t;
 }
-function Ae(e = Oe) {
+function De(e, t = Te) {
 	return {
 		schema_version: "1.0",
 		component_version: d,
 		component: f,
-		type: "status_card.action",
-		action: "acknowledge",
-		event_id: ke(e)
+		type: "navigation.select",
+		action: "select",
+		event_id: Ee(t),
+		page: e
 	};
 }
-function D(e, t = Oe) {
+function Oe(e, t, n = Te) {
 	return {
 		schema_version: "1.0",
 		component_version: d,
 		component: p,
-		type: "navigation.select",
-		action: "select",
-		event_id: ke(t),
-		page: e
-	};
-}
-function je(e, t, n = Oe) {
-	return {
-		schema_version: "1.0",
-		component_version: d,
-		component: m,
 		type: e === "select" ? "demo.select" : "demo.open",
 		action: e,
-		event_id: ke(n),
+		event_id: Ee(n),
 		case_name: t
 	};
 }
-function Me(e = Oe) {
+function ke(e = Te) {
 	return {
 		schema_version: "1.0",
 		component_version: d,
-		component: y,
+		component: v,
 		type: "evaluation.run",
 		action: "run",
-		event_id: ke(e)
+		event_id: Ee(e)
 	};
 }
 //#endregion
 //#region node_modules/.pnpm/react@19.3.0/node_modules/react/cjs/react-jsx-runtime.production.js
-var Ne = /* @__PURE__ */ e(((e) => {
+var O = /* @__PURE__ */ e(((e) => {
 	var t = Symbol.for("react.transitional.element"), n = Symbol.for("react.fragment");
 	function r(e, n, r) {
 		var i = null;
@@ -9804,19 +9772,19 @@ var Ne = /* @__PURE__ */ e(((e) => {
 		};
 	}
 	e.Fragment = n, e.jsx = r, e.jsxs = r;
-})), O = (/* @__PURE__ */ e(((e, t) => {
-	t.exports = Ne();
-})))(), Pe = [
+})), k = (/* @__PURE__ */ e(((e, t) => {
+	t.exports = O();
+})))(), Ae = [
 	"Hồ sơ",
 	"Kiểm chứng",
 	"Hệ thống"
-], Fe = {
+], je = {
 	upcoming: "·",
 	current: "→",
 	complete: "✓",
 	warning: "!",
 	error: "×"
-}, Ie = {
+}, Me = {
 	empty: "Chưa có hồ sơ",
 	ready: "Sẵn sàng bắt đầu",
 	processing: "Đang xử lý",
@@ -9825,7 +9793,7 @@ var Ne = /* @__PURE__ */ e(((e) => {
 	error: "Cần xử lý lỗi",
 	disabled: "Chưa thể bắt đầu"
 };
-function Le({ viewModel: e, onDomainEvent: t }) {
+function Ne({ viewModel: e, onDomainEvent: t }) {
 	let [n, r] = (0, l.useState)(!1), i = (0, l.useId)(), a = (0, l.useId)(), o = (0, l.useRef)(null), s = (0, l.useRef)(null), c = (0, l.useRef)(null);
 	(0, l.useEffect)(() => {
 		if (!n) return;
@@ -9838,14 +9806,14 @@ function Le({ viewModel: e, onDomainEvent: t }) {
 	let u = () => {
 		r(!1), o.current?.focus();
 	}, d = (e) => {
-		r(!1), t(D(e));
+		r(!1), t(De(e));
 	};
-	return /* @__PURE__ */ (0, O.jsxs)("div", {
+	return /* @__PURE__ */ (0, k.jsxs)("div", {
 		className: "cl-shell",
 		"data-theme": e.theme,
 		"aria-busy": e.page_state === "processing",
 		children: [
-			/* @__PURE__ */ (0, O.jsx)("a", {
+			/* @__PURE__ */ (0, k.jsx)("a", {
 				className: "cl-shell__skip",
 				href: "#cl-v2-main",
 				onClick: (e) => {
@@ -9853,10 +9821,10 @@ function Le({ viewModel: e, onDomainEvent: t }) {
 				},
 				children: "Chuyển đến nội dung chính"
 			}),
-			/* @__PURE__ */ (0, O.jsxs)("header", {
+			/* @__PURE__ */ (0, k.jsxs)("header", {
 				className: "cl-shell__header",
 				children: [
-					/* @__PURE__ */ (0, O.jsx)("button", {
+					/* @__PURE__ */ (0, k.jsx)("button", {
 						type: "button",
 						ref: o,
 						className: "cl-shell__menu",
@@ -9864,53 +9832,53 @@ function Le({ viewModel: e, onDomainEvent: t }) {
 						"aria-expanded": n,
 						"aria-controls": i,
 						onClick: () => r((e) => !e),
-						children: /* @__PURE__ */ (0, O.jsx)("span", {
+						children: /* @__PURE__ */ (0, k.jsx)("span", {
 							"aria-hidden": "true",
 							children: n ? "×" : "☰"
 						})
 					}),
-					/* @__PURE__ */ (0, O.jsxs)("div", {
+					/* @__PURE__ */ (0, k.jsxs)("div", {
 						className: "cl-shell__brand",
 						"aria-label": "HUB và CreditLens",
-						children: [/* @__PURE__ */ (0, O.jsx)("img", {
+						children: [/* @__PURE__ */ (0, k.jsx)("img", {
 							src: e.logo_data_uri,
 							alt: "",
 							className: "cl-shell__logo"
-						}), /* @__PURE__ */ (0, O.jsxs)("div", {
+						}), /* @__PURE__ */ (0, k.jsxs)("div", {
 							className: "cl-shell__brand-name",
-							children: [/* @__PURE__ */ (0, O.jsx)("strong", { children: "HUB × CreditLens" }), /* @__PURE__ */ (0, O.jsx)("span", { children: "Thẩm định có thể kiểm chứng" })]
+							children: [/* @__PURE__ */ (0, k.jsx)("strong", { children: "HUB × CreditLens" }), /* @__PURE__ */ (0, k.jsx)("span", { children: "Thẩm định có thể kiểm chứng" })]
 						})]
 					}),
-					/* @__PURE__ */ (0, O.jsxs)("div", {
+					/* @__PURE__ */ (0, k.jsxs)("div", {
 						className: "cl-shell__header-status",
-						children: [/* @__PURE__ */ (0, O.jsx)("span", {
+						children: [/* @__PURE__ */ (0, k.jsx)("span", {
 							"aria-hidden": "true",
 							className: "cl-shell__header-dot"
 						}), "Quy trình xác định · Không tự động phê duyệt"]
 					})
 				]
 			}),
-			n ? /* @__PURE__ */ (0, O.jsx)("button", {
+			n ? /* @__PURE__ */ (0, k.jsx)("button", {
 				type: "button",
 				className: "cl-shell__scrim",
 				"aria-label": "Đóng điều hướng",
 				onClick: u
 			}) : null,
-			/* @__PURE__ */ (0, O.jsxs)("aside", {
+			/* @__PURE__ */ (0, k.jsxs)("aside", {
 				id: i,
 				className: `cl-shell__sidebar${n ? " is-open" : ""}`,
 				"aria-label": "Điều hướng ứng dụng",
-				children: [/* @__PURE__ */ (0, O.jsx)("nav", {
+				children: [/* @__PURE__ */ (0, k.jsx)("nav", {
 					"aria-label": "Điều hướng chính",
-					children: Pe.map((t) => /* @__PURE__ */ (0, O.jsxs)("section", {
+					children: Ae.map((t) => /* @__PURE__ */ (0, k.jsxs)("section", {
 						className: "cl-shell__nav-group",
 						"aria-labelledby": `${i}-${t}`,
-						children: [/* @__PURE__ */ (0, O.jsx)("h2", {
+						children: [/* @__PURE__ */ (0, k.jsx)("h2", {
 							id: `${i}-${t}`,
 							children: t
 						}), e.navigation.filter((e) => e.group === t).map((t) => {
 							let n = t.page === e.active_page;
-							return /* @__PURE__ */ (0, O.jsxs)("button", {
+							return /* @__PURE__ */ (0, k.jsxs)("button", {
 								type: "button",
 								ref: n ? s : void 0,
 								className: `cl-shell__nav-item${n ? " is-active" : ""}`,
@@ -9918,99 +9886,99 @@ function Le({ viewModel: e, onDomainEvent: t }) {
 								"aria-label": t.label,
 								title: t.label,
 								onClick: () => d(t.page),
-								children: [/* @__PURE__ */ (0, O.jsx)("span", {
+								children: [/* @__PURE__ */ (0, k.jsx)("span", {
 									className: "cl-shell__nav-index",
 									"aria-hidden": "true",
 									children: t.ordinal
-								}), /* @__PURE__ */ (0, O.jsx)("span", {
+								}), /* @__PURE__ */ (0, k.jsx)("span", {
 									className: "cl-shell__nav-label",
 									children: t.label
 								})]
 							}, t.page);
 						})]
 					}, t))
-				}), /* @__PURE__ */ (0, O.jsx)("p", {
+				}), /* @__PURE__ */ (0, k.jsx)("p", {
 					className: "cl-shell__sidebar-note",
 					children: "Ngưỡng minh họa · Không phải chính sách ngân hàng · Bắt buộc con người xem xét"
 				})]
 			}),
-			/* @__PURE__ */ (0, O.jsxs)("main", {
+			/* @__PURE__ */ (0, k.jsxs)("main", {
 				ref: c,
 				id: "cl-v2-main",
 				className: "cl-shell__main",
 				tabIndex: -1,
-				children: [/* @__PURE__ */ (0, O.jsxs)("section", {
+				children: [/* @__PURE__ */ (0, k.jsxs)("section", {
 					className: `cl-case-context cl-tone--${e.case_context.status_tone}`,
 					"aria-live": "polite",
-					children: [/* @__PURE__ */ (0, O.jsxs)("div", { children: [/* @__PURE__ */ (0, O.jsx)("span", {
+					children: [/* @__PURE__ */ (0, k.jsxs)("div", { children: [/* @__PURE__ */ (0, k.jsx)("span", {
 						className: "cl-case-context__label",
 						children: "Hồ sơ hiện tại"
-					}), /* @__PURE__ */ (0, O.jsx)("strong", { children: e.case_context.case_id ?? "Chưa có hồ sơ đang mở" })] }), /* @__PURE__ */ (0, O.jsxs)("div", {
+					}), /* @__PURE__ */ (0, k.jsx)("strong", { children: e.case_context.case_id ?? "Chưa có hồ sơ đang mở" })] }), /* @__PURE__ */ (0, k.jsxs)("div", {
 						className: "cl-case-context__meta",
 						children: [
-							e.case_context.source ? /* @__PURE__ */ (0, O.jsx)("span", { children: e.case_context.source }) : null,
-							/* @__PURE__ */ (0, O.jsx)("span", { children: e.case_context.status_label }),
-							/* @__PURE__ */ (0, O.jsx)("span", { children: e.case_context.summary })
+							e.case_context.source ? /* @__PURE__ */ (0, k.jsx)("span", { children: e.case_context.source }) : null,
+							/* @__PURE__ */ (0, k.jsx)("span", { children: e.case_context.status_label }),
+							/* @__PURE__ */ (0, k.jsx)("span", { children: e.case_context.summary })
 						]
 					})]
-				}), e.overview ? /* @__PURE__ */ (0, O.jsxs)(O.Fragment, { children: [
-					/* @__PURE__ */ (0, O.jsxs)("section", {
+				}), e.overview ? /* @__PURE__ */ (0, k.jsxs)(k.Fragment, { children: [
+					/* @__PURE__ */ (0, k.jsxs)("section", {
 						className: "cl-page-header",
-						children: [/* @__PURE__ */ (0, O.jsxs)("div", { children: [
-							/* @__PURE__ */ (0, O.jsx)("p", {
+						children: [/* @__PURE__ */ (0, k.jsxs)("div", { children: [
+							/* @__PURE__ */ (0, k.jsx)("p", {
 								className: "cl-page-header__eyebrow",
 								children: "CreditLens workspace"
 							}),
-							/* @__PURE__ */ (0, O.jsx)("h1", { children: "Tổng quan và hồ sơ" }),
-							/* @__PURE__ */ (0, O.jsx)("p", { children: "Bắt đầu từ bộ tài liệu hoặc mở một hồ sơ minh họa xác định." })
-						] }), /* @__PURE__ */ (0, O.jsx)("span", {
+							/* @__PURE__ */ (0, k.jsx)("h1", { children: "Tổng quan và hồ sơ" }),
+							/* @__PURE__ */ (0, k.jsx)("p", { children: "Bắt đầu từ bộ tài liệu hoặc mở một hồ sơ minh họa xác định." })
+						] }), /* @__PURE__ */ (0, k.jsx)("span", {
 							className: "cl-page-header__badge",
 							children: "Không dùng LLM để mở trang"
 						})]
 					}),
-					/* @__PURE__ */ (0, O.jsxs)("section", {
+					/* @__PURE__ */ (0, k.jsxs)("section", {
 						className: "cl-legal-alert",
 						"aria-labelledby": a,
-						children: [/* @__PURE__ */ (0, O.jsx)("div", {
+						children: [/* @__PURE__ */ (0, k.jsx)("div", {
 							"aria-hidden": "true",
 							className: "cl-legal-alert__icon",
 							children: "i"
-						}), /* @__PURE__ */ (0, O.jsxs)("div", { children: [
-							/* @__PURE__ */ (0, O.jsx)("strong", {
+						}), /* @__PURE__ */ (0, k.jsxs)("div", { children: [
+							/* @__PURE__ */ (0, k.jsx)("strong", {
 								id: a,
 								children: "Dữ liệu chỉ được dùng trong phiên hiện tại"
 							}),
-							/* @__PURE__ */ (0, O.jsx)("p", { children: "CreditLens hỗ trợ thẩm định; quyết định cuối cùng thuộc cán bộ tín dụng." }),
-							/* @__PURE__ */ (0, O.jsxs)("details", { children: [/* @__PURE__ */ (0, O.jsx)("summary", { children: "Xem nguyên tắc sử dụng" }), /* @__PURE__ */ (0, O.jsx)("p", { children: "Không tải dữ liệu ngân hàng thật hoặc thông tin mật vào bản minh họa công khai. Hệ thống không tự phê duyệt hoặc từ chối khoản vay." })] })
+							/* @__PURE__ */ (0, k.jsx)("p", { children: "CreditLens hỗ trợ thẩm định; quyết định cuối cùng thuộc cán bộ tín dụng." }),
+							/* @__PURE__ */ (0, k.jsxs)("details", { children: [/* @__PURE__ */ (0, k.jsx)("summary", { children: "Xem nguyên tắc sử dụng" }), /* @__PURE__ */ (0, k.jsx)("p", { children: "Không tải dữ liệu ngân hàng thật hoặc thông tin mật vào bản minh họa công khai. Hệ thống không tự phê duyệt hoặc từ chối khoản vay." })] })
 						] })]
 					}),
-					/* @__PURE__ */ (0, O.jsxs)("section", {
+					/* @__PURE__ */ (0, k.jsxs)("section", {
 						className: `cl-page-state cl-page-state--${e.page_state}`,
 						role: e.page_state === "error" ? "alert" : "status",
-						children: [/* @__PURE__ */ (0, O.jsx)("strong", { children: Ie[e.page_state] }), /* @__PURE__ */ (0, O.jsx)("span", { children: e.state_message })]
+						children: [/* @__PURE__ */ (0, k.jsx)("strong", { children: Me[e.page_state] }), /* @__PURE__ */ (0, k.jsx)("span", { children: e.state_message })]
 					}),
-					/* @__PURE__ */ (0, O.jsxs)("section", {
+					/* @__PURE__ */ (0, k.jsxs)("section", {
 						className: "cl-workflow",
 						"aria-labelledby": "cl-workflow-title",
-						children: [/* @__PURE__ */ (0, O.jsxs)("div", {
+						children: [/* @__PURE__ */ (0, k.jsxs)("div", {
 							className: "cl-section-heading",
-							children: [/* @__PURE__ */ (0, O.jsxs)("div", { children: [/* @__PURE__ */ (0, O.jsx)("p", {
+							children: [/* @__PURE__ */ (0, k.jsxs)("div", { children: [/* @__PURE__ */ (0, k.jsx)("p", {
 								className: "cl-page-header__eyebrow",
 								children: "Luồng xử lý"
-							}), /* @__PURE__ */ (0, O.jsx)("h2", {
+							}), /* @__PURE__ */ (0, k.jsx)("h2", {
 								id: "cl-workflow-title",
 								children: "Quy trình thẩm định"
-							})] }), /* @__PURE__ */ (0, O.jsx)("span", { children: "Python cung cấp trạng thái" })]
-						}), /* @__PURE__ */ (0, O.jsx)("ol", { children: e.workflow.map((e, t) => /* @__PURE__ */ (0, O.jsxs)("li", {
+							})] }), /* @__PURE__ */ (0, k.jsx)("span", { children: "Python cung cấp trạng thái" })]
+						}), /* @__PURE__ */ (0, k.jsx)("ol", { children: e.workflow.map((e, t) => /* @__PURE__ */ (0, k.jsxs)("li", {
 							className: `cl-workflow__step cl-workflow__step--${e.state}`,
-							children: [/* @__PURE__ */ (0, O.jsx)("span", {
+							children: [/* @__PURE__ */ (0, k.jsx)("span", {
 								className: "cl-workflow__marker",
 								"aria-hidden": "true",
-								children: e.state === "upcoming" ? t + 1 : Fe[e.state]
-							}), /* @__PURE__ */ (0, O.jsxs)("div", { children: [
-								/* @__PURE__ */ (0, O.jsx)("strong", { children: e.label }),
-								/* @__PURE__ */ (0, O.jsx)("p", { children: e.description }),
-								/* @__PURE__ */ (0, O.jsx)("span", {
+								children: e.state === "upcoming" ? t + 1 : je[e.state]
+							}), /* @__PURE__ */ (0, k.jsxs)("div", { children: [
+								/* @__PURE__ */ (0, k.jsx)("strong", { children: e.label }),
+								/* @__PURE__ */ (0, k.jsx)("p", { children: e.description }),
+								/* @__PURE__ */ (0, k.jsx)("span", {
 									className: "cl-workflow__status",
 									"aria-current": e.state === "current" ? "step" : void 0,
 									children: e.status_label
@@ -10018,26 +9986,26 @@ function Le({ viewModel: e, onDomainEvent: t }) {
 							] })]
 						}, e.key)) })]
 					}),
-					/* @__PURE__ */ (0, O.jsxs)("section", {
+					/* @__PURE__ */ (0, k.jsxs)("section", {
 						className: "cl-process",
 						"aria-labelledby": "cl-process-title",
-						children: [/* @__PURE__ */ (0, O.jsx)("div", {
+						children: [/* @__PURE__ */ (0, k.jsx)("div", {
 							className: "cl-section-heading",
-							children: /* @__PURE__ */ (0, O.jsx)("h2", {
+							children: /* @__PURE__ */ (0, k.jsx)("h2", {
 								id: "cl-process-title",
 								children: "Các chặng xử lý"
 							})
-						}), /* @__PURE__ */ (0, O.jsx)("div", {
+						}), /* @__PURE__ */ (0, k.jsx)("div", {
 							className: "cl-process__grid",
-							children: e.process_cards.map((e, t) => /* @__PURE__ */ (0, O.jsxs)("article", {
+							children: e.process_cards.map((e, t) => /* @__PURE__ */ (0, k.jsxs)("article", {
 								className: `cl-process-card cl-process-card--${e.state}`,
 								children: [
-									/* @__PURE__ */ (0, O.jsxs)("div", {
+									/* @__PURE__ */ (0, k.jsxs)("div", {
 										className: "cl-process-card__topline",
-										children: [/* @__PURE__ */ (0, O.jsx)("span", { children: String(t + 1).padStart(2, "0") }), /* @__PURE__ */ (0, O.jsx)("span", { children: e.state === "complete" ? "Hoàn tất" : e.state === "current" ? "Hiện tại" : e.state === "warning" ? "Cần xem xét" : e.state === "error" ? "Có lỗi" : "Sắp tới" })]
+										children: [/* @__PURE__ */ (0, k.jsx)("span", { children: String(t + 1).padStart(2, "0") }), /* @__PURE__ */ (0, k.jsx)("span", { children: e.state === "complete" ? "Hoàn tất" : e.state === "current" ? "Hiện tại" : e.state === "warning" ? "Cần xem xét" : e.state === "error" ? "Có lỗi" : "Sắp tới" })]
 									}),
-									/* @__PURE__ */ (0, O.jsx)("h3", { children: e.label }),
-									/* @__PURE__ */ (0, O.jsx)("p", { children: e.description })
+									/* @__PURE__ */ (0, k.jsx)("h3", { children: e.label }),
+									/* @__PURE__ */ (0, k.jsx)("p", { children: e.description })
 								]
 							}, e.key))
 						})]
@@ -10049,62 +10017,62 @@ function Le({ viewModel: e, onDomainEvent: t }) {
 }
 //#endregion
 //#region src/CoreBusinessPage.tsx
-var Re = {
+var Pe = {
 	declared: "Kê khai",
 	observed: "Quan sát từ chứng từ",
 	calculated: "Python tính toán",
 	other: "Nguồn khác"
-}, ze = {
+}, Fe = {
 	empty: "Chưa có dữ liệu",
 	loading: "Đang xử lý",
 	success: "Sẵn sàng xem xét",
 	partial: "Dữ liệu chưa đầy đủ",
 	error: "Không thể hiển thị"
 };
-function k({ tone: e, children: t }) {
-	return /* @__PURE__ */ (0, O.jsx)("span", {
+function Ie({ tone: e, children: t }) {
+	return /* @__PURE__ */ (0, k.jsx)("span", {
 		className: `cl-core-badge cl-tone--${e}`,
 		children: t
 	});
 }
-function Be({ role: e }) {
-	return /* @__PURE__ */ (0, O.jsx)("span", {
+function Le({ role: e }) {
+	return /* @__PURE__ */ (0, k.jsx)("span", {
 		className: `cl-source-role cl-source-role--${e}`,
-		children: Re[e]
+		children: Pe[e]
 	});
 }
-function Ve({ item: e }) {
-	return /* @__PURE__ */ (0, O.jsxs)("div", {
+function Re({ item: e }) {
+	return /* @__PURE__ */ (0, k.jsxs)("div", {
 		className: "cl-evidence-card",
 		children: [
-			/* @__PURE__ */ (0, O.jsxs)("div", {
+			/* @__PURE__ */ (0, k.jsxs)("div", {
 				className: "cl-evidence-card__path",
-				children: [/* @__PURE__ */ (0, O.jsx)("strong", { children: e.document }), /* @__PURE__ */ (0, O.jsx)("span", { children: e.page === null ? "Trang không xác định" : `Trang ${e.page}` })]
+				children: [/* @__PURE__ */ (0, k.jsx)("strong", { children: e.document }), /* @__PURE__ */ (0, k.jsx)("span", { children: e.page === null ? "Trang không xác định" : `Trang ${e.page}` })]
 			}),
-			/* @__PURE__ */ (0, O.jsxs)("dl", { children: [/* @__PURE__ */ (0, O.jsxs)("div", { children: [/* @__PURE__ */ (0, O.jsx)("dt", { children: "Trường" }), /* @__PURE__ */ (0, O.jsx)("dd", { children: e.field })] }), /* @__PURE__ */ (0, O.jsxs)("div", { children: [/* @__PURE__ */ (0, O.jsx)("dt", { children: "Giá trị" }), /* @__PURE__ */ (0, O.jsx)("dd", { children: e.value })] })] }),
-			e.excerpt ? /* @__PURE__ */ (0, O.jsx)("blockquote", { children: e.excerpt }) : /* @__PURE__ */ (0, O.jsx)("p", { children: "Không có trích đoạn nguồn." })
+			/* @__PURE__ */ (0, k.jsxs)("dl", { children: [/* @__PURE__ */ (0, k.jsxs)("div", { children: [/* @__PURE__ */ (0, k.jsx)("dt", { children: "Trường" }), /* @__PURE__ */ (0, k.jsx)("dd", { children: e.field })] }), /* @__PURE__ */ (0, k.jsxs)("div", { children: [/* @__PURE__ */ (0, k.jsx)("dt", { children: "Giá trị" }), /* @__PURE__ */ (0, k.jsx)("dd", { children: e.value })] })] }),
+			e.excerpt ? /* @__PURE__ */ (0, k.jsx)("blockquote", { children: e.excerpt }) : /* @__PURE__ */ (0, k.jsx)("p", { children: "Không có trích đoạn nguồn." })
 		]
 	});
 }
-function He({ field: e }) {
-	return /* @__PURE__ */ (0, O.jsxs)("article", {
+function ze({ field: e }) {
+	return /* @__PURE__ */ (0, k.jsxs)("article", {
 		className: "cl-field-card",
 		children: [
-			/* @__PURE__ */ (0, O.jsxs)("div", {
+			/* @__PURE__ */ (0, k.jsxs)("div", {
 				className: "cl-field-card__identity",
-				children: [/* @__PURE__ */ (0, O.jsxs)("div", { children: [/* @__PURE__ */ (0, O.jsx)("span", {
+				children: [/* @__PURE__ */ (0, k.jsxs)("div", { children: [/* @__PURE__ */ (0, k.jsx)("span", {
 					className: "cl-field-card__key",
 					children: e.key
-				}), /* @__PURE__ */ (0, O.jsx)("h3", { children: e.label })] }), /* @__PURE__ */ (0, O.jsx)(Be, { role: e.source_role })]
+				}), /* @__PURE__ */ (0, k.jsx)("h3", { children: e.label })] }), /* @__PURE__ */ (0, k.jsx)(Le, { role: e.source_role })]
 			}),
-			/* @__PURE__ */ (0, O.jsx)("p", {
+			/* @__PURE__ */ (0, k.jsx)("p", {
 				className: "cl-field-card__value",
 				children: e.value_display
 			}),
-			/* @__PURE__ */ (0, O.jsxs)("dl", {
+			/* @__PURE__ */ (0, k.jsxs)("dl", {
 				className: "cl-field-card__meta",
 				children: [
-					/* @__PURE__ */ (0, O.jsxs)("div", { children: [/* @__PURE__ */ (0, O.jsx)("dt", { children: "Confidence" }), /* @__PURE__ */ (0, O.jsx)("dd", { children: /* @__PURE__ */ (0, O.jsxs)(k, {
+					/* @__PURE__ */ (0, k.jsxs)("div", { children: [/* @__PURE__ */ (0, k.jsx)("dt", { children: "Confidence" }), /* @__PURE__ */ (0, k.jsx)("dd", { children: /* @__PURE__ */ (0, k.jsxs)(Ie, {
 						tone: e.confidence_tone,
 						children: [
 							e.confidence_display,
@@ -10112,84 +10080,84 @@ function He({ field: e }) {
 							e.confidence_label
 						]
 					}) })] }),
-					/* @__PURE__ */ (0, O.jsxs)("div", { children: [/* @__PURE__ */ (0, O.jsx)("dt", { children: "Tài liệu" }), /* @__PURE__ */ (0, O.jsx)("dd", { children: e.source })] }),
-					/* @__PURE__ */ (0, O.jsxs)("div", { children: [/* @__PURE__ */ (0, O.jsx)("dt", { children: "Trang / nguồn" }), /* @__PURE__ */ (0, O.jsx)("dd", { children: e.page === null ? "Không xác định" : `Trang ${e.page}` })] }),
-					/* @__PURE__ */ (0, O.jsxs)("div", { children: [/* @__PURE__ */ (0, O.jsx)("dt", { children: "Trạng thái" }), /* @__PURE__ */ (0, O.jsx)("dd", { children: e.status })] })
+					/* @__PURE__ */ (0, k.jsxs)("div", { children: [/* @__PURE__ */ (0, k.jsx)("dt", { children: "Tài liệu" }), /* @__PURE__ */ (0, k.jsx)("dd", { children: e.source })] }),
+					/* @__PURE__ */ (0, k.jsxs)("div", { children: [/* @__PURE__ */ (0, k.jsx)("dt", { children: "Trang / nguồn" }), /* @__PURE__ */ (0, k.jsx)("dd", { children: e.page === null ? "Không xác định" : `Trang ${e.page}` })] }),
+					/* @__PURE__ */ (0, k.jsxs)("div", { children: [/* @__PURE__ */ (0, k.jsx)("dt", { children: "Trạng thái" }), /* @__PURE__ */ (0, k.jsx)("dd", { children: e.status })] })
 				]
 			}),
-			e.evidence ? /* @__PURE__ */ (0, O.jsxs)("details", {
+			e.evidence ? /* @__PURE__ */ (0, k.jsxs)("details", {
 				className: "cl-local-disclosure",
-				children: [/* @__PURE__ */ (0, O.jsx)("summary", { children: "Xem bằng chứng nguồn" }), /* @__PURE__ */ (0, O.jsx)(Ve, { item: e.evidence })]
-			}) : /* @__PURE__ */ (0, O.jsx)("p", {
+				children: [/* @__PURE__ */ (0, k.jsx)("summary", { children: "Xem bằng chứng nguồn" }), /* @__PURE__ */ (0, k.jsx)(Re, { item: e.evidence })]
+			}) : /* @__PURE__ */ (0, k.jsx)("p", {
 				className: "cl-field-card__no-evidence",
 				children: "Chưa có bằng chứng tham chiếu."
 			})
 		]
 	});
 }
-function Ue({ viewModel: e }) {
+function Be({ viewModel: e }) {
 	let [t, n] = (0, l.useState)("all"), [r, i] = (0, l.useState)("all"), a = (0, l.useMemo)(() => e.fields.filter((e) => (t === "all" || e.source_role === t) && (r === "all" || e.confidence_tone === r)), [
 		r,
 		t,
 		e.fields
 	]);
-	return /* @__PURE__ */ (0, O.jsxs)(O.Fragment, { children: [/* @__PURE__ */ (0, O.jsxs)("section", {
+	return /* @__PURE__ */ (0, k.jsxs)(k.Fragment, { children: [/* @__PURE__ */ (0, k.jsxs)("section", {
 		className: "cl-core-section",
 		"aria-labelledby": "cl-documents-title",
-		children: [/* @__PURE__ */ (0, O.jsxs)("div", {
+		children: [/* @__PURE__ */ (0, k.jsxs)("div", {
 			className: "cl-core-section__heading",
-			children: [/* @__PURE__ */ (0, O.jsxs)("div", { children: [/* @__PURE__ */ (0, O.jsx)("p", {
+			children: [/* @__PURE__ */ (0, k.jsxs)("div", { children: [/* @__PURE__ */ (0, k.jsx)("p", {
 				className: "cl-core-eyebrow",
 				children: "Document status"
-			}), /* @__PURE__ */ (0, O.jsx)("h2", {
+			}), /* @__PURE__ */ (0, k.jsx)("h2", {
 				id: "cl-documents-title",
 				children: "Danh mục tài liệu"
-			})] }), /* @__PURE__ */ (0, O.jsxs)("span", { children: [e.documents.length, " tài liệu"] })]
-		}), e.documents.length ? /* @__PURE__ */ (0, O.jsx)("div", {
+			})] }), /* @__PURE__ */ (0, k.jsxs)("span", { children: [e.documents.length, " tài liệu"] })]
+		}), e.documents.length ? /* @__PURE__ */ (0, k.jsx)("div", {
 			className: "cl-document-grid",
-			children: e.documents.map((e) => /* @__PURE__ */ (0, O.jsxs)("article", {
+			children: e.documents.map((e) => /* @__PURE__ */ (0, k.jsxs)("article", {
 				className: "cl-document-card",
 				children: [
-					/* @__PURE__ */ (0, O.jsxs)("div", {
+					/* @__PURE__ */ (0, k.jsxs)("div", {
 						className: "cl-document-card__topline",
-						children: [/* @__PURE__ */ (0, O.jsx)("h3", { children: e.name }), /* @__PURE__ */ (0, O.jsx)(k, {
+						children: [/* @__PURE__ */ (0, k.jsx)("h3", { children: e.name }), /* @__PURE__ */ (0, k.jsx)(Ie, {
 							tone: e.confidence_tone,
 							children: e.status
 						})]
 					}),
-					/* @__PURE__ */ (0, O.jsxs)("dl", { children: [
-						/* @__PURE__ */ (0, O.jsxs)("div", { children: [/* @__PURE__ */ (0, O.jsx)("dt", { children: "Loại dự kiến" }), /* @__PURE__ */ (0, O.jsx)("dd", { children: e.expected_type })] }),
-						/* @__PURE__ */ (0, O.jsxs)("div", { children: [/* @__PURE__ */ (0, O.jsx)("dt", { children: "Loại nhận diện" }), /* @__PURE__ */ (0, O.jsx)("dd", { children: e.detected_type })] }),
-						/* @__PURE__ */ (0, O.jsxs)("div", { children: [/* @__PURE__ */ (0, O.jsx)("dt", { children: "Số trang" }), /* @__PURE__ */ (0, O.jsx)("dd", { children: e.pages })] }),
-						/* @__PURE__ */ (0, O.jsxs)("div", { children: [/* @__PURE__ */ (0, O.jsx)("dt", { children: "Confidence" }), /* @__PURE__ */ (0, O.jsxs)("dd", { children: [
+					/* @__PURE__ */ (0, k.jsxs)("dl", { children: [
+						/* @__PURE__ */ (0, k.jsxs)("div", { children: [/* @__PURE__ */ (0, k.jsx)("dt", { children: "Loại dự kiến" }), /* @__PURE__ */ (0, k.jsx)("dd", { children: e.expected_type })] }),
+						/* @__PURE__ */ (0, k.jsxs)("div", { children: [/* @__PURE__ */ (0, k.jsx)("dt", { children: "Loại nhận diện" }), /* @__PURE__ */ (0, k.jsx)("dd", { children: e.detected_type })] }),
+						/* @__PURE__ */ (0, k.jsxs)("div", { children: [/* @__PURE__ */ (0, k.jsx)("dt", { children: "Số trang" }), /* @__PURE__ */ (0, k.jsx)("dd", { children: e.pages })] }),
+						/* @__PURE__ */ (0, k.jsxs)("div", { children: [/* @__PURE__ */ (0, k.jsx)("dt", { children: "Confidence" }), /* @__PURE__ */ (0, k.jsxs)("dd", { children: [
 							e.confidence_display,
 							" · ",
 							e.confidence_label
 						] })] })
 					] }),
-					e.type_mismatch ? /* @__PURE__ */ (0, O.jsx)("p", {
+					e.type_mismatch ? /* @__PURE__ */ (0, k.jsx)("p", {
 						className: "cl-document-card__warning",
 						children: "Sai lệch loại — cần xác minh"
 					}) : null
 				]
 			}, `${e.name}-${e.expected_type}`))
-		}) : /* @__PURE__ */ (0, O.jsx)("p", {
+		}) : /* @__PURE__ */ (0, k.jsx)("p", {
 			className: "cl-inline-empty",
 			children: "Phiên hiện tại không có metadata tài liệu."
 		})]
-	}), /* @__PURE__ */ (0, O.jsxs)("section", {
+	}), /* @__PURE__ */ (0, k.jsxs)("section", {
 		className: "cl-core-section",
 		"aria-labelledby": "cl-fields-title",
 		children: [
-			/* @__PURE__ */ (0, O.jsxs)("div", {
+			/* @__PURE__ */ (0, k.jsxs)("div", {
 				className: "cl-core-section__heading cl-core-section__heading--filters",
-				children: [/* @__PURE__ */ (0, O.jsxs)("div", { children: [/* @__PURE__ */ (0, O.jsx)("p", {
+				children: [/* @__PURE__ */ (0, k.jsxs)("div", { children: [/* @__PURE__ */ (0, k.jsx)("p", {
 					className: "cl-core-eyebrow",
 					children: "Extracted fields"
-				}), /* @__PURE__ */ (0, O.jsx)("h2", {
+				}), /* @__PURE__ */ (0, k.jsx)("h2", {
 					id: "cl-fields-title",
 					children: "Dữ kiện đã chuẩn hóa"
-				})] }), /* @__PURE__ */ (0, O.jsxs)("span", {
+				})] }), /* @__PURE__ */ (0, k.jsxs)("span", {
 					"aria-live": "polite",
 					children: [
 						a.length,
@@ -10199,152 +10167,152 @@ function Ue({ viewModel: e }) {
 					]
 				})]
 			}),
-			/* @__PURE__ */ (0, O.jsxs)("div", {
+			/* @__PURE__ */ (0, k.jsxs)("div", {
 				className: "cl-core-filters",
 				"aria-label": "Bộ lọc dữ kiện cục bộ",
-				children: [/* @__PURE__ */ (0, O.jsxs)("label", { children: ["Nguồn dữ liệu", /* @__PURE__ */ (0, O.jsxs)("select", {
+				children: [/* @__PURE__ */ (0, k.jsxs)("label", { children: ["Nguồn dữ liệu", /* @__PURE__ */ (0, k.jsxs)("select", {
 					value: t,
 					onChange: (e) => n(e.target.value),
 					children: [
-						/* @__PURE__ */ (0, O.jsx)("option", {
+						/* @__PURE__ */ (0, k.jsx)("option", {
 							value: "all",
 							children: "Tất cả nguồn"
 						}),
-						/* @__PURE__ */ (0, O.jsx)("option", {
+						/* @__PURE__ */ (0, k.jsx)("option", {
 							value: "declared",
 							children: "Kê khai"
 						}),
-						/* @__PURE__ */ (0, O.jsx)("option", {
+						/* @__PURE__ */ (0, k.jsx)("option", {
 							value: "observed",
 							children: "Quan sát từ chứng từ"
 						}),
-						/* @__PURE__ */ (0, O.jsx)("option", {
+						/* @__PURE__ */ (0, k.jsx)("option", {
 							value: "calculated",
 							children: "Python tính toán"
 						}),
-						/* @__PURE__ */ (0, O.jsx)("option", {
+						/* @__PURE__ */ (0, k.jsx)("option", {
 							value: "other",
 							children: "Nguồn khác"
 						})
 					]
-				})] }), /* @__PURE__ */ (0, O.jsxs)("label", { children: ["Trạng thái confidence", /* @__PURE__ */ (0, O.jsxs)("select", {
+				})] }), /* @__PURE__ */ (0, k.jsxs)("label", { children: ["Trạng thái confidence", /* @__PURE__ */ (0, k.jsxs)("select", {
 					value: r,
 					onChange: (e) => i(e.target.value),
 					children: [
-						/* @__PURE__ */ (0, O.jsx)("option", {
+						/* @__PURE__ */ (0, k.jsx)("option", {
 							value: "all",
 							children: "Tất cả trạng thái"
 						}),
-						/* @__PURE__ */ (0, O.jsx)("option", {
+						/* @__PURE__ */ (0, k.jsx)("option", {
 							value: "success",
 							children: "Tin cậy cao"
 						}),
-						/* @__PURE__ */ (0, O.jsx)("option", {
+						/* @__PURE__ */ (0, k.jsx)("option", {
 							value: "warning",
 							children: "Cần đối chiếu"
 						}),
-						/* @__PURE__ */ (0, O.jsx)("option", {
+						/* @__PURE__ */ (0, k.jsx)("option", {
 							value: "danger",
 							children: "Cần xác minh"
 						}),
-						/* @__PURE__ */ (0, O.jsx)("option", {
+						/* @__PURE__ */ (0, k.jsx)("option", {
 							value: "neutral",
 							children: "Thiếu dữ liệu"
 						})
 					]
 				})] })]
 			}),
-			a.length ? /* @__PURE__ */ (0, O.jsx)("div", {
+			a.length ? /* @__PURE__ */ (0, k.jsx)("div", {
 				className: "cl-field-grid",
-				children: a.map((e) => /* @__PURE__ */ (0, O.jsx)(He, { field: e }, e.key))
-			}) : /* @__PURE__ */ (0, O.jsx)("p", {
+				children: a.map((e) => /* @__PURE__ */ (0, k.jsx)(ze, { field: e }, e.key))
+			}) : /* @__PURE__ */ (0, k.jsx)("p", {
 				className: "cl-inline-empty",
 				children: "Không có trường phù hợp bộ lọc hiện tại."
 			})
 		]
 	})] });
 }
-function We({ viewModel: e }) {
-	return /* @__PURE__ */ (0, O.jsxs)(O.Fragment, { children: [
-		/* @__PURE__ */ (0, O.jsxs)("section", {
+function Ve({ viewModel: e }) {
+	return /* @__PURE__ */ (0, k.jsxs)(k.Fragment, { children: [
+		/* @__PURE__ */ (0, k.jsxs)("section", {
 			className: "cl-core-section",
 			"aria-labelledby": "cl-comparison-title",
-			children: [/* @__PURE__ */ (0, O.jsx)("div", {
+			children: [/* @__PURE__ */ (0, k.jsx)("div", {
 				className: "cl-core-section__heading",
-				children: /* @__PURE__ */ (0, O.jsxs)("div", { children: [/* @__PURE__ */ (0, O.jsx)("p", {
+				children: /* @__PURE__ */ (0, k.jsxs)("div", { children: [/* @__PURE__ */ (0, k.jsx)("p", {
 					className: "cl-core-eyebrow",
 					children: "Cross-document comparison"
-				}), /* @__PURE__ */ (0, O.jsx)("h2", {
+				}), /* @__PURE__ */ (0, k.jsx)("h2", {
 					id: "cl-comparison-title",
 					children: "Đối chiếu dữ liệu"
 				})] })
-			}), /* @__PURE__ */ (0, O.jsx)("div", {
+			}), /* @__PURE__ */ (0, k.jsx)("div", {
 				className: "cl-comparison-grid",
-				children: e.comparisons.map((e) => /* @__PURE__ */ (0, O.jsxs)("article", {
+				children: e.comparisons.map((e) => /* @__PURE__ */ (0, k.jsxs)("article", {
 					className: "cl-comparison-card",
 					children: [
-						/* @__PURE__ */ (0, O.jsxs)("div", {
+						/* @__PURE__ */ (0, k.jsxs)("div", {
 							className: "cl-comparison-card__topline",
-							children: [/* @__PURE__ */ (0, O.jsx)("h3", { children: e.title }), /* @__PURE__ */ (0, O.jsx)(k, {
+							children: [/* @__PURE__ */ (0, k.jsx)("h3", { children: e.title }), /* @__PURE__ */ (0, k.jsx)(Ie, {
 								tone: e.status_tone,
 								children: e.status
 							})]
 						}),
-						/* @__PURE__ */ (0, O.jsx)("div", {
+						/* @__PURE__ */ (0, k.jsx)("div", {
 							className: "cl-comparison-values",
-							children: e.values.map((e, t) => /* @__PURE__ */ (0, O.jsxs)("div", {
+							children: e.values.map((e, t) => /* @__PURE__ */ (0, k.jsxs)("div", {
 								className: "cl-comparison-value",
 								children: [
-									/* @__PURE__ */ (0, O.jsx)(Be, { role: e.role }),
-									/* @__PURE__ */ (0, O.jsx)("span", { children: e.label }),
-									/* @__PURE__ */ (0, O.jsx)("strong", { children: e.value_display }),
-									/* @__PURE__ */ (0, O.jsx)("small", { children: e.source })
+									/* @__PURE__ */ (0, k.jsx)(Le, { role: e.role }),
+									/* @__PURE__ */ (0, k.jsx)("span", { children: e.label }),
+									/* @__PURE__ */ (0, k.jsx)("strong", { children: e.value_display }),
+									/* @__PURE__ */ (0, k.jsx)("small", { children: e.source })
 								]
 							}, `${e.role}-${e.label}-${t}`))
 						}),
-						/* @__PURE__ */ (0, O.jsxs)("div", {
+						/* @__PURE__ */ (0, k.jsxs)("div", {
 							className: "cl-comparison-card__difference",
-							children: [/* @__PURE__ */ (0, O.jsx)("span", { children: "Chênh lệch từ Python" }), /* @__PURE__ */ (0, O.jsx)("strong", { children: e.difference_display })]
+							children: [/* @__PURE__ */ (0, k.jsx)("span", { children: "Chênh lệch từ Python" }), /* @__PURE__ */ (0, k.jsx)("strong", { children: e.difference_display })]
 						})
 					]
 				}, e.title))
 			})]
 		}),
-		/* @__PURE__ */ (0, O.jsxs)("section", {
+		/* @__PURE__ */ (0, k.jsxs)("section", {
 			className: "cl-core-section",
 			"aria-labelledby": "cl-metrics-title",
-			children: [/* @__PURE__ */ (0, O.jsxs)("div", {
+			children: [/* @__PURE__ */ (0, k.jsxs)("div", {
 				className: "cl-core-section__heading",
-				children: [/* @__PURE__ */ (0, O.jsxs)("div", { children: [/* @__PURE__ */ (0, O.jsx)("p", {
+				children: [/* @__PURE__ */ (0, k.jsxs)("div", { children: [/* @__PURE__ */ (0, k.jsx)("p", {
 					className: "cl-core-eyebrow",
 					children: "Financial metrics"
-				}), /* @__PURE__ */ (0, O.jsx)("h2", {
+				}), /* @__PURE__ */ (0, k.jsx)("h2", {
 					id: "cl-metrics-title",
 					children: "Chỉ số tín dụng"
-				})] }), /* @__PURE__ */ (0, O.jsxs)("span", { children: [e.metrics.length, " chỉ số do Python trả về"] })]
-			}), /* @__PURE__ */ (0, O.jsx)(Ke, { metrics: e.metrics })]
+				})] }), /* @__PURE__ */ (0, k.jsxs)("span", { children: [e.metrics.length, " chỉ số do Python trả về"] })]
+			}), /* @__PURE__ */ (0, k.jsx)(Ue, { metrics: e.metrics })]
 		}),
-		/* @__PURE__ */ (0, O.jsxs)("section", {
+		/* @__PURE__ */ (0, k.jsxs)("section", {
 			className: "cl-core-section",
 			"aria-labelledby": "cl-thresholds-title",
 			children: [
-				/* @__PURE__ */ (0, O.jsx)("div", {
+				/* @__PURE__ */ (0, k.jsx)("div", {
 					className: "cl-core-section__heading",
-					children: /* @__PURE__ */ (0, O.jsxs)("div", { children: [/* @__PURE__ */ (0, O.jsx)("p", {
+					children: /* @__PURE__ */ (0, k.jsxs)("div", { children: [/* @__PURE__ */ (0, k.jsx)("p", {
 						className: "cl-core-eyebrow",
 						children: "Current configuration"
-					}), /* @__PURE__ */ (0, O.jsx)("h2", {
+					}), /* @__PURE__ */ (0, k.jsx)("h2", {
 						id: "cl-thresholds-title",
 						children: "Ngưỡng minh họa hiện hành"
 					})] })
 				}),
-				/* @__PURE__ */ (0, O.jsx)("p", {
+				/* @__PURE__ */ (0, k.jsx)("p", {
 					className: "cl-core-disclaimer",
 					children: "Các ngưỡng này chỉ phục vụ minh họa, không phải chính sách cấp tín dụng của ngân hàng."
 				}),
-				/* @__PURE__ */ (0, O.jsx)("div", {
+				/* @__PURE__ */ (0, k.jsx)("div", {
 					className: "cl-threshold-list",
-					children: e.thresholds.map((e) => /* @__PURE__ */ (0, O.jsxs)("div", { children: [/* @__PURE__ */ (0, O.jsx)("span", { children: e.label }), /* @__PURE__ */ (0, O.jsxs)("strong", { children: [
+					children: e.thresholds.map((e) => /* @__PURE__ */ (0, k.jsxs)("div", { children: [/* @__PURE__ */ (0, k.jsx)("span", { children: e.label }), /* @__PURE__ */ (0, k.jsxs)("strong", { children: [
 						e.relation === "above" ? ">" : "<",
 						" ",
 						e.value_display
@@ -10354,55 +10322,55 @@ function We({ viewModel: e }) {
 		})
 	] });
 }
-var Ge = [
+var He = [
 	"HIGH",
 	"MEDIUM",
 	"LOW",
 	"INFO"
 ];
-function Ke({ metrics: e }) {
-	return /* @__PURE__ */ (0, O.jsx)("div", {
+function Ue({ metrics: e }) {
+	return /* @__PURE__ */ (0, k.jsx)("div", {
 		className: "cl-metric-grid",
-		children: e.map((e) => /* @__PURE__ */ (0, O.jsxs)("article", {
+		children: e.map((e) => /* @__PURE__ */ (0, k.jsxs)("article", {
 			className: `cl-metric-card cl-metric-card--${e.status_tone}`,
 			children: [
-				/* @__PURE__ */ (0, O.jsxs)("div", {
+				/* @__PURE__ */ (0, k.jsxs)("div", {
 					className: "cl-metric-card__topline",
-					children: [/* @__PURE__ */ (0, O.jsx)(Be, { role: e.source_role }), /* @__PURE__ */ (0, O.jsx)(k, {
+					children: [/* @__PURE__ */ (0, k.jsx)(Le, { role: e.source_role }), /* @__PURE__ */ (0, k.jsx)(Ie, {
 						tone: e.status_tone,
 						children: e.status
 					})]
 				}),
-				/* @__PURE__ */ (0, O.jsx)("h3", { children: e.label }),
-				/* @__PURE__ */ (0, O.jsx)("p", {
+				/* @__PURE__ */ (0, k.jsx)("h3", { children: e.label }),
+				/* @__PURE__ */ (0, k.jsx)("p", {
 					className: "cl-metric-card__value",
 					children: e.value_display
 				}),
-				/* @__PURE__ */ (0, O.jsx)("p", {
+				/* @__PURE__ */ (0, k.jsx)("p", {
 					className: "cl-metric-card__reference",
 					children: e.reference
 				}),
-				/* @__PURE__ */ (0, O.jsxs)("details", {
+				/* @__PURE__ */ (0, k.jsxs)("details", {
 					className: "cl-local-disclosure",
-					children: [/* @__PURE__ */ (0, O.jsx)("summary", { children: "Xem công thức và diễn giải" }), /* @__PURE__ */ (0, O.jsxs)("dl", {
+					children: [/* @__PURE__ */ (0, k.jsx)("summary", { children: "Xem công thức và diễn giải" }), /* @__PURE__ */ (0, k.jsxs)("dl", {
 						className: "cl-metric-card__details",
-						children: [/* @__PURE__ */ (0, O.jsxs)("div", { children: [/* @__PURE__ */ (0, O.jsx)("dt", { children: "Công thức" }), /* @__PURE__ */ (0, O.jsx)("dd", { children: e.formula })] }), /* @__PURE__ */ (0, O.jsxs)("div", { children: [/* @__PURE__ */ (0, O.jsx)("dt", { children: "Diễn giải" }), /* @__PURE__ */ (0, O.jsx)("dd", { children: e.note })] })]
+						children: [/* @__PURE__ */ (0, k.jsxs)("div", { children: [/* @__PURE__ */ (0, k.jsx)("dt", { children: "Công thức" }), /* @__PURE__ */ (0, k.jsx)("dd", { children: e.formula })] }), /* @__PURE__ */ (0, k.jsxs)("div", { children: [/* @__PURE__ */ (0, k.jsx)("dt", { children: "Diễn giải" }), /* @__PURE__ */ (0, k.jsx)("dd", { children: e.note })] })]
 					})]
 				})
 			]
 		}, e.key))
 	});
 }
-function qe({ risk: e }) {
-	return /* @__PURE__ */ (0, O.jsxs)("article", {
+function We({ risk: e }) {
+	return /* @__PURE__ */ (0, k.jsxs)("article", {
 		className: `cl-risk-card cl-risk-card--${e.severity_tone}`,
 		children: [
-			/* @__PURE__ */ (0, O.jsxs)("div", {
+			/* @__PURE__ */ (0, k.jsxs)("div", {
 				className: "cl-risk-card__topline",
-				children: [/* @__PURE__ */ (0, O.jsx)("span", {
+				children: [/* @__PURE__ */ (0, k.jsx)("span", {
 					className: "cl-risk-card__code",
 					children: e.code
-				}), /* @__PURE__ */ (0, O.jsxs)(k, {
+				}), /* @__PURE__ */ (0, k.jsxs)(Ie, {
 					tone: e.severity_tone,
 					children: [
 						e.severity,
@@ -10411,22 +10379,22 @@ function qe({ risk: e }) {
 					]
 				})]
 			}),
-			/* @__PURE__ */ (0, O.jsx)("h3", { children: e.name }),
-			/* @__PURE__ */ (0, O.jsx)("p", { children: e.description }),
-			e.difference ? /* @__PURE__ */ (0, O.jsxs)("div", {
+			/* @__PURE__ */ (0, k.jsx)("h3", { children: e.name }),
+			/* @__PURE__ */ (0, k.jsx)("p", { children: e.description }),
+			e.difference ? /* @__PURE__ */ (0, k.jsxs)("div", {
 				className: "cl-risk-card__difference",
-				children: [/* @__PURE__ */ (0, O.jsx)("span", { children: "Chênh lệch liên quan" }), /* @__PURE__ */ (0, O.jsx)("strong", { children: e.difference })]
+				children: [/* @__PURE__ */ (0, k.jsx)("span", { children: "Chênh lệch liên quan" }), /* @__PURE__ */ (0, k.jsx)("strong", { children: e.difference })]
 			}) : null,
-			/* @__PURE__ */ (0, O.jsxs)("details", {
+			/* @__PURE__ */ (0, k.jsxs)("details", {
 				className: "cl-local-disclosure",
-				children: [/* @__PURE__ */ (0, O.jsxs)("summary", { children: [
+				children: [/* @__PURE__ */ (0, k.jsxs)("summary", { children: [
 					"Bằng chứng (",
 					e.evidence.length,
 					")"
-				] }), e.evidence.length ? /* @__PURE__ */ (0, O.jsx)("div", {
+				] }), e.evidence.length ? /* @__PURE__ */ (0, k.jsx)("div", {
 					className: "cl-evidence-stack",
-					children: e.evidence.map((e, t) => /* @__PURE__ */ (0, O.jsx)(Ve, { item: e }, `${e.document}-${e.page}-${t}`))
-				}) : /* @__PURE__ */ (0, O.jsx)("p", {
+					children: e.evidence.map((e, t) => /* @__PURE__ */ (0, k.jsx)(Re, { item: e }, `${e.document}-${e.page}-${t}`))
+				}) : /* @__PURE__ */ (0, k.jsx)("p", {
 					className: "cl-inline-empty",
 					children: "Thông tin chưa đủ — không có bằng chứng hỗ trợ."
 				})]
@@ -10434,671 +10402,671 @@ function qe({ risk: e }) {
 		]
 	});
 }
-function Je({ viewModel: e }) {
-	return e.risks.length ? /* @__PURE__ */ (0, O.jsx)("div", {
+function Ge({ viewModel: e }) {
+	return e.risks.length ? /* @__PURE__ */ (0, k.jsx)("div", {
 		className: "cl-risk-groups",
-		children: Ge.map((t) => {
+		children: He.map((t) => {
 			let n = e.risks.filter((e) => e.severity === t);
-			return n.length ? /* @__PURE__ */ (0, O.jsxs)("details", {
+			return n.length ? /* @__PURE__ */ (0, k.jsxs)("details", {
 				className: "cl-risk-group",
 				open: !0,
-				children: [/* @__PURE__ */ (0, O.jsxs)("summary", { children: [/* @__PURE__ */ (0, O.jsxs)("span", { children: ["Mức độ ", n[0]?.severity_label] }), /* @__PURE__ */ (0, O.jsx)("strong", { children: n.length })] }), /* @__PURE__ */ (0, O.jsx)("div", {
+				children: [/* @__PURE__ */ (0, k.jsxs)("summary", { children: [/* @__PURE__ */ (0, k.jsxs)("span", { children: ["Mức độ ", n[0]?.severity_label] }), /* @__PURE__ */ (0, k.jsx)("strong", { children: n.length })] }), /* @__PURE__ */ (0, k.jsx)("div", {
 					className: "cl-risk-grid",
-					children: n.map((e) => /* @__PURE__ */ (0, O.jsx)(qe, { risk: e }, e.code))
+					children: n.map((e) => /* @__PURE__ */ (0, k.jsx)(We, { risk: e }, e.code))
 				})]
 			}, t) : null;
 		})
-	}) : /* @__PURE__ */ (0, O.jsx)("div", {
+	}) : /* @__PURE__ */ (0, k.jsx)("div", {
 		className: "cl-core-no-risks",
 		role: "status",
 		children: "Không phát hiện mâu thuẫn trọng yếu theo các quy tắc minh họa hiện tại."
 	});
 }
-function Ye({ viewModel: e }) {
+function Ke({ viewModel: e }) {
 	let t = e.state === "empty" || e.state === "loading" || e.state === "error";
-	return /* @__PURE__ */ (0, O.jsxs)("main", {
+	return /* @__PURE__ */ (0, k.jsxs)("main", {
 		className: "cl-core-page",
 		"data-theme": e.theme,
 		"data-page": e.page,
 		id: "creditlens-core-content",
 		children: [
-			/* @__PURE__ */ (0, O.jsxs)("header", {
+			/* @__PURE__ */ (0, k.jsxs)("header", {
 				className: "cl-core-header",
-				children: [/* @__PURE__ */ (0, O.jsxs)("div", { children: [
-					/* @__PURE__ */ (0, O.jsx)("p", {
+				children: [/* @__PURE__ */ (0, k.jsxs)("div", { children: [
+					/* @__PURE__ */ (0, k.jsx)("p", {
 						className: "cl-core-eyebrow",
 						children: "CreditLens · Core business page"
 					}),
-					/* @__PURE__ */ (0, O.jsx)("h1", { children: e.title }),
-					/* @__PURE__ */ (0, O.jsx)("p", { children: e.subtitle })
-				] }), e.case_status ? /* @__PURE__ */ (0, O.jsx)(k, {
+					/* @__PURE__ */ (0, k.jsx)("h1", { children: e.title }),
+					/* @__PURE__ */ (0, k.jsx)("p", { children: e.subtitle })
+				] }), e.case_status ? /* @__PURE__ */ (0, k.jsx)(Ie, {
 					tone: e.state === "partial" ? "warning" : "info",
 					children: e.case_status
 				}) : null]
 			}),
-			/* @__PURE__ */ (0, O.jsxs)("div", {
+			/* @__PURE__ */ (0, k.jsxs)("div", {
 				className: `cl-core-state cl-core-state--${e.state}`,
 				role: e.state === "error" ? "alert" : "status",
 				"aria-live": "polite",
 				children: [
-					e.state === "loading" ? /* @__PURE__ */ (0, O.jsx)("span", {
+					e.state === "loading" ? /* @__PURE__ */ (0, k.jsx)("span", {
 						className: "cl-core-spinner",
 						"aria-hidden": "true"
 					}) : null,
-					/* @__PURE__ */ (0, O.jsx)("strong", { children: ze[e.state] }),
-					/* @__PURE__ */ (0, O.jsx)("span", { children: e.state_message })
+					/* @__PURE__ */ (0, k.jsx)("strong", { children: Fe[e.state] }),
+					/* @__PURE__ */ (0, k.jsx)("span", { children: e.state_message })
 				]
 			}),
-			e.state === "loading" ? /* @__PURE__ */ (0, O.jsxs)("div", {
+			e.state === "loading" ? /* @__PURE__ */ (0, k.jsxs)("div", {
 				className: "cl-core-skeleton",
 				"aria-hidden": "true",
 				children: [
-					/* @__PURE__ */ (0, O.jsx)("span", {}),
-					/* @__PURE__ */ (0, O.jsx)("span", {}),
-					/* @__PURE__ */ (0, O.jsx)("span", {})
+					/* @__PURE__ */ (0, k.jsx)("span", {}),
+					/* @__PURE__ */ (0, k.jsx)("span", {}),
+					/* @__PURE__ */ (0, k.jsx)("span", {})
 				]
 			}) : null,
-			!t && e.page === "extraction" ? /* @__PURE__ */ (0, O.jsx)(Ue, { viewModel: e }) : null,
-			!t && e.page === "analysis" ? /* @__PURE__ */ (0, O.jsx)(We, { viewModel: e }) : null,
-			!t && e.page === "risk" ? /* @__PURE__ */ (0, O.jsx)(Je, { viewModel: e }) : null
+			!t && e.page === "extraction" ? /* @__PURE__ */ (0, k.jsx)(Be, { viewModel: e }) : null,
+			!t && e.page === "analysis" ? /* @__PURE__ */ (0, k.jsx)(Ve, { viewModel: e }) : null,
+			!t && e.page === "risk" ? /* @__PURE__ */ (0, k.jsx)(Ge, { viewModel: e }) : null
 		]
 	});
 }
 //#endregion
 //#region src/Cluster5Pages.tsx
-var Xe = {
+var qe = {
 	empty: "Chưa có dữ liệu",
 	success: "Sẵn sàng để xem xét",
 	partial: "Thông tin chưa đầy đủ",
 	error: "Không thể hiển thị"
 };
-function Ze({ viewModel: e }) {
+function Je({ viewModel: e }) {
 	let t = e.findings.filter((e) => e.category === "finding"), n = e.findings.filter((e) => e.category !== "finding"), r = e.state === "empty" || e.state === "error";
-	return /* @__PURE__ */ (0, O.jsxs)("main", {
+	return /* @__PURE__ */ (0, k.jsxs)("main", {
 		className: "cl-support-page cl-summary-page",
 		"data-theme": e.theme,
 		id: "creditlens-summary-content",
 		children: [
-			/* @__PURE__ */ (0, O.jsxs)("header", {
+			/* @__PURE__ */ (0, k.jsxs)("header", {
 				className: "cl-support-header",
-				children: [/* @__PURE__ */ (0, O.jsxs)("div", { children: [
-					/* @__PURE__ */ (0, O.jsx)("p", {
+				children: [/* @__PURE__ */ (0, k.jsxs)("div", { children: [
+					/* @__PURE__ */ (0, k.jsx)("p", {
 						className: "cl-core-eyebrow",
 						children: "Decision support view"
 					}),
-					/* @__PURE__ */ (0, O.jsx)("h1", { children: "Tóm tắt thẩm định tín dụng" }),
-					/* @__PURE__ */ (0, O.jsx)("p", { children: "Deterministic findings được ưu tiên; quyết định cuối cùng thuộc về chuyên viên." })
-				] }), /* @__PURE__ */ (0, O.jsx)(k, {
+					/* @__PURE__ */ (0, k.jsx)("h1", { children: "Tóm tắt thẩm định tín dụng" }),
+					/* @__PURE__ */ (0, k.jsx)("p", { children: "Deterministic findings được ưu tiên; quyết định cuối cùng thuộc về chuyên viên." })
+				] }), /* @__PURE__ */ (0, k.jsx)(Ie, {
 					tone: e.review_status_tone,
 					children: e.review_status
 				})]
 			}),
-			/* @__PURE__ */ (0, O.jsxs)("div", {
+			/* @__PURE__ */ (0, k.jsxs)("div", {
 				className: `cl-core-state cl-core-state--${e.state}`,
 				role: e.state === "error" ? "alert" : "status",
 				"aria-live": "polite",
-				children: [/* @__PURE__ */ (0, O.jsx)("strong", { children: Xe[e.state] }), /* @__PURE__ */ (0, O.jsx)("span", { children: e.state_message })]
+				children: [/* @__PURE__ */ (0, k.jsx)("strong", { children: qe[e.state] }), /* @__PURE__ */ (0, k.jsx)("span", { children: e.state_message })]
 			}),
-			r ? null : /* @__PURE__ */ (0, O.jsxs)(O.Fragment, { children: [
-				/* @__PURE__ */ (0, O.jsxs)("section", {
+			r ? null : /* @__PURE__ */ (0, k.jsxs)(k.Fragment, { children: [
+				/* @__PURE__ */ (0, k.jsxs)("section", {
 					className: "cl-summary-hero",
 					"aria-labelledby": "cl-case-summary-title",
-					children: [/* @__PURE__ */ (0, O.jsxs)("div", {
+					children: [/* @__PURE__ */ (0, k.jsxs)("div", {
 						className: "cl-summary-applicant",
 						children: [
-							/* @__PURE__ */ (0, O.jsx)("p", {
+							/* @__PURE__ */ (0, k.jsx)("p", {
 								className: "cl-core-eyebrow",
 								children: "Applicant / Case"
 							}),
-							/* @__PURE__ */ (0, O.jsx)("h2", {
+							/* @__PURE__ */ (0, k.jsx)("h2", {
 								id: "cl-case-summary-title",
 								children: e.applicant
 							}),
-							/* @__PURE__ */ (0, O.jsx)("p", { children: e.employer }),
-							/* @__PURE__ */ (0, O.jsx)("code", { children: e.case_id })
+							/* @__PURE__ */ (0, k.jsx)("p", { children: e.employer }),
+							/* @__PURE__ */ (0, k.jsx)("code", { children: e.case_id })
 						]
-					}), /* @__PURE__ */ (0, O.jsxs)("dl", {
+					}), /* @__PURE__ */ (0, k.jsxs)("dl", {
 						className: "cl-summary-status-grid",
 						children: [
-							/* @__PURE__ */ (0, O.jsxs)("div", { children: [/* @__PURE__ */ (0, O.jsx)("dt", { children: "Review status" }), /* @__PURE__ */ (0, O.jsx)("dd", { children: /* @__PURE__ */ (0, O.jsx)(k, {
+							/* @__PURE__ */ (0, k.jsxs)("div", { children: [/* @__PURE__ */ (0, k.jsx)("dt", { children: "Review status" }), /* @__PURE__ */ (0, k.jsx)("dd", { children: /* @__PURE__ */ (0, k.jsx)(Ie, {
 								tone: e.review_status_tone,
 								children: e.review_status
 							}) })] }),
-							/* @__PURE__ */ (0, O.jsxs)("div", { children: [/* @__PURE__ */ (0, O.jsx)("dt", { children: "Mức cảnh báo cao nhất" }), /* @__PURE__ */ (0, O.jsx)("dd", { children: /* @__PURE__ */ (0, O.jsx)(k, {
+							/* @__PURE__ */ (0, k.jsxs)("div", { children: [/* @__PURE__ */ (0, k.jsx)("dt", { children: "Mức cảnh báo cao nhất" }), /* @__PURE__ */ (0, k.jsx)("dd", { children: /* @__PURE__ */ (0, k.jsx)(Ie, {
 								tone: e.highest_alert_tone,
 								children: e.highest_alert
 							}) })] }),
-							/* @__PURE__ */ (0, O.jsxs)("div", { children: [/* @__PURE__ */ (0, O.jsx)("dt", { children: "Số tiền đề nghị" }), /* @__PURE__ */ (0, O.jsx)("dd", { children: e.loan_amount })] }),
-							/* @__PURE__ */ (0, O.jsxs)("div", { children: [/* @__PURE__ */ (0, O.jsx)("dt", { children: "Thời hạn" }), /* @__PURE__ */ (0, O.jsx)("dd", { children: e.loan_term })] }),
-							/* @__PURE__ */ (0, O.jsxs)("div", {
+							/* @__PURE__ */ (0, k.jsxs)("div", { children: [/* @__PURE__ */ (0, k.jsx)("dt", { children: "Số tiền đề nghị" }), /* @__PURE__ */ (0, k.jsx)("dd", { children: e.loan_amount })] }),
+							/* @__PURE__ */ (0, k.jsxs)("div", { children: [/* @__PURE__ */ (0, k.jsx)("dt", { children: "Thời hạn" }), /* @__PURE__ */ (0, k.jsx)("dd", { children: e.loan_term })] }),
+							/* @__PURE__ */ (0, k.jsxs)("div", {
 								className: "cl-summary-status-grid__wide",
-								children: [/* @__PURE__ */ (0, O.jsx)("dt", { children: "Mục đích vay" }), /* @__PURE__ */ (0, O.jsx)("dd", { children: e.loan_purpose })]
+								children: [/* @__PURE__ */ (0, k.jsx)("dt", { children: "Mục đích vay" }), /* @__PURE__ */ (0, k.jsx)("dd", { children: e.loan_purpose })]
 							})
 						]
 					})]
 				}),
-				/* @__PURE__ */ (0, O.jsxs)("section", {
+				/* @__PURE__ */ (0, k.jsxs)("section", {
 					className: "cl-core-section",
 					"aria-labelledby": "cl-summary-metrics-title",
-					children: [/* @__PURE__ */ (0, O.jsxs)("div", {
+					children: [/* @__PURE__ */ (0, k.jsxs)("div", {
 						className: "cl-core-section__heading",
-						children: [/* @__PURE__ */ (0, O.jsxs)("div", { children: [/* @__PURE__ */ (0, O.jsx)("p", {
+						children: [/* @__PURE__ */ (0, k.jsxs)("div", { children: [/* @__PURE__ */ (0, k.jsx)("p", {
 							className: "cl-core-eyebrow",
 							children: "Key metrics"
-						}), /* @__PURE__ */ (0, O.jsx)("h2", {
+						}), /* @__PURE__ */ (0, k.jsx)("h2", {
 							id: "cl-summary-metrics-title",
 							children: "Chỉ số chính"
-						})] }), /* @__PURE__ */ (0, O.jsxs)("span", { children: [e.metrics.length, " giá trị từ Python"] })]
-					}), /* @__PURE__ */ (0, O.jsx)(Ke, { metrics: e.metrics })]
+						})] }), /* @__PURE__ */ (0, k.jsxs)("span", { children: [e.metrics.length, " giá trị từ Python"] })]
+					}), /* @__PURE__ */ (0, k.jsx)(Ue, { metrics: e.metrics })]
 				}),
-				/* @__PURE__ */ (0, O.jsxs)("section", {
+				/* @__PURE__ */ (0, k.jsxs)("section", {
 					className: "cl-core-section",
 					"aria-labelledby": "cl-top-risks-title",
-					children: [/* @__PURE__ */ (0, O.jsxs)("div", {
+					children: [/* @__PURE__ */ (0, k.jsxs)("div", {
 						className: "cl-core-section__heading",
-						children: [/* @__PURE__ */ (0, O.jsxs)("div", { children: [/* @__PURE__ */ (0, O.jsx)("p", {
+						children: [/* @__PURE__ */ (0, k.jsxs)("div", { children: [/* @__PURE__ */ (0, k.jsx)("p", {
 							className: "cl-core-eyebrow",
 							children: "Top risks"
-						}), /* @__PURE__ */ (0, O.jsx)("h2", {
+						}), /* @__PURE__ */ (0, k.jsx)("h2", {
 							id: "cl-top-risks-title",
 							children: "Cảnh báo cần ưu tiên đọc"
-						})] }), /* @__PURE__ */ (0, O.jsxs)("span", { children: [
+						})] }), /* @__PURE__ */ (0, k.jsxs)("span", { children: [
 							e.top_risks.length,
 							"/",
 							e.total_risk_count,
 							" cảnh báo theo thứ tự backend"
 						] })]
-					}), e.top_risks.length ? /* @__PURE__ */ (0, O.jsx)("div", {
+					}), e.top_risks.length ? /* @__PURE__ */ (0, k.jsx)("div", {
 						className: "cl-risk-grid",
-						children: e.top_risks.map((e) => /* @__PURE__ */ (0, O.jsx)(qe, { risk: e }, e.code))
-					}) : /* @__PURE__ */ (0, O.jsx)("div", {
+						children: e.top_risks.map((e) => /* @__PURE__ */ (0, k.jsx)(We, { risk: e }, e.code))
+					}) : /* @__PURE__ */ (0, k.jsx)("div", {
 						className: "cl-core-no-risks",
 						role: "status",
 						children: "Không phát hiện cảnh báo trọng yếu theo các quy tắc minh họa hiện tại."
 					})]
 				}),
-				/* @__PURE__ */ (0, O.jsxs)("section", {
+				/* @__PURE__ */ (0, k.jsxs)("section", {
 					className: "cl-core-section",
 					"aria-labelledby": "cl-findings-title",
-					children: [/* @__PURE__ */ (0, O.jsx)("div", {
+					children: [/* @__PURE__ */ (0, k.jsx)("div", {
 						className: "cl-core-section__heading",
-						children: /* @__PURE__ */ (0, O.jsxs)("div", { children: [/* @__PURE__ */ (0, O.jsx)("p", {
+						children: /* @__PURE__ */ (0, k.jsxs)("div", { children: [/* @__PURE__ */ (0, k.jsx)("p", {
 							className: "cl-core-eyebrow",
 							children: "Deterministic findings"
-						}), /* @__PURE__ */ (0, O.jsx)("h2", {
+						}), /* @__PURE__ */ (0, k.jsx)("h2", {
 							id: "cl-findings-title",
 							children: "Kết quả xác định"
 						})] })
-					}), /* @__PURE__ */ (0, O.jsx)("div", {
+					}), /* @__PURE__ */ (0, k.jsx)("div", {
 						className: "cl-finding-grid",
-						children: t.map((e, t) => /* @__PURE__ */ (0, O.jsxs)("article", {
+						children: t.map((e, t) => /* @__PURE__ */ (0, k.jsxs)("article", {
 							className: "cl-finding-card",
-							children: [/* @__PURE__ */ (0, O.jsx)(k, {
+							children: [/* @__PURE__ */ (0, k.jsx)(Ie, {
 								tone: e.tone,
 								children: e.title
-							}), /* @__PURE__ */ (0, O.jsx)("p", { children: e.detail })]
+							}), /* @__PURE__ */ (0, k.jsx)("p", { children: e.detail })]
 						}, `${e.title}-${t}`))
 					})]
 				}),
-				/* @__PURE__ */ (0, O.jsxs)("section", {
+				/* @__PURE__ */ (0, k.jsxs)("section", {
 					className: "cl-core-section",
 					"aria-labelledby": "cl-evidence-summary-title",
 					children: [
-						/* @__PURE__ */ (0, O.jsx)("div", {
+						/* @__PURE__ */ (0, k.jsx)("div", {
 							className: "cl-core-section__heading",
-							children: /* @__PURE__ */ (0, O.jsxs)("div", { children: [/* @__PURE__ */ (0, O.jsx)("p", {
+							children: /* @__PURE__ */ (0, k.jsxs)("div", { children: [/* @__PURE__ */ (0, k.jsx)("p", {
 								className: "cl-core-eyebrow",
 								children: "Evidence summary"
-							}), /* @__PURE__ */ (0, O.jsx)("h2", {
+							}), /* @__PURE__ */ (0, k.jsx)("h2", {
 								id: "cl-evidence-summary-title",
 								children: "Phạm vi bằng chứng"
 							})] })
 						}),
-						/* @__PURE__ */ (0, O.jsxs)("dl", {
+						/* @__PURE__ */ (0, k.jsxs)("dl", {
 							className: "cl-summary-counts",
 							children: [
-								/* @__PURE__ */ (0, O.jsxs)("div", { children: [/* @__PURE__ */ (0, O.jsx)("dt", { children: "Tài liệu" }), /* @__PURE__ */ (0, O.jsx)("dd", { children: e.document_count })] }),
-								/* @__PURE__ */ (0, O.jsxs)("div", { children: [/* @__PURE__ */ (0, O.jsx)("dt", { children: "Trường trích xuất" }), /* @__PURE__ */ (0, O.jsx)("dd", { children: e.extracted_field_count })] }),
-								/* @__PURE__ */ (0, O.jsxs)("div", { children: [/* @__PURE__ */ (0, O.jsx)("dt", { children: "Tham chiếu cảnh báo" }), /* @__PURE__ */ (0, O.jsx)("dd", { children: e.evidence.length })] })
+								/* @__PURE__ */ (0, k.jsxs)("div", { children: [/* @__PURE__ */ (0, k.jsx)("dt", { children: "Tài liệu" }), /* @__PURE__ */ (0, k.jsx)("dd", { children: e.document_count })] }),
+								/* @__PURE__ */ (0, k.jsxs)("div", { children: [/* @__PURE__ */ (0, k.jsx)("dt", { children: "Trường trích xuất" }), /* @__PURE__ */ (0, k.jsx)("dd", { children: e.extracted_field_count })] }),
+								/* @__PURE__ */ (0, k.jsxs)("div", { children: [/* @__PURE__ */ (0, k.jsx)("dt", { children: "Tham chiếu cảnh báo" }), /* @__PURE__ */ (0, k.jsx)("dd", { children: e.evidence.length })] })
 							]
 						}),
-						/* @__PURE__ */ (0, O.jsxs)("details", {
+						/* @__PURE__ */ (0, k.jsxs)("details", {
 							className: "cl-local-disclosure",
-							children: [/* @__PURE__ */ (0, O.jsxs)("summary", { children: [
+							children: [/* @__PURE__ */ (0, k.jsxs)("summary", { children: [
 								"Xem bằng chứng cảnh báo (",
 								e.evidence.length,
 								")"
-							] }), e.evidence.length ? /* @__PURE__ */ (0, O.jsx)("div", {
+							] }), e.evidence.length ? /* @__PURE__ */ (0, k.jsx)("div", {
 								className: "cl-evidence-stack",
-								children: e.evidence.map((e, t) => /* @__PURE__ */ (0, O.jsx)(Ve, { item: e }, `${e.document}-${e.page}-${t}`))
-							}) : /* @__PURE__ */ (0, O.jsx)("p", {
+								children: e.evidence.map((e, t) => /* @__PURE__ */ (0, k.jsx)(Re, { item: e }, `${e.document}-${e.page}-${t}`))
+							}) : /* @__PURE__ */ (0, k.jsx)("p", {
 								className: "cl-inline-empty",
 								children: "Không có bằng chứng rủi ro được tạo."
 							})]
 						})
 					]
 				}),
-				/* @__PURE__ */ (0, O.jsxs)("section", {
+				/* @__PURE__ */ (0, k.jsxs)("section", {
 					className: "cl-human-review-panel",
 					"aria-labelledby": "cl-human-review-title",
-					children: [/* @__PURE__ */ (0, O.jsx)("div", {
+					children: [/* @__PURE__ */ (0, k.jsx)("div", {
 						className: "cl-core-section__heading",
-						children: /* @__PURE__ */ (0, O.jsxs)("div", { children: [/* @__PURE__ */ (0, O.jsx)("p", {
+						children: /* @__PURE__ */ (0, k.jsxs)("div", { children: [/* @__PURE__ */ (0, k.jsx)("p", {
 							className: "cl-core-eyebrow",
 							children: "Human-in-the-loop"
-						}), /* @__PURE__ */ (0, O.jsx)("h2", {
+						}), /* @__PURE__ */ (0, k.jsx)("h2", {
 							id: "cl-human-review-title",
 							children: "System assessment và Human Review"
 						})] })
-					}), /* @__PURE__ */ (0, O.jsxs)("div", {
+					}), /* @__PURE__ */ (0, k.jsxs)("div", {
 						className: "cl-human-review-grid",
-						children: [/* @__PURE__ */ (0, O.jsxs)("article", { children: [
-							/* @__PURE__ */ (0, O.jsx)("h3", { children: "System assessment" }),
-							/* @__PURE__ */ (0, O.jsx)("p", { children: /* @__PURE__ */ (0, O.jsx)("strong", { children: e.review_status }) }),
-							/* @__PURE__ */ (0, O.jsx)("p", { children: "Python cung cấp trạng thái, chỉ số, cảnh báo và bằng chứng. Hệ thống không ra quyết định khoản vay." })
-						] }), /* @__PURE__ */ (0, O.jsxs)("article", { children: [
-							/* @__PURE__ */ (0, O.jsx)("h3", { children: "Human Review" }),
-							n.length ? /* @__PURE__ */ (0, O.jsx)("ul", { children: n.map((e, t) => /* @__PURE__ */ (0, O.jsxs)("li", { children: [
-								/* @__PURE__ */ (0, O.jsxs)("strong", { children: [e.title, ":"] }),
+						children: [/* @__PURE__ */ (0, k.jsxs)("article", { children: [
+							/* @__PURE__ */ (0, k.jsx)("h3", { children: "System assessment" }),
+							/* @__PURE__ */ (0, k.jsx)("p", { children: /* @__PURE__ */ (0, k.jsx)("strong", { children: e.review_status }) }),
+							/* @__PURE__ */ (0, k.jsx)("p", { children: "Python cung cấp trạng thái, chỉ số, cảnh báo và bằng chứng. Hệ thống không ra quyết định khoản vay." })
+						] }), /* @__PURE__ */ (0, k.jsxs)("article", { children: [
+							/* @__PURE__ */ (0, k.jsx)("h3", { children: "Human Review" }),
+							n.length ? /* @__PURE__ */ (0, k.jsx)("ul", { children: n.map((e, t) => /* @__PURE__ */ (0, k.jsxs)("li", { children: [
+								/* @__PURE__ */ (0, k.jsxs)("strong", { children: [e.title, ":"] }),
 								" ",
 								e.detail
-							] }, `${e.category}-${t}`)) }) : /* @__PURE__ */ (0, O.jsx)("p", { children: "Không có câu hỏi hoặc hạng mục bắt buộc còn thiếu trong kết quả hiện tại." }),
-							/* @__PURE__ */ (0, O.jsx)("p", {
+							] }, `${e.category}-${t}`)) }) : /* @__PURE__ */ (0, k.jsx)("p", { children: "Không có câu hỏi hoặc hạng mục bắt buộc còn thiếu trong kết quả hiện tại." }),
+							/* @__PURE__ */ (0, k.jsx)("p", {
 								className: "cl-human-review-final",
 								children: "Chuyên viên xác minh dữ kiện, xử lý mâu thuẫn và chịu trách nhiệm về quyết định cuối cùng."
 							})
 						] })]
 					})]
 				}),
-				e.ai_explanation ? /* @__PURE__ */ (0, O.jsxs)("section", {
+				e.ai_explanation ? /* @__PURE__ */ (0, k.jsxs)("section", {
 					className: "cl-ai-explanation",
 					"aria-labelledby": "cl-ai-explanation-title",
 					children: [
-						/* @__PURE__ */ (0, O.jsxs)("div", { children: [/* @__PURE__ */ (0, O.jsx)("span", { children: "AI-generated explanation" }), /* @__PURE__ */ (0, O.jsx)("h2", {
+						/* @__PURE__ */ (0, k.jsxs)("div", { children: [/* @__PURE__ */ (0, k.jsx)("span", { children: "AI-generated explanation" }), /* @__PURE__ */ (0, k.jsx)("h2", {
 							id: "cl-ai-explanation-title",
 							children: "Diễn giải bổ sung bằng AI"
 						})] }),
-						/* @__PURE__ */ (0, O.jsx)("p", { children: e.ai_explanation }),
-						/* @__PURE__ */ (0, O.jsx)("small", { children: "Nội dung này không thay đổi deterministic findings, công thức hoặc review status." })
+						/* @__PURE__ */ (0, k.jsx)("p", { children: e.ai_explanation }),
+						/* @__PURE__ */ (0, k.jsx)("small", { children: "Nội dung này không thay đổi deterministic findings, công thức hoặc review status." })
 					]
 				}) : null,
-				/* @__PURE__ */ (0, O.jsxs)("section", {
+				/* @__PURE__ */ (0, k.jsxs)("section", {
 					className: "cl-export-anchor",
 					"aria-labelledby": "cl-export-title",
 					children: [
-						/* @__PURE__ */ (0, O.jsx)("p", {
+						/* @__PURE__ */ (0, k.jsx)("p", {
 							className: "cl-core-eyebrow",
 							children: "Export actions"
 						}),
-						/* @__PURE__ */ (0, O.jsx)("h2", {
+						/* @__PURE__ */ (0, k.jsx)("h2", {
 							id: "cl-export-title",
 							children: "Xuất báo cáo"
 						}),
-						/* @__PURE__ */ (0, O.jsx)("p", { children: "Word, Excel, PDF, Markdown và JSON tiếp tục dùng generator, schema và filename hiện hành trong khu vực tải xuống ngay bên dưới." })
+						/* @__PURE__ */ (0, k.jsx)("p", { children: "Word, Excel, PDF, Markdown và JSON tiếp tục dùng generator, schema và filename hiện hành trong khu vực tải xuống ngay bên dưới." })
 					]
 				})
 			] })
 		]
 	});
 }
-function Qe({ viewModel: e }) {
-	return /* @__PURE__ */ (0, O.jsxs)("main", {
+function Ye({ viewModel: e }) {
+	return /* @__PURE__ */ (0, k.jsxs)("main", {
 		className: "cl-support-page cl-methodology-page",
 		"data-theme": e.theme,
 		id: "creditlens-methodology-content",
 		children: [
-			/* @__PURE__ */ (0, O.jsx)("header", {
+			/* @__PURE__ */ (0, k.jsx)("header", {
 				className: "cl-support-header",
-				children: /* @__PURE__ */ (0, O.jsxs)("div", { children: [
-					/* @__PURE__ */ (0, O.jsx)("p", {
+				children: /* @__PURE__ */ (0, k.jsxs)("div", { children: [
+					/* @__PURE__ */ (0, k.jsx)("p", {
 						className: "cl-core-eyebrow",
 						children: "Methodology & limitations"
 					}),
-					/* @__PURE__ */ (0, O.jsx)("h1", { children: "Phương pháp và giới hạn" }),
-					/* @__PURE__ */ (0, O.jsx)("p", { children: "Business definitions được giữ nguyên; giao diện chỉ tổ chức lại để dễ kiểm tra." })
+					/* @__PURE__ */ (0, k.jsx)("h1", { children: "Phương pháp và giới hạn" }),
+					/* @__PURE__ */ (0, k.jsx)("p", { children: "Business definitions được giữ nguyên; giao diện chỉ tổ chức lại để dễ kiểm tra." })
 				] })
 			}),
-			/* @__PURE__ */ (0, O.jsxs)("section", {
+			/* @__PURE__ */ (0, k.jsxs)("section", {
 				className: "cl-core-section",
 				"aria-labelledby": "cl-method-layers-title",
-				children: [/* @__PURE__ */ (0, O.jsx)("div", {
+				children: [/* @__PURE__ */ (0, k.jsx)("div", {
 					className: "cl-core-section__heading",
-					children: /* @__PURE__ */ (0, O.jsxs)("div", { children: [/* @__PURE__ */ (0, O.jsx)("p", {
+					children: /* @__PURE__ */ (0, k.jsxs)("div", { children: [/* @__PURE__ */ (0, k.jsx)("p", {
 						className: "cl-core-eyebrow",
 						children: "Three-layer method"
-					}), /* @__PURE__ */ (0, O.jsx)("h2", {
+					}), /* @__PURE__ */ (0, k.jsx)("h2", {
 						id: "cl-method-layers-title",
 						children: "Ba lớp của thuật toán"
 					})] })
-				}), /* @__PURE__ */ (0, O.jsx)("div", {
+				}), /* @__PURE__ */ (0, k.jsx)("div", {
 					className: "cl-method-layer-grid",
-					children: e.layers.map((e) => /* @__PURE__ */ (0, O.jsxs)("article", { children: [/* @__PURE__ */ (0, O.jsx)("h3", { children: e.label }), /* @__PURE__ */ (0, O.jsx)("p", { children: e.description })] }, e.key))
+					children: e.layers.map((e) => /* @__PURE__ */ (0, k.jsxs)("article", { children: [/* @__PURE__ */ (0, k.jsx)("h3", { children: e.label }), /* @__PURE__ */ (0, k.jsx)("p", { children: e.description })] }, e.key))
 				})]
 			}),
-			/* @__PURE__ */ (0, O.jsxs)("section", {
+			/* @__PURE__ */ (0, k.jsxs)("section", {
 				className: "cl-core-section",
 				"aria-labelledby": "cl-formulas-title",
-				children: [/* @__PURE__ */ (0, O.jsxs)("div", {
+				children: [/* @__PURE__ */ (0, k.jsxs)("div", {
 					className: "cl-core-section__heading",
-					children: [/* @__PURE__ */ (0, O.jsxs)("div", { children: [/* @__PURE__ */ (0, O.jsx)("p", {
+					children: [/* @__PURE__ */ (0, k.jsxs)("div", { children: [/* @__PURE__ */ (0, k.jsx)("p", {
 						className: "cl-core-eyebrow",
 						children: "Formula cards"
-					}), /* @__PURE__ */ (0, O.jsx)("h2", {
+					}), /* @__PURE__ */ (0, k.jsx)("h2", {
 						id: "cl-formulas-title",
 						children: "Công thức hiện hành"
-					})] }), /* @__PURE__ */ (0, O.jsx)("span", { children: "6 chỉ số · Không tính trong React" })]
-				}), /* @__PURE__ */ (0, O.jsx)("div", {
+					})] }), /* @__PURE__ */ (0, k.jsx)("span", { children: "6 chỉ số · Không tính trong React" })]
+				}), /* @__PURE__ */ (0, k.jsx)("div", {
 					className: "cl-formula-grid",
-					children: e.formulas.map((e) => /* @__PURE__ */ (0, O.jsxs)("article", {
+					children: e.formulas.map((e) => /* @__PURE__ */ (0, k.jsxs)("article", {
 						className: "cl-formula-card",
 						children: [
-							/* @__PURE__ */ (0, O.jsx)("h3", { children: e.name }),
-							/* @__PURE__ */ (0, O.jsx)("code", { children: e.formula }),
-							/* @__PURE__ */ (0, O.jsx)("p", { children: e.meaning }),
-							/* @__PURE__ */ (0, O.jsxs)("details", {
+							/* @__PURE__ */ (0, k.jsx)("h3", { children: e.name }),
+							/* @__PURE__ */ (0, k.jsx)("code", { children: e.formula }),
+							/* @__PURE__ */ (0, k.jsx)("p", { children: e.meaning }),
+							/* @__PURE__ */ (0, k.jsxs)("details", {
 								className: "cl-local-disclosure",
-								children: [/* @__PURE__ */ (0, O.jsx)("summary", { children: "Giới hạn" }), /* @__PURE__ */ (0, O.jsx)("p", { children: e.limitation })]
+								children: [/* @__PURE__ */ (0, k.jsx)("summary", { children: "Giới hạn" }), /* @__PURE__ */ (0, k.jsx)("p", { children: e.limitation })]
 							})
 						]
 					}, e.key))
 				})]
 			}),
-			/* @__PURE__ */ (0, O.jsxs)("section", {
+			/* @__PURE__ */ (0, k.jsxs)("section", {
 				className: "cl-core-section",
 				"aria-labelledby": "cl-pdf-capability-title",
-				children: [/* @__PURE__ */ (0, O.jsx)("div", {
+				children: [/* @__PURE__ */ (0, k.jsx)("div", {
 					className: "cl-core-section__heading",
-					children: /* @__PURE__ */ (0, O.jsxs)("div", { children: [/* @__PURE__ */ (0, O.jsx)("p", {
+					children: /* @__PURE__ */ (0, k.jsxs)("div", { children: [/* @__PURE__ */ (0, k.jsx)("p", {
 						className: "cl-core-eyebrow",
 						children: "Document capability"
-					}), /* @__PURE__ */ (0, O.jsx)("h2", {
+					}), /* @__PURE__ */ (0, k.jsx)("h2", {
 						id: "cl-pdf-capability-title",
 						children: "Khả năng đọc PDF"
 					})] })
-				}), /* @__PURE__ */ (0, O.jsx)("div", {
+				}), /* @__PURE__ */ (0, k.jsx)("div", {
 					className: "cl-table-scroll",
 					tabIndex: 0,
 					"aria-label": "Bảng khả năng đọc PDF",
-					children: /* @__PURE__ */ (0, O.jsxs)("table", {
+					children: /* @__PURE__ */ (0, k.jsxs)("table", {
 						className: "cl-data-table",
 						"aria-label": "Bảng khả năng đọc PDF",
-						children: [/* @__PURE__ */ (0, O.jsx)("thead", { children: /* @__PURE__ */ (0, O.jsxs)("tr", { children: [
-							/* @__PURE__ */ (0, O.jsx)("th", {
+						children: [/* @__PURE__ */ (0, k.jsx)("thead", { children: /* @__PURE__ */ (0, k.jsxs)("tr", { children: [
+							/* @__PURE__ */ (0, k.jsx)("th", {
 								scope: "col",
 								children: "Loại PDF"
 							}),
-							/* @__PURE__ */ (0, O.jsx)("th", {
+							/* @__PURE__ */ (0, k.jsx)("th", {
 								scope: "col",
 								children: "Mức hỗ trợ"
 							}),
-							/* @__PURE__ */ (0, O.jsx)("th", {
+							/* @__PURE__ */ (0, k.jsx)("th", {
 								scope: "col",
 								children: "Giới hạn"
 							})
-						] }) }), /* @__PURE__ */ (0, O.jsx)("tbody", { children: e.capabilities.map((e) => /* @__PURE__ */ (0, O.jsxs)("tr", { children: [
-							/* @__PURE__ */ (0, O.jsx)("th", {
+						] }) }), /* @__PURE__ */ (0, k.jsx)("tbody", { children: e.capabilities.map((e) => /* @__PURE__ */ (0, k.jsxs)("tr", { children: [
+							/* @__PURE__ */ (0, k.jsx)("th", {
 								scope: "row",
 								children: e.document_type
 							}),
-							/* @__PURE__ */ (0, O.jsx)("td", { children: e.support_level }),
-							/* @__PURE__ */ (0, O.jsx)("td", { children: e.limitation })
+							/* @__PURE__ */ (0, k.jsx)("td", { children: e.support_level }),
+							/* @__PURE__ */ (0, k.jsx)("td", { children: e.limitation })
 						] }, e.document_type)) })]
 					})
 				})]
 			}),
-			/* @__PURE__ */ (0, O.jsxs)("section", {
+			/* @__PURE__ */ (0, k.jsxs)("section", {
 				className: "cl-self-eval-section",
 				"aria-labelledby": "cl-self-eval-title",
-				children: [/* @__PURE__ */ (0, O.jsx)("div", {
+				children: [/* @__PURE__ */ (0, k.jsx)("div", {
 					className: "cl-core-section__heading",
-					children: /* @__PURE__ */ (0, O.jsxs)("div", { children: [/* @__PURE__ */ (0, O.jsx)("p", {
+					children: /* @__PURE__ */ (0, k.jsxs)("div", { children: [/* @__PURE__ */ (0, k.jsx)("p", {
 						className: "cl-core-eyebrow",
 						children: "Different questions"
-					}), /* @__PURE__ */ (0, O.jsx)("h2", {
+					}), /* @__PURE__ */ (0, k.jsx)("h2", {
 						id: "cl-self-eval-title",
 						children: "SELF-TEST ≠ EVALUATION"
 					})] })
-				}), /* @__PURE__ */ (0, O.jsxs)("div", {
+				}), /* @__PURE__ */ (0, k.jsxs)("div", {
 					className: "cl-self-eval-grid",
-					children: [/* @__PURE__ */ (0, O.jsxs)("article", { children: [/* @__PURE__ */ (0, O.jsx)("h3", { children: "SELF-TEST" }), /* @__PURE__ */ (0, O.jsx)("p", { children: e.self_test_definition })] }), /* @__PURE__ */ (0, O.jsxs)("article", { children: [/* @__PURE__ */ (0, O.jsx)("h3", { children: "EVALUATION" }), /* @__PURE__ */ (0, O.jsx)("p", { children: e.evaluation_definition })] })]
+					children: [/* @__PURE__ */ (0, k.jsxs)("article", { children: [/* @__PURE__ */ (0, k.jsx)("h3", { children: "SELF-TEST" }), /* @__PURE__ */ (0, k.jsx)("p", { children: e.self_test_definition })] }), /* @__PURE__ */ (0, k.jsxs)("article", { children: [/* @__PURE__ */ (0, k.jsx)("h3", { children: "EVALUATION" }), /* @__PURE__ */ (0, k.jsx)("p", { children: e.evaluation_definition })] })]
 				})]
 			}),
-			/* @__PURE__ */ (0, O.jsxs)("section", {
+			/* @__PURE__ */ (0, k.jsxs)("section", {
 				className: "cl-limitations-section",
 				"aria-labelledby": "cl-limitations-title",
-				children: [/* @__PURE__ */ (0, O.jsx)("div", {
+				children: [/* @__PURE__ */ (0, k.jsx)("div", {
 					className: "cl-core-section__heading",
-					children: /* @__PURE__ */ (0, O.jsxs)("div", { children: [/* @__PURE__ */ (0, O.jsx)("p", {
+					children: /* @__PURE__ */ (0, k.jsxs)("div", { children: [/* @__PURE__ */ (0, k.jsx)("p", {
 						className: "cl-core-eyebrow",
 						children: "Limitations & Human Review"
-					}), /* @__PURE__ */ (0, O.jsx)("h2", {
+					}), /* @__PURE__ */ (0, k.jsx)("h2", {
 						id: "cl-limitations-title",
 						children: "Giới hạn và trách nhiệm xem xét"
 					})] })
-				}), /* @__PURE__ */ (0, O.jsx)("div", {
+				}), /* @__PURE__ */ (0, k.jsx)("div", {
 					className: "cl-limitation-grid",
-					children: e.limitations.map((e) => /* @__PURE__ */ (0, O.jsxs)("article", { children: [/* @__PURE__ */ (0, O.jsx)("h3", { children: e.title }), /* @__PURE__ */ (0, O.jsx)("ul", { children: e.items.map((e) => /* @__PURE__ */ (0, O.jsx)("li", { children: e }, e)) })] }, e.title))
+					children: e.limitations.map((e) => /* @__PURE__ */ (0, k.jsxs)("article", { children: [/* @__PURE__ */ (0, k.jsx)("h3", { children: e.title }), /* @__PURE__ */ (0, k.jsx)("ul", { children: e.items.map((e) => /* @__PURE__ */ (0, k.jsx)("li", { children: e }, e)) })] }, e.title))
 				})]
 			})
 		]
 	});
 }
-function $e({ title: e, rows: t }) {
-	return /* @__PURE__ */ (0, O.jsxs)("section", {
+function Xe({ title: e, rows: t }) {
+	return /* @__PURE__ */ (0, k.jsxs)("section", {
 		className: "cl-core-section",
 		"aria-labelledby": `cl-${e.toLowerCase().replace(/[^a-z]+/g, "-")}`,
-		children: [/* @__PURE__ */ (0, O.jsx)("div", {
+		children: [/* @__PURE__ */ (0, k.jsx)("div", {
 			className: "cl-core-section__heading",
-			children: /* @__PURE__ */ (0, O.jsx)("h2", {
+			children: /* @__PURE__ */ (0, k.jsx)("h2", {
 				id: `cl-${e.toLowerCase().replace(/[^a-z]+/g, "-")}`,
 				children: e
 			})
-		}), /* @__PURE__ */ (0, O.jsx)("div", {
+		}), /* @__PURE__ */ (0, k.jsx)("div", {
 			className: "cl-table-scroll",
 			tabIndex: 0,
 			"aria-label": `Bảng ${e}`,
-			children: /* @__PURE__ */ (0, O.jsxs)("table", {
+			children: /* @__PURE__ */ (0, k.jsxs)("table", {
 				className: "cl-data-table cl-metric-table",
 				"aria-label": `Bảng ${e}`,
-				children: [/* @__PURE__ */ (0, O.jsx)("thead", { children: /* @__PURE__ */ (0, O.jsxs)("tr", { children: [
-					/* @__PURE__ */ (0, O.jsx)("th", {
+				children: [/* @__PURE__ */ (0, k.jsx)("thead", { children: /* @__PURE__ */ (0, k.jsxs)("tr", { children: [
+					/* @__PURE__ */ (0, k.jsx)("th", {
 						scope: "col",
 						children: "Class"
 					}),
-					/* @__PURE__ */ (0, O.jsx)("th", {
+					/* @__PURE__ */ (0, k.jsx)("th", {
 						scope: "col",
 						children: "TP"
 					}),
-					/* @__PURE__ */ (0, O.jsx)("th", {
+					/* @__PURE__ */ (0, k.jsx)("th", {
 						scope: "col",
 						children: "FP"
 					}),
-					/* @__PURE__ */ (0, O.jsx)("th", {
+					/* @__PURE__ */ (0, k.jsx)("th", {
 						scope: "col",
 						children: "FN"
 					}),
-					/* @__PURE__ */ (0, O.jsx)("th", {
+					/* @__PURE__ */ (0, k.jsx)("th", {
 						scope: "col",
 						children: "TN"
 					}),
-					/* @__PURE__ */ (0, O.jsx)("th", {
+					/* @__PURE__ */ (0, k.jsx)("th", {
 						scope: "col",
 						children: "Precision"
 					}),
-					/* @__PURE__ */ (0, O.jsx)("th", {
+					/* @__PURE__ */ (0, k.jsx)("th", {
 						scope: "col",
 						children: "Recall"
 					}),
-					/* @__PURE__ */ (0, O.jsx)("th", {
+					/* @__PURE__ */ (0, k.jsx)("th", {
 						scope: "col",
 						children: "F1"
 					})
-				] }) }), /* @__PURE__ */ (0, O.jsx)("tbody", { children: t.map((e) => /* @__PURE__ */ (0, O.jsxs)("tr", { children: [
-					/* @__PURE__ */ (0, O.jsx)("th", {
+				] }) }), /* @__PURE__ */ (0, k.jsx)("tbody", { children: t.map((e) => /* @__PURE__ */ (0, k.jsxs)("tr", { children: [
+					/* @__PURE__ */ (0, k.jsx)("th", {
 						scope: "row",
 						children: e.name
 					}),
-					/* @__PURE__ */ (0, O.jsx)("td", { children: e.tp }),
-					/* @__PURE__ */ (0, O.jsx)("td", { children: e.fp }),
-					/* @__PURE__ */ (0, O.jsx)("td", { children: e.fn }),
-					/* @__PURE__ */ (0, O.jsx)("td", { children: e.tn ?? "N/A" }),
-					/* @__PURE__ */ (0, O.jsx)("td", { children: e.precision }),
-					/* @__PURE__ */ (0, O.jsx)("td", { children: e.recall }),
-					/* @__PURE__ */ (0, O.jsx)("td", { children: e.f1 })
+					/* @__PURE__ */ (0, k.jsx)("td", { children: e.tp }),
+					/* @__PURE__ */ (0, k.jsx)("td", { children: e.fp }),
+					/* @__PURE__ */ (0, k.jsx)("td", { children: e.fn }),
+					/* @__PURE__ */ (0, k.jsx)("td", { children: e.tn ?? "N/A" }),
+					/* @__PURE__ */ (0, k.jsx)("td", { children: e.precision }),
+					/* @__PURE__ */ (0, k.jsx)("td", { children: e.recall }),
+					/* @__PURE__ */ (0, k.jsx)("td", { children: e.f1 })
 				] }, e.name)) })]
 			})
 		})]
 	});
 }
-function et({ viewModel: e, onDomainEvent: t }) {
+function Ze({ viewModel: e, onDomainEvent: t }) {
 	let [n, r] = (0, l.useState)(!1), [i, a] = (0, l.useState)("all"), o = (0, l.useMemo)(() => Array.from(new Set(e.failure_cases.map((e) => e.failure_type))), [e.failure_cases]), s = (0, l.useMemo)(() => e.failure_cases.filter((e) => i === "all" || e.failure_type === i), [i, e.failure_cases]);
-	return /* @__PURE__ */ (0, O.jsxs)("main", {
+	return /* @__PURE__ */ (0, k.jsxs)("main", {
 		className: "cl-support-page cl-evaluation-page",
 		"data-theme": e.theme,
 		id: "creditlens-evaluation-content",
 		children: [
-			/* @__PURE__ */ (0, O.jsxs)("header", {
+			/* @__PURE__ */ (0, k.jsxs)("header", {
 				className: "cl-support-header cl-evaluation-header",
-				children: [/* @__PURE__ */ (0, O.jsxs)("div", { children: [
-					/* @__PURE__ */ (0, O.jsx)("p", {
+				children: [/* @__PURE__ */ (0, k.jsxs)("div", { children: [
+					/* @__PURE__ */ (0, k.jsx)("p", {
 						className: "cl-core-eyebrow",
 						children: "Deterministic benchmark"
 					}),
-					/* @__PURE__ */ (0, O.jsx)("h1", { children: "Model / Pipeline Evaluation" }),
-					/* @__PURE__ */ (0, O.jsx)("p", { children: "Evaluation đo chất lượng hệ thống; không phải self-test và không gọi LLM." })
-				] }), /* @__PURE__ */ (0, O.jsx)("button", {
+					/* @__PURE__ */ (0, k.jsx)("h1", { children: "Model / Pipeline Evaluation" }),
+					/* @__PURE__ */ (0, k.jsx)("p", { children: "Evaluation đo chất lượng hệ thống; không phải self-test và không gọi LLM." })
+				] }), /* @__PURE__ */ (0, k.jsx)("button", {
 					className: "cl-evaluation-run",
 					type: "button",
 					onClick: () => {
-						n || (r(!0), t(Me()));
+						n || (r(!0), t(ke()));
 					},
 					disabled: n,
 					children: n ? "Đang chạy…" : e.state === "success" ? "Run Evaluation lại" : "Run Evaluation"
 				})]
 			}),
-			/* @__PURE__ */ (0, O.jsxs)("div", {
+			/* @__PURE__ */ (0, k.jsxs)("div", {
 				className: `cl-core-state cl-core-state--${e.state === "error" ? "error" : e.state === "success" ? "success" : "empty"}`,
 				role: e.state === "error" ? "alert" : "status",
 				"aria-live": "polite",
-				children: [/* @__PURE__ */ (0, O.jsx)("strong", { children: e.state === "success" ? "Evaluation đã sẵn sàng" : e.state === "error" ? "Evaluation lỗi" : "Chưa có báo cáo" }), /* @__PURE__ */ (0, O.jsx)("span", { children: e.state_message })]
+				children: [/* @__PURE__ */ (0, k.jsx)("strong", { children: e.state === "success" ? "Evaluation đã sẵn sàng" : e.state === "error" ? "Evaluation lỗi" : "Chưa có báo cáo" }), /* @__PURE__ */ (0, k.jsx)("span", { children: e.state_message })]
 			}),
-			e.state === "success" ? /* @__PURE__ */ (0, O.jsxs)(O.Fragment, { children: [
-				/* @__PURE__ */ (0, O.jsxs)("section", {
+			e.state === "success" ? /* @__PURE__ */ (0, k.jsxs)(k.Fragment, { children: [
+				/* @__PURE__ */ (0, k.jsxs)("section", {
 					className: "cl-eval-meta",
 					"aria-labelledby": "cl-eval-meta-title",
-					children: [/* @__PURE__ */ (0, O.jsxs)("div", { children: [/* @__PURE__ */ (0, O.jsx)("p", {
+					children: [/* @__PURE__ */ (0, k.jsxs)("div", { children: [/* @__PURE__ */ (0, k.jsx)("p", {
 						className: "cl-core-eyebrow",
 						children: "Reproducibility"
-					}), /* @__PURE__ */ (0, O.jsx)("h2", {
+					}), /* @__PURE__ */ (0, k.jsx)("h2", {
 						id: "cl-eval-meta-title",
 						children: "Dataset và lần chạy"
-					})] }), /* @__PURE__ */ (0, O.jsx)("div", {
+					})] }), /* @__PURE__ */ (0, k.jsx)("div", {
 						className: "cl-label-value-grid",
-						children: [...e.metadata, ...e.dataset].map((e, t) => /* @__PURE__ */ (0, O.jsxs)("div", { children: [/* @__PURE__ */ (0, O.jsx)("span", { children: e.label }), /* @__PURE__ */ (0, O.jsx)("strong", { children: e.value })] }, `${e.label}-${t}`))
+						children: [...e.metadata, ...e.dataset].map((e, t) => /* @__PURE__ */ (0, k.jsxs)("div", { children: [/* @__PURE__ */ (0, k.jsx)("span", { children: e.label }), /* @__PURE__ */ (0, k.jsx)("strong", { children: e.value })] }, `${e.label}-${t}`))
 					})]
 				}),
-				/* @__PURE__ */ (0, O.jsxs)("section", {
+				/* @__PURE__ */ (0, k.jsxs)("section", {
 					className: "cl-core-section",
 					"aria-labelledby": "cl-scorecards-title",
-					children: [/* @__PURE__ */ (0, O.jsxs)("div", {
+					children: [/* @__PURE__ */ (0, k.jsxs)("div", {
 						className: "cl-core-section__heading",
-						children: [/* @__PURE__ */ (0, O.jsxs)("div", { children: [/* @__PURE__ */ (0, O.jsx)("p", {
+						children: [/* @__PURE__ */ (0, k.jsxs)("div", { children: [/* @__PURE__ */ (0, k.jsx)("p", {
 							className: "cl-core-eyebrow",
 							children: "Evaluation scorecards"
-						}), /* @__PURE__ */ (0, O.jsx)("h2", {
+						}), /* @__PURE__ */ (0, k.jsx)("h2", {
 							id: "cl-scorecards-title",
 							children: "Kết quả chính"
-						})] }), /* @__PURE__ */ (0, O.jsxs)("span", { children: ["LLM API calls: ", e.llm_api_calls ?? "N/A"] })]
-					}), /* @__PURE__ */ (0, O.jsx)("div", {
+						})] }), /* @__PURE__ */ (0, k.jsxs)("span", { children: ["LLM API calls: ", e.llm_api_calls ?? "N/A"] })]
+					}), /* @__PURE__ */ (0, k.jsx)("div", {
 						className: "cl-scorecard-grid",
-						children: e.scorecards.map((e) => /* @__PURE__ */ (0, O.jsxs)("article", { children: [/* @__PURE__ */ (0, O.jsx)("span", { children: e.label }), /* @__PURE__ */ (0, O.jsx)("strong", { children: e.value_display })] }, e.key))
+						children: e.scorecards.map((e) => /* @__PURE__ */ (0, k.jsxs)("article", { children: [/* @__PURE__ */ (0, k.jsx)("span", { children: e.label }), /* @__PURE__ */ (0, k.jsx)("strong", { children: e.value_display })] }, e.key))
 					})]
 				}),
-				/* @__PURE__ */ (0, O.jsxs)("section", {
+				/* @__PURE__ */ (0, k.jsxs)("section", {
 					className: "cl-core-section",
 					"aria-labelledby": "cl-field-metrics-title",
-					children: [/* @__PURE__ */ (0, O.jsx)("div", {
+					children: [/* @__PURE__ */ (0, k.jsx)("div", {
 						className: "cl-core-section__heading",
-						children: /* @__PURE__ */ (0, O.jsx)("h2", {
+						children: /* @__PURE__ */ (0, k.jsx)("h2", {
 							id: "cl-field-metrics-title",
 							children: "Extraction Accuracy · field-level"
 						})
-					}), /* @__PURE__ */ (0, O.jsx)("div", {
+					}), /* @__PURE__ */ (0, k.jsx)("div", {
 						className: "cl-table-scroll",
 						tabIndex: 0,
 						"aria-label": "Bảng field-level extraction metrics",
-						children: /* @__PURE__ */ (0, O.jsxs)("table", {
+						children: /* @__PURE__ */ (0, k.jsxs)("table", {
 							className: "cl-data-table",
-							children: [/* @__PURE__ */ (0, O.jsx)("thead", { children: /* @__PURE__ */ (0, O.jsxs)("tr", { children: [
-								/* @__PURE__ */ (0, O.jsx)("th", {
+							children: [/* @__PURE__ */ (0, k.jsx)("thead", { children: /* @__PURE__ */ (0, k.jsxs)("tr", { children: [
+								/* @__PURE__ */ (0, k.jsx)("th", {
 									scope: "col",
 									children: "Field"
 								}),
-								/* @__PURE__ */ (0, O.jsx)("th", {
+								/* @__PURE__ */ (0, k.jsx)("th", {
 									scope: "col",
 									children: "Correct"
 								}),
-								/* @__PURE__ */ (0, O.jsx)("th", {
+								/* @__PURE__ */ (0, k.jsx)("th", {
 									scope: "col",
 									children: "Total"
 								}),
-								/* @__PURE__ */ (0, O.jsx)("th", {
+								/* @__PURE__ */ (0, k.jsx)("th", {
 									scope: "col",
 									children: "Accuracy"
 								}),
-								/* @__PURE__ */ (0, O.jsx)("th", {
+								/* @__PURE__ */ (0, k.jsx)("th", {
 									scope: "col",
 									children: "Comparison"
 								})
-							] }) }), /* @__PURE__ */ (0, O.jsx)("tbody", { children: e.field_metrics.map((e) => /* @__PURE__ */ (0, O.jsxs)("tr", { children: [
-								/* @__PURE__ */ (0, O.jsx)("th", {
+							] }) }), /* @__PURE__ */ (0, k.jsx)("tbody", { children: e.field_metrics.map((e) => /* @__PURE__ */ (0, k.jsxs)("tr", { children: [
+								/* @__PURE__ */ (0, k.jsx)("th", {
 									scope: "row",
 									children: e.name
 								}),
-								/* @__PURE__ */ (0, O.jsx)("td", { children: e.correct }),
-								/* @__PURE__ */ (0, O.jsx)("td", { children: e.total }),
-								/* @__PURE__ */ (0, O.jsx)("td", { children: e.accuracy }),
-								/* @__PURE__ */ (0, O.jsx)("td", { children: e.detail })
+								/* @__PURE__ */ (0, k.jsx)("td", { children: e.correct }),
+								/* @__PURE__ */ (0, k.jsx)("td", { children: e.total }),
+								/* @__PURE__ */ (0, k.jsx)("td", { children: e.accuracy }),
+								/* @__PURE__ */ (0, k.jsx)("td", { children: e.detail })
 							] }, e.name)) })]
 						})
 					})]
 				}),
-				/* @__PURE__ */ (0, O.jsx)($e, {
+				/* @__PURE__ */ (0, k.jsx)(Xe, {
 					title: "Risk Precision / Recall / F1",
 					rows: e.risk_metrics
 				}),
-				/* @__PURE__ */ (0, O.jsxs)("section", {
+				/* @__PURE__ */ (0, k.jsxs)("section", {
 					className: "cl-core-section",
 					"aria-labelledby": "cl-confusion-title",
-					children: [/* @__PURE__ */ (0, O.jsx)("div", {
+					children: [/* @__PURE__ */ (0, k.jsx)("div", {
 						className: "cl-core-section__heading",
-						children: /* @__PURE__ */ (0, O.jsxs)("div", { children: [/* @__PURE__ */ (0, O.jsx)("p", {
+						children: /* @__PURE__ */ (0, k.jsxs)("div", { children: [/* @__PURE__ */ (0, k.jsx)("p", {
 							className: "cl-core-eyebrow",
 							children: "Status accuracy"
-						}), /* @__PURE__ */ (0, O.jsx)("h2", {
+						}), /* @__PURE__ */ (0, k.jsx)("h2", {
 							id: "cl-confusion-title",
 							children: "Confusion Matrix"
 						})] })
-					}), /* @__PURE__ */ (0, O.jsx)("div", {
+					}), /* @__PURE__ */ (0, k.jsx)("div", {
 						className: "cl-table-scroll",
 						tabIndex: 0,
 						"aria-label": "Confusion matrix trạng thái",
-						children: /* @__PURE__ */ (0, O.jsxs)("table", {
+						children: /* @__PURE__ */ (0, k.jsxs)("table", {
 							className: "cl-data-table cl-confusion-table",
 							"aria-label": "Confusion matrix trạng thái",
 							children: [
-								/* @__PURE__ */ (0, O.jsx)("caption", { children: "Hàng là Actual; cột là Predicted. Giá trị số là text equivalent của heatmap." }),
-								/* @__PURE__ */ (0, O.jsx)("thead", { children: /* @__PURE__ */ (0, O.jsxs)("tr", { children: [/* @__PURE__ */ (0, O.jsx)("th", {
+								/* @__PURE__ */ (0, k.jsx)("caption", { children: "Hàng là Actual; cột là Predicted. Giá trị số là text equivalent của heatmap." }),
+								/* @__PURE__ */ (0, k.jsx)("thead", { children: /* @__PURE__ */ (0, k.jsxs)("tr", { children: [/* @__PURE__ */ (0, k.jsx)("th", {
 									scope: "col",
 									children: "Actual \\ Predicted"
-								}), e.confusion_labels.map((e) => /* @__PURE__ */ (0, O.jsx)("th", {
+								}), e.confusion_labels.map((e) => /* @__PURE__ */ (0, k.jsx)("th", {
 									scope: "col",
 									children: e
 								}, e))] }) }),
-								/* @__PURE__ */ (0, O.jsx)("tbody", { children: e.confusion_rows.map((t) => /* @__PURE__ */ (0, O.jsxs)("tr", { children: [/* @__PURE__ */ (0, O.jsx)("th", {
+								/* @__PURE__ */ (0, k.jsx)("tbody", { children: e.confusion_rows.map((t) => /* @__PURE__ */ (0, k.jsxs)("tr", { children: [/* @__PURE__ */ (0, k.jsx)("th", {
 									scope: "row",
 									children: t.actual
-								}), t.predicted.map((n, r) => /* @__PURE__ */ (0, O.jsx)("td", {
+								}), t.predicted.map((n, r) => /* @__PURE__ */ (0, k.jsx)("td", {
 									className: `${n > 0 ? "is-nonzero" : ""} ${t.actual === e.confusion_labels[r] ? "is-diagonal" : ""}`,
 									children: n
 								}, `${t.actual}-${e.confusion_labels[r]}`))] }, t.actual)) })
@@ -11106,105 +11074,105 @@ function et({ viewModel: e, onDomainEvent: t }) {
 						})
 					})]
 				}),
-				/* @__PURE__ */ (0, O.jsx)($e, {
+				/* @__PURE__ */ (0, k.jsx)(Xe, {
 					title: "Status metrics by class",
 					rows: e.status_metrics
 				}),
-				/* @__PURE__ */ (0, O.jsxs)("section", {
+				/* @__PURE__ */ (0, k.jsxs)("section", {
 					className: "cl-core-section",
 					"aria-labelledby": "cl-grounding-title",
-					children: [/* @__PURE__ */ (0, O.jsx)("div", {
+					children: [/* @__PURE__ */ (0, k.jsx)("div", {
 						className: "cl-core-section__heading",
-						children: /* @__PURE__ */ (0, O.jsxs)("div", { children: [/* @__PURE__ */ (0, O.jsx)("p", {
+						children: /* @__PURE__ */ (0, k.jsxs)("div", { children: [/* @__PURE__ */ (0, k.jsx)("p", {
 							className: "cl-core-eyebrow",
 							children: "Saved outputs · no API"
-						}), /* @__PURE__ */ (0, O.jsx)("h2", {
+						}), /* @__PURE__ */ (0, k.jsx)("h2", {
 							id: "cl-grounding-title",
 							children: "Grounding metrics"
 						})] })
-					}), /* @__PURE__ */ (0, O.jsx)("div", {
+					}), /* @__PURE__ */ (0, k.jsx)("div", {
 						className: "cl-table-scroll",
 						tabIndex: 0,
 						"aria-label": "Bảng grounding metrics",
-						children: /* @__PURE__ */ (0, O.jsxs)("table", {
+						children: /* @__PURE__ */ (0, k.jsxs)("table", {
 							className: "cl-data-table",
-							children: [/* @__PURE__ */ (0, O.jsx)("thead", { children: /* @__PURE__ */ (0, O.jsxs)("tr", { children: [
-								/* @__PURE__ */ (0, O.jsx)("th", {
+							children: [/* @__PURE__ */ (0, k.jsx)("thead", { children: /* @__PURE__ */ (0, k.jsxs)("tr", { children: [
+								/* @__PURE__ */ (0, k.jsx)("th", {
 									scope: "col",
 									children: "Variant"
 								}),
-								/* @__PURE__ */ (0, O.jsx)("th", {
+								/* @__PURE__ */ (0, k.jsx)("th", {
 									scope: "col",
 									children: "Evidence coverage"
 								}),
-								/* @__PURE__ */ (0, O.jsx)("th", {
+								/* @__PURE__ */ (0, k.jsx)("th", {
 									scope: "col",
 									children: "Unsupported claim rate"
 								}),
-								/* @__PURE__ */ (0, O.jsx)("th", {
+								/* @__PURE__ */ (0, k.jsx)("th", {
 									scope: "col",
 									children: "Factual consistency"
 								})
-							] }) }), /* @__PURE__ */ (0, O.jsx)("tbody", { children: e.grounding.map((e) => /* @__PURE__ */ (0, O.jsxs)("tr", { children: [
-								/* @__PURE__ */ (0, O.jsx)("th", {
+							] }) }), /* @__PURE__ */ (0, k.jsx)("tbody", { children: e.grounding.map((e) => /* @__PURE__ */ (0, k.jsxs)("tr", { children: [
+								/* @__PURE__ */ (0, k.jsx)("th", {
 									scope: "row",
 									children: e.variant
 								}),
-								/* @__PURE__ */ (0, O.jsx)("td", { children: e.evidence_coverage }),
-								/* @__PURE__ */ (0, O.jsx)("td", { children: e.unsupported_claim_rate }),
-								/* @__PURE__ */ (0, O.jsx)("td", { children: e.factual_consistency })
+								/* @__PURE__ */ (0, k.jsx)("td", { children: e.evidence_coverage }),
+								/* @__PURE__ */ (0, k.jsx)("td", { children: e.unsupported_claim_rate }),
+								/* @__PURE__ */ (0, k.jsx)("td", { children: e.factual_consistency })
 							] }, e.variant)) })]
 						})
 					})]
 				}),
-				/* @__PURE__ */ (0, O.jsxs)("section", {
+				/* @__PURE__ */ (0, k.jsxs)("section", {
 					className: "cl-core-section",
 					"aria-labelledby": "cl-baselines-title",
-					children: [/* @__PURE__ */ (0, O.jsx)("div", {
+					children: [/* @__PURE__ */ (0, k.jsx)("div", {
 						className: "cl-core-section__heading",
-						children: /* @__PURE__ */ (0, O.jsxs)("div", { children: [/* @__PURE__ */ (0, O.jsx)("p", {
+						children: /* @__PURE__ */ (0, k.jsxs)("div", { children: [/* @__PURE__ */ (0, k.jsx)("p", {
 							className: "cl-core-eyebrow",
 							children: "Current system vs baseline"
-						}), /* @__PURE__ */ (0, O.jsx)("h2", {
+						}), /* @__PURE__ */ (0, k.jsx)("h2", {
 							id: "cl-baselines-title",
 							children: "Baseline comparison"
 						})] })
-					}), /* @__PURE__ */ (0, O.jsx)("div", {
+					}), /* @__PURE__ */ (0, k.jsx)("div", {
 						className: "cl-baseline-grid",
-						children: e.baselines.map((e) => /* @__PURE__ */ (0, O.jsxs)("article", { children: [
-							/* @__PURE__ */ (0, O.jsx)("span", { children: e.baseline }),
-							/* @__PURE__ */ (0, O.jsx)("h3", { children: e.variant }),
-							/* @__PURE__ */ (0, O.jsx)("dl", { children: e.values.map((e) => /* @__PURE__ */ (0, O.jsxs)("div", { children: [/* @__PURE__ */ (0, O.jsx)("dt", { children: e.label }), /* @__PURE__ */ (0, O.jsx)("dd", { children: e.value })] }, e.label)) })
+						children: e.baselines.map((e) => /* @__PURE__ */ (0, k.jsxs)("article", { children: [
+							/* @__PURE__ */ (0, k.jsx)("span", { children: e.baseline }),
+							/* @__PURE__ */ (0, k.jsx)("h3", { children: e.variant }),
+							/* @__PURE__ */ (0, k.jsx)("dl", { children: e.values.map((e) => /* @__PURE__ */ (0, k.jsxs)("div", { children: [/* @__PURE__ */ (0, k.jsx)("dt", { children: e.label }), /* @__PURE__ */ (0, k.jsx)("dd", { children: e.value })] }, e.label)) })
 						] }, `${e.baseline}-${e.variant}`))
 					})]
 				}),
-				/* @__PURE__ */ (0, O.jsxs)("section", {
+				/* @__PURE__ */ (0, k.jsxs)("section", {
 					className: "cl-core-section",
 					"aria-labelledby": "cl-processing-title",
-					children: [/* @__PURE__ */ (0, O.jsx)("div", {
+					children: [/* @__PURE__ */ (0, k.jsx)("div", {
 						className: "cl-core-section__heading",
-						children: /* @__PURE__ */ (0, O.jsx)("h2", {
+						children: /* @__PURE__ */ (0, k.jsx)("h2", {
 							id: "cl-processing-title",
 							children: "Processing time"
 						})
-					}), /* @__PURE__ */ (0, O.jsx)("dl", {
+					}), /* @__PURE__ */ (0, k.jsx)("dl", {
 						className: "cl-label-value-grid",
-						children: e.processing.map((e) => /* @__PURE__ */ (0, O.jsxs)("div", { children: [/* @__PURE__ */ (0, O.jsx)("dt", { children: e.label }), /* @__PURE__ */ (0, O.jsx)("dd", { children: e.value })] }, e.label))
+						children: e.processing.map((e) => /* @__PURE__ */ (0, k.jsxs)("div", { children: [/* @__PURE__ */ (0, k.jsx)("dt", { children: e.label }), /* @__PURE__ */ (0, k.jsx)("dd", { children: e.value })] }, e.label))
 					})]
 				}),
-				/* @__PURE__ */ (0, O.jsxs)("section", {
+				/* @__PURE__ */ (0, k.jsxs)("section", {
 					className: "cl-core-section",
 					"aria-labelledby": "cl-failures-title",
 					children: [
-						/* @__PURE__ */ (0, O.jsxs)("div", {
+						/* @__PURE__ */ (0, k.jsxs)("div", {
 							className: "cl-core-section__heading cl-core-section__heading--filters",
-							children: [/* @__PURE__ */ (0, O.jsxs)("div", { children: [/* @__PURE__ */ (0, O.jsx)("p", {
+							children: [/* @__PURE__ */ (0, k.jsxs)("div", { children: [/* @__PURE__ */ (0, k.jsx)("p", {
 								className: "cl-core-eyebrow",
 								children: "Failure-case report"
-							}), /* @__PURE__ */ (0, O.jsx)("h2", {
+							}), /* @__PURE__ */ (0, k.jsx)("h2", {
 								id: "cl-failures-title",
 								children: "Failure cases"
-							})] }), /* @__PURE__ */ (0, O.jsxs)("span", {
+							})] }), /* @__PURE__ */ (0, k.jsxs)("span", {
 								"aria-live": "polite",
 								children: [
 									s.length,
@@ -11214,49 +11182,49 @@ function et({ viewModel: e, onDomainEvent: t }) {
 								]
 							})]
 						}),
-						/* @__PURE__ */ (0, O.jsx)("div", {
+						/* @__PURE__ */ (0, k.jsx)("div", {
 							className: "cl-core-filters",
-							children: /* @__PURE__ */ (0, O.jsxs)("label", { children: ["Failure type", /* @__PURE__ */ (0, O.jsxs)("select", {
+							children: /* @__PURE__ */ (0, k.jsxs)("label", { children: ["Failure type", /* @__PURE__ */ (0, k.jsxs)("select", {
 								value: i,
 								onChange: (e) => a(e.target.value),
-								children: [/* @__PURE__ */ (0, O.jsx)("option", {
+								children: [/* @__PURE__ */ (0, k.jsx)("option", {
 									value: "all",
 									children: "Tất cả failure types"
-								}), o.map((e) => /* @__PURE__ */ (0, O.jsx)("option", {
+								}), o.map((e) => /* @__PURE__ */ (0, k.jsx)("option", {
 									value: e,
 									children: e
 								}, e))]
 							})] })
 						}),
-						/* @__PURE__ */ (0, O.jsx)("div", {
+						/* @__PURE__ */ (0, k.jsx)("div", {
 							className: "cl-failure-grid",
-							children: s.map((e) => /* @__PURE__ */ (0, O.jsxs)("article", { children: [
-								/* @__PURE__ */ (0, O.jsxs)("div", { children: [/* @__PURE__ */ (0, O.jsx)("code", { children: e.case_id }), /* @__PURE__ */ (0, O.jsx)(k, {
+							children: s.map((e) => /* @__PURE__ */ (0, k.jsxs)("article", { children: [
+								/* @__PURE__ */ (0, k.jsxs)("div", { children: [/* @__PURE__ */ (0, k.jsx)("code", { children: e.case_id }), /* @__PURE__ */ (0, k.jsx)(Ie, {
 									tone: e.status.includes("MITIGATED") || e.status.includes("EVALUATED") ? "success" : "warning",
 									children: e.status
 								})] }),
-								/* @__PURE__ */ (0, O.jsx)("h3", { children: e.failure_type }),
-								/* @__PURE__ */ (0, O.jsxs)("dl", { children: [
-									/* @__PURE__ */ (0, O.jsxs)("div", { children: [/* @__PURE__ */ (0, O.jsx)("dt", { children: "Input / Scenario" }), /* @__PURE__ */ (0, O.jsx)("dd", { children: e.scenario })] }),
-									/* @__PURE__ */ (0, O.jsxs)("div", { children: [/* @__PURE__ */ (0, O.jsx)("dt", { children: "Expected" }), /* @__PURE__ */ (0, O.jsx)("dd", { children: e.expected })] }),
-									/* @__PURE__ */ (0, O.jsxs)("div", { children: [/* @__PURE__ */ (0, O.jsx)("dt", { children: "Actual" }), /* @__PURE__ */ (0, O.jsx)("dd", { children: e.actual })] }),
-									/* @__PURE__ */ (0, O.jsxs)("div", { children: [/* @__PURE__ */ (0, O.jsx)("dt", { children: "Probable Cause" }), /* @__PURE__ */ (0, O.jsx)("dd", { children: e.probable_cause })] }),
-									/* @__PURE__ */ (0, O.jsxs)("div", { children: [/* @__PURE__ */ (0, O.jsx)("dt", { children: "Mitigation" }), /* @__PURE__ */ (0, O.jsx)("dd", { children: e.mitigation })] })
+								/* @__PURE__ */ (0, k.jsx)("h3", { children: e.failure_type }),
+								/* @__PURE__ */ (0, k.jsxs)("dl", { children: [
+									/* @__PURE__ */ (0, k.jsxs)("div", { children: [/* @__PURE__ */ (0, k.jsx)("dt", { children: "Input / Scenario" }), /* @__PURE__ */ (0, k.jsx)("dd", { children: e.scenario })] }),
+									/* @__PURE__ */ (0, k.jsxs)("div", { children: [/* @__PURE__ */ (0, k.jsx)("dt", { children: "Expected" }), /* @__PURE__ */ (0, k.jsx)("dd", { children: e.expected })] }),
+									/* @__PURE__ */ (0, k.jsxs)("div", { children: [/* @__PURE__ */ (0, k.jsx)("dt", { children: "Actual" }), /* @__PURE__ */ (0, k.jsx)("dd", { children: e.actual })] }),
+									/* @__PURE__ */ (0, k.jsxs)("div", { children: [/* @__PURE__ */ (0, k.jsx)("dt", { children: "Probable Cause" }), /* @__PURE__ */ (0, k.jsx)("dd", { children: e.probable_cause })] }),
+									/* @__PURE__ */ (0, k.jsxs)("div", { children: [/* @__PURE__ */ (0, k.jsx)("dt", { children: "Mitigation" }), /* @__PURE__ */ (0, k.jsx)("dd", { children: e.mitigation })] })
 								] })
 							] }, e.case_id))
 						})
 					]
 				}),
-				/* @__PURE__ */ (0, O.jsxs)("section", {
+				/* @__PURE__ */ (0, k.jsxs)("section", {
 					className: "cl-limitations-section",
 					"aria-labelledby": "cl-eval-limitations-title",
-					children: [/* @__PURE__ */ (0, O.jsx)("div", {
+					children: [/* @__PURE__ */ (0, k.jsx)("div", {
 						className: "cl-core-section__heading",
-						children: /* @__PURE__ */ (0, O.jsx)("h2", {
+						children: /* @__PURE__ */ (0, k.jsx)("h2", {
 							id: "cl-eval-limitations-title",
 							children: "Evaluation limitations"
 						})
-					}), /* @__PURE__ */ (0, O.jsx)("ul", { children: e.limitations.map((e) => /* @__PURE__ */ (0, O.jsx)("li", { children: e }, e)) })]
+					}), /* @__PURE__ */ (0, k.jsx)("ul", { children: e.limitations.map((e) => /* @__PURE__ */ (0, k.jsx)("li", { children: e }, e)) })]
 				})
 			] }) : null
 		]
@@ -11264,201 +11232,201 @@ function et({ viewModel: e, onDomainEvent: t }) {
 }
 //#endregion
 //#region src/Cluster6SettingsPage.tsx
-var tt = {
+var Qe = {
 	connected: "Kết nối đã được xác minh trong phiên hiện tại.",
 	not_configured: "Chưa có kết nối đã xác minh. Phân tích Python vẫn hoạt động.",
 	error: "Kết nối chưa thể xác minh. Không có bí mật nào được chuyển sang React."
-}, nt = {
+}, $e = {
 	ready: "Sẵn sàng nhận tin nhắn mới",
 	disabled: "Chờ kết nối và model hợp lệ",
 	error: "Lượt gọi gần nhất cần được kiểm tra"
 };
-function rt({ tone: e, children: t }) {
-	return /* @__PURE__ */ (0, O.jsx)("span", {
+function et({ tone: e, children: t }) {
+	return /* @__PURE__ */ (0, k.jsx)("span", {
 		className: `cl-badge cl-badge--${e}`,
 		children: t
 	});
 }
-function it({ viewModel: e }) {
+function tt({ viewModel: e }) {
 	let t = e.connection_state === "connected" ? "success" : e.connection_state === "error" ? "danger" : "neutral";
-	return /* @__PURE__ */ (0, O.jsxs)("main", {
+	return /* @__PURE__ */ (0, k.jsxs)("main", {
 		className: "cl-support-page cl-settings-page",
 		"data-theme": e.theme,
 		"aria-labelledby": "cl-settings-title",
 		children: [
-			/* @__PURE__ */ (0, O.jsxs)("header", {
+			/* @__PURE__ */ (0, k.jsxs)("header", {
 				className: "cl-support-header cl-settings-header",
-				children: [/* @__PURE__ */ (0, O.jsxs)("div", { children: [
-					/* @__PURE__ */ (0, O.jsx)("p", {
+				children: [/* @__PURE__ */ (0, k.jsxs)("div", { children: [
+					/* @__PURE__ */ (0, k.jsx)("p", {
 						className: "cl-core-eyebrow",
 						children: "SESSION SETTINGS"
 					}),
-					/* @__PURE__ */ (0, O.jsx)("h1", {
+					/* @__PURE__ */ (0, k.jsx)("h1", {
 						id: "cl-settings-title",
 						children: "Cài đặt và trợ lý AI"
 					}),
-					/* @__PURE__ */ (0, O.jsx)("p", { children: "Python giữ credential, provider state, thresholds, lịch sử hội thoại và toàn bộ inference execution." })
-				] }), /* @__PURE__ */ (0, O.jsx)(rt, {
+					/* @__PURE__ */ (0, k.jsx)("p", { children: "Python giữ credential, provider state, thresholds, lịch sử hội thoại và toàn bộ inference execution." })
+				] }), /* @__PURE__ */ (0, k.jsx)(et, {
 					tone: t,
 					children: e.connection_status_label
 				})]
 			}),
-			/* @__PURE__ */ (0, O.jsxs)("section", {
+			/* @__PURE__ */ (0, k.jsxs)("section", {
 				className: `cl-settings-status cl-tone--${t}`,
 				role: e.connection_state === "error" ? "alert" : "status",
 				"aria-live": "polite",
 				"aria-labelledby": "cl-settings-status-title",
-				children: [/* @__PURE__ */ (0, O.jsxs)("div", { children: [
-					/* @__PURE__ */ (0, O.jsx)("p", {
+				children: [/* @__PURE__ */ (0, k.jsxs)("div", { children: [
+					/* @__PURE__ */ (0, k.jsx)("p", {
 						className: "cl-core-eyebrow",
 						children: "CONNECTION STATUS"
 					}),
-					/* @__PURE__ */ (0, O.jsx)("h2", {
+					/* @__PURE__ */ (0, k.jsx)("h2", {
 						id: "cl-settings-status-title",
 						children: e.connection_status_label
 					}),
-					/* @__PURE__ */ (0, O.jsx)("p", { children: e.error_message ?? tt[e.connection_state] })
-				] }), /* @__PURE__ */ (0, O.jsxs)("dl", {
+					/* @__PURE__ */ (0, k.jsx)("p", { children: e.error_message ?? Qe[e.connection_state] })
+				] }), /* @__PURE__ */ (0, k.jsxs)("dl", {
 					className: "cl-settings-status__facts",
 					children: [
-						/* @__PURE__ */ (0, O.jsxs)("div", { children: [/* @__PURE__ */ (0, O.jsx)("dt", { children: "Provider" }), /* @__PURE__ */ (0, O.jsx)("dd", { children: e.active_provider_label ?? "Chưa chọn" })] }),
-						/* @__PURE__ */ (0, O.jsxs)("div", { children: [/* @__PURE__ */ (0, O.jsx)("dt", { children: "Model" }), /* @__PURE__ */ (0, O.jsx)("dd", { children: /* @__PURE__ */ (0, O.jsx)("code", { children: e.active_model ?? "Chưa chọn" }) })] }),
-						/* @__PURE__ */ (0, O.jsxs)("div", { children: [/* @__PURE__ */ (0, O.jsx)("dt", { children: "Hồ sơ hiện tại" }), /* @__PURE__ */ (0, O.jsx)("dd", { children: e.current_case ?? "Chưa có" })] })
+						/* @__PURE__ */ (0, k.jsxs)("div", { children: [/* @__PURE__ */ (0, k.jsx)("dt", { children: "Provider" }), /* @__PURE__ */ (0, k.jsx)("dd", { children: e.active_provider_label ?? "Chưa chọn" })] }),
+						/* @__PURE__ */ (0, k.jsxs)("div", { children: [/* @__PURE__ */ (0, k.jsx)("dt", { children: "Model" }), /* @__PURE__ */ (0, k.jsx)("dd", { children: /* @__PURE__ */ (0, k.jsx)("code", { children: e.active_model ?? "Chưa chọn" }) })] }),
+						/* @__PURE__ */ (0, k.jsxs)("div", { children: [/* @__PURE__ */ (0, k.jsx)("dt", { children: "Hồ sơ hiện tại" }), /* @__PURE__ */ (0, k.jsx)("dd", { children: e.current_case ?? "Chưa có" })] })
 					]
 				})]
 			}),
-			/* @__PURE__ */ (0, O.jsxs)("section", {
+			/* @__PURE__ */ (0, k.jsxs)("section", {
 				className: "cl-core-section",
 				"aria-labelledby": "cl-provider-title",
-				children: [/* @__PURE__ */ (0, O.jsxs)("div", {
+				children: [/* @__PURE__ */ (0, k.jsxs)("div", {
 					className: "cl-core-section__heading",
-					children: [/* @__PURE__ */ (0, O.jsxs)("div", { children: [/* @__PURE__ */ (0, O.jsx)("p", {
+					children: [/* @__PURE__ */ (0, k.jsxs)("div", { children: [/* @__PURE__ */ (0, k.jsx)("p", {
 						className: "cl-core-eyebrow",
 						children: "AI CONNECTION"
-					}), /* @__PURE__ */ (0, O.jsx)("h2", {
+					}), /* @__PURE__ */ (0, k.jsx)("h2", {
 						id: "cl-provider-title",
 						children: "Provider và model trong phiên"
-					})] }), /* @__PURE__ */ (0, O.jsx)("span", { children: "Không hard-code provider" })]
-				}), /* @__PURE__ */ (0, O.jsx)("div", {
+					})] }), /* @__PURE__ */ (0, k.jsx)("span", { children: "Không hard-code provider" })]
+				}), /* @__PURE__ */ (0, k.jsx)("div", {
 					className: "cl-provider-grid",
-					children: e.providers.map((e) => /* @__PURE__ */ (0, O.jsxs)("article", {
+					children: e.providers.map((e) => /* @__PURE__ */ (0, k.jsxs)("article", {
 						className: `cl-provider-card${e.active ? " is-active" : ""}`,
 						children: [
-							/* @__PURE__ */ (0, O.jsxs)("div", {
+							/* @__PURE__ */ (0, k.jsxs)("div", {
 								className: "cl-provider-card__topline",
-								children: [/* @__PURE__ */ (0, O.jsx)("h3", { children: e.label }), /* @__PURE__ */ (0, O.jsx)(rt, {
+								children: [/* @__PURE__ */ (0, k.jsx)("h3", { children: e.label }), /* @__PURE__ */ (0, k.jsx)(et, {
 									tone: e.status_tone,
 									children: e.status_label
 								})]
 							}),
-							/* @__PURE__ */ (0, O.jsx)("p", { children: e.description }),
-							/* @__PURE__ */ (0, O.jsxs)("dl", { children: [/* @__PURE__ */ (0, O.jsxs)("div", { children: [/* @__PURE__ */ (0, O.jsx)("dt", { children: "Model" }), /* @__PURE__ */ (0, O.jsx)("dd", { children: /* @__PURE__ */ (0, O.jsx)("code", { children: e.model ?? "Chưa có" }) })] }), /* @__PURE__ */ (0, O.jsxs)("div", { children: [/* @__PURE__ */ (0, O.jsx)("dt", { children: "Model khả dụng" }), /* @__PURE__ */ (0, O.jsx)("dd", { children: e.connected ? e.model_count : "—" })] })] })
+							/* @__PURE__ */ (0, k.jsx)("p", { children: e.description }),
+							/* @__PURE__ */ (0, k.jsxs)("dl", { children: [/* @__PURE__ */ (0, k.jsxs)("div", { children: [/* @__PURE__ */ (0, k.jsx)("dt", { children: "Model" }), /* @__PURE__ */ (0, k.jsx)("dd", { children: /* @__PURE__ */ (0, k.jsx)("code", { children: e.model ?? "Chưa có" }) })] }), /* @__PURE__ */ (0, k.jsxs)("div", { children: [/* @__PURE__ */ (0, k.jsx)("dt", { children: "Model khả dụng" }), /* @__PURE__ */ (0, k.jsx)("dd", { children: e.connected ? e.model_count : "—" })] })] })
 						]
 					}, e.provider))
 				})]
 			}),
-			/* @__PURE__ */ (0, O.jsxs)("div", {
+			/* @__PURE__ */ (0, k.jsxs)("div", {
 				className: "cl-settings-two-column",
-				children: [/* @__PURE__ */ (0, O.jsxs)("section", {
+				children: [/* @__PURE__ */ (0, k.jsxs)("section", {
 					className: "cl-core-section",
 					"aria-labelledby": "cl-chat-session-title",
 					children: [
-						/* @__PURE__ */ (0, O.jsxs)("div", {
+						/* @__PURE__ */ (0, k.jsxs)("div", {
 							className: "cl-core-section__heading",
-							children: [/* @__PURE__ */ (0, O.jsxs)("div", { children: [/* @__PURE__ */ (0, O.jsx)("p", {
+							children: [/* @__PURE__ */ (0, k.jsxs)("div", { children: [/* @__PURE__ */ (0, k.jsx)("p", {
 								className: "cl-core-eyebrow",
 								children: "CHAT SESSION"
-							}), /* @__PURE__ */ (0, O.jsx)("h2", {
+							}), /* @__PURE__ */ (0, k.jsx)("h2", {
 								id: "cl-chat-session-title",
 								children: "Chat và lịch sử"
-							})] }), /* @__PURE__ */ (0, O.jsx)(rt, {
+							})] }), /* @__PURE__ */ (0, k.jsx)(et, {
 								tone: e.chat_state === "ready" ? "success" : e.chat_state === "error" ? "danger" : "neutral",
 								children: e.chat_state === "ready" ? "READY" : e.chat_state === "error" ? "ERROR" : "DISABLED"
 							})]
 						}),
-						/* @__PURE__ */ (0, O.jsx)("p", {
+						/* @__PURE__ */ (0, k.jsx)("p", {
 							className: "cl-settings-lead",
-							children: nt[e.chat_state]
+							children: $e[e.chat_state]
 						}),
-						/* @__PURE__ */ (0, O.jsxs)("dl", {
+						/* @__PURE__ */ (0, k.jsxs)("dl", {
 							className: "cl-session-facts",
-							children: [/* @__PURE__ */ (0, O.jsxs)("div", { children: [/* @__PURE__ */ (0, O.jsx)("dt", { children: "Lượt tin nhắn hợp lệ" }), /* @__PURE__ */ (0, O.jsx)("dd", { children: e.chat_message_count })] }), /* @__PURE__ */ (0, O.jsxs)("div", { children: [/* @__PURE__ */ (0, O.jsx)("dt", { children: "Context hồ sơ" }), /* @__PURE__ */ (0, O.jsx)("dd", { children: e.current_case ?? "Không có" })] })]
+							children: [/* @__PURE__ */ (0, k.jsxs)("div", { children: [/* @__PURE__ */ (0, k.jsx)("dt", { children: "Lượt tin nhắn hợp lệ" }), /* @__PURE__ */ (0, k.jsx)("dd", { children: e.chat_message_count })] }), /* @__PURE__ */ (0, k.jsxs)("div", { children: [/* @__PURE__ */ (0, k.jsx)("dt", { children: "Context hồ sơ" }), /* @__PURE__ */ (0, k.jsx)("dd", { children: e.current_case ?? "Không có" })] })]
 						}),
-						/* @__PURE__ */ (0, O.jsx)("p", {
+						/* @__PURE__ */ (0, k.jsx)("p", {
 							className: "cl-settings-note",
 							children: "Nội dung hội thoại không nằm trong view-model này. Streamlit native render lịch sử và chỉ gửi khi người dùng submit nội dung không rỗng."
 						})
 					]
-				}), /* @__PURE__ */ (0, O.jsxs)("section", {
+				}), /* @__PURE__ */ (0, k.jsxs)("section", {
 					className: "cl-core-section",
 					"aria-labelledby": "cl-session-controls-title",
 					children: [
-						/* @__PURE__ */ (0, O.jsxs)("div", {
+						/* @__PURE__ */ (0, k.jsxs)("div", {
 							className: "cl-core-section__heading",
-							children: [/* @__PURE__ */ (0, O.jsxs)("div", { children: [/* @__PURE__ */ (0, O.jsx)("p", {
+							children: [/* @__PURE__ */ (0, k.jsxs)("div", { children: [/* @__PURE__ */ (0, k.jsx)("p", {
 								className: "cl-core-eyebrow",
 								children: "SESSION CONTROLS"
-							}), /* @__PURE__ */ (0, O.jsx)("h2", {
+							}), /* @__PURE__ */ (0, k.jsx)("h2", {
 								id: "cl-session-controls-title",
 								children: "Trạng thái phiên"
-							})] }), /* @__PURE__ */ (0, O.jsx)("span", { children: "Không persistence server-side" })]
+							})] }), /* @__PURE__ */ (0, k.jsx)("span", { children: "Không persistence server-side" })]
 						}),
-						/* @__PURE__ */ (0, O.jsxs)("dl", {
+						/* @__PURE__ */ (0, k.jsxs)("dl", {
 							className: "cl-session-facts",
-							children: [/* @__PURE__ */ (0, O.jsxs)("div", { children: [/* @__PURE__ */ (0, O.jsx)("dt", { children: "Hồ sơ đã xử lý" }), /* @__PURE__ */ (0, O.jsx)("dd", { children: e.has_result ? "Có" : "Chưa có" })] }), /* @__PURE__ */ (0, O.jsxs)("div", { children: [/* @__PURE__ */ (0, O.jsx)("dt", { children: "Evaluation đã chạy" }), /* @__PURE__ */ (0, O.jsx)("dd", { children: e.evaluation_ready ? "Có" : "Chưa có" })] })]
+							children: [/* @__PURE__ */ (0, k.jsxs)("div", { children: [/* @__PURE__ */ (0, k.jsx)("dt", { children: "Hồ sơ đã xử lý" }), /* @__PURE__ */ (0, k.jsx)("dd", { children: e.has_result ? "Có" : "Chưa có" })] }), /* @__PURE__ */ (0, k.jsxs)("div", { children: [/* @__PURE__ */ (0, k.jsx)("dt", { children: "Evaluation đã chạy" }), /* @__PURE__ */ (0, k.jsx)("dd", { children: e.evaluation_ready ? "Có" : "Chưa có" })] })]
 						}),
-						/* @__PURE__ */ (0, O.jsxs)("ul", {
+						/* @__PURE__ */ (0, k.jsxs)("ul", {
 							className: "cl-settings-checklist",
 							children: [
-								/* @__PURE__ */ (0, O.jsx)("li", { children: "Đổi provider hoặc model không gọi inference." }),
-								/* @__PURE__ */ (0, O.jsx)("li", { children: "Rerun và render history không gửi lại prompt." }),
-								/* @__PURE__ */ (0, O.jsx)("li", { children: "Mỗi provider giữ tối đa một kết nối đã xác minh trong phiên." })
+								/* @__PURE__ */ (0, k.jsx)("li", { children: "Đổi provider hoặc model không gọi inference." }),
+								/* @__PURE__ */ (0, k.jsx)("li", { children: "Rerun và render history không gửi lại prompt." }),
+								/* @__PURE__ */ (0, k.jsx)("li", { children: "Mỗi provider giữ tối đa một kết nối đã xác minh trong phiên." })
 							]
 						})
 					]
 				})]
 			}),
-			/* @__PURE__ */ (0, O.jsxs)("section", {
+			/* @__PURE__ */ (0, k.jsxs)("section", {
 				className: "cl-core-section",
 				"aria-labelledby": "cl-session-thresholds-title",
 				children: [
-					/* @__PURE__ */ (0, O.jsxs)("div", {
+					/* @__PURE__ */ (0, k.jsxs)("div", {
 						className: "cl-core-section__heading",
-						children: [/* @__PURE__ */ (0, O.jsxs)("div", { children: [/* @__PURE__ */ (0, O.jsx)("p", {
+						children: [/* @__PURE__ */ (0, k.jsxs)("div", { children: [/* @__PURE__ */ (0, k.jsx)("p", {
 							className: "cl-core-eyebrow",
 							children: "SESSION THRESHOLDS"
-						}), /* @__PURE__ */ (0, O.jsx)("h2", {
+						}), /* @__PURE__ */ (0, k.jsx)("h2", {
 							id: "cl-session-thresholds-title",
 							children: "Ngưỡng minh họa hiện hành"
-						})] }), /* @__PURE__ */ (0, O.jsx)("span", { children: "Python source of truth" })]
+						})] }), /* @__PURE__ */ (0, k.jsx)("span", { children: "Python source of truth" })]
 					}),
-					/* @__PURE__ */ (0, O.jsx)("p", {
+					/* @__PURE__ */ (0, k.jsx)("p", {
 						className: "cl-core-disclaimer",
 						children: "Giá trị chỉ phục vụ minh họa, không phải chính sách tín dụng của ngân hàng."
 					}),
-					/* @__PURE__ */ (0, O.jsx)("dl", {
+					/* @__PURE__ */ (0, k.jsx)("dl", {
 						className: "cl-settings-threshold-grid",
-						children: e.thresholds.map((e) => /* @__PURE__ */ (0, O.jsxs)("div", { children: [/* @__PURE__ */ (0, O.jsx)("dt", { children: e.label }), /* @__PURE__ */ (0, O.jsx)("dd", { children: e.value_display })] }, e.key))
+						children: e.thresholds.map((e) => /* @__PURE__ */ (0, k.jsxs)("div", { children: [/* @__PURE__ */ (0, k.jsx)("dt", { children: e.label }), /* @__PURE__ */ (0, k.jsx)("dd", { children: e.value_display })] }, e.key))
 					})
 				]
 			}),
-			/* @__PURE__ */ (0, O.jsxs)("section", {
+			/* @__PURE__ */ (0, k.jsxs)("section", {
 				className: "cl-settings-security",
 				"aria-labelledby": "cl-settings-security-title",
-				children: [/* @__PURE__ */ (0, O.jsx)("div", {
+				children: [/* @__PURE__ */ (0, k.jsx)("div", {
 					"aria-hidden": "true",
 					className: "cl-settings-security__icon",
 					children: "✓"
-				}), /* @__PURE__ */ (0, O.jsxs)("div", { children: [
-					/* @__PURE__ */ (0, O.jsx)("p", {
+				}), /* @__PURE__ */ (0, k.jsxs)("div", { children: [
+					/* @__PURE__ */ (0, k.jsx)("p", {
 						className: "cl-core-eyebrow",
 						children: "BACKEND-ONLY CREDENTIALS"
 					}),
-					/* @__PURE__ */ (0, O.jsx)("h2", {
+					/* @__PURE__ */ (0, k.jsx)("h2", {
 						id: "cl-settings-security-title",
 						children: "Secure native controls ngay bên dưới"
 					}),
-					/* @__PURE__ */ (0, O.jsx)("p", { children: "API Key dùng trường password của Streamlit, không đi qua React props, browser event, localStorage hoặc telemetry. Chat input và mọi request provider cũng chạy từ Python." })
+					/* @__PURE__ */ (0, k.jsx)("p", { children: "API Key dùng trường password của Streamlit, không đi qua React props, browser event, localStorage hoặc telemetry. Chat input và mọi request provider cũng chạy từ Python." })
 				] })]
 			})
 		]
@@ -11466,199 +11434,128 @@ function it({ viewModel: e }) {
 }
 //#endregion
 //#region src/DemoCasePanel.tsx
-function at({ viewModel: e, onDomainEvent: t }) {
+function nt({ viewModel: e, onDomainEvent: t }) {
 	let n = (0, l.useId)(), r = (0, l.useId)(), [i, a] = (0, l.useState)(!1), o = e.cases.find((t) => t.case_name === e.selected_case) ?? e.cases[0], s = e.loading || i;
-	return /* @__PURE__ */ (0, O.jsxs)("section", {
+	return /* @__PURE__ */ (0, k.jsxs)("section", {
 		className: "cl-demo-panel",
 		"data-theme": e.theme,
 		"aria-labelledby": "cl-demo-title",
 		children: [
-			/* @__PURE__ */ (0, O.jsx)("p", {
+			/* @__PURE__ */ (0, k.jsx)("p", {
 				className: "cl-page-header__eyebrow",
 				children: "Luồng xác định"
 			}),
-			/* @__PURE__ */ (0, O.jsx)("h2", {
+			/* @__PURE__ */ (0, k.jsx)("h2", {
 				id: "cl-demo-title",
 				children: "Hồ sơ minh họa"
 			}),
-			/* @__PURE__ */ (0, O.jsx)("p", {
+			/* @__PURE__ */ (0, k.jsx)("p", {
 				className: "cl-demo-panel__intro",
 				children: "Xem luồng sản phẩm bằng dữ liệu tổng hợp mà không gọi mô hình."
 			}),
-			/* @__PURE__ */ (0, O.jsx)("label", {
+			/* @__PURE__ */ (0, k.jsx)("label", {
 				htmlFor: n,
 				children: "Chọn hồ sơ"
 			}),
-			/* @__PURE__ */ (0, O.jsx)("select", {
+			/* @__PURE__ */ (0, k.jsx)("select", {
 				id: n,
 				value: e.selected_case,
 				"aria-describedby": r,
 				disabled: s,
-				onChange: (e) => t(je("select", e.target.value)),
-				children: e.cases.map((e) => /* @__PURE__ */ (0, O.jsx)("option", {
+				onChange: (e) => t(Oe("select", e.target.value)),
+				children: e.cases.map((e) => /* @__PURE__ */ (0, k.jsx)("option", {
 					value: e.case_name,
 					children: e.case_name
 				}, e.case_name))
 			}),
-			o ? /* @__PURE__ */ (0, O.jsxs)("article", {
+			o ? /* @__PURE__ */ (0, k.jsxs)("article", {
 				className: "cl-demo-card",
 				id: r,
 				children: [
-					/* @__PURE__ */ (0, O.jsx)("span", { children: o.case_code }),
-					/* @__PURE__ */ (0, O.jsx)("h3", { children: o.title }),
-					/* @__PURE__ */ (0, O.jsx)("p", { children: o.description })
+					/* @__PURE__ */ (0, k.jsx)("span", { children: o.case_code }),
+					/* @__PURE__ */ (0, k.jsx)("h3", { children: o.title }),
+					/* @__PURE__ */ (0, k.jsx)("p", { children: o.description })
 				]
 			}) : null,
-			s ? /* @__PURE__ */ (0, O.jsx)("p", {
+			s ? /* @__PURE__ */ (0, k.jsx)("p", {
 				role: "status",
 				children: "Đang xử lý domain action…"
 			}) : null,
-			e.error ? /* @__PURE__ */ (0, O.jsx)("p", {
+			e.error ? /* @__PURE__ */ (0, k.jsx)("p", {
 				role: "alert",
 				className: "cl-demo-panel__error",
 				children: e.error
 			}) : null,
-			/* @__PURE__ */ (0, O.jsx)("button", {
+			/* @__PURE__ */ (0, k.jsx)("button", {
 				type: "button",
 				className: "cl-demo-panel__action",
 				disabled: s || !!e.error || !o,
 				onClick: () => {
-					!o || s || e.error || (a(!0), t(je("open", o.case_name)));
+					!o || s || e.error || (a(!0), t(Oe("open", o.case_name)));
 				},
 				children: "Mở hồ sơ minh họa"
 			}),
-			/* @__PURE__ */ (0, O.jsxs)("div", {
+			/* @__PURE__ */ (0, k.jsxs)("div", {
 				className: `cl-demo-status cl-tone--${e.case_context.status_tone}`,
 				children: [
-					/* @__PURE__ */ (0, O.jsx)("strong", { children: e.case_context.status_label }),
-					/* @__PURE__ */ (0, O.jsx)("p", { children: e.case_context.summary }),
-					e.case_context.case_id ? /* @__PURE__ */ (0, O.jsx)("code", { children: e.case_context.case_id }) : null
+					/* @__PURE__ */ (0, k.jsx)("strong", { children: e.case_context.status_label }),
+					/* @__PURE__ */ (0, k.jsx)("p", { children: e.case_context.summary }),
+					e.case_context.case_id ? /* @__PURE__ */ (0, k.jsx)("code", { children: e.case_context.case_id }) : null
 				]
 			})
 		]
 	});
 }
 //#endregion
-//#region src/V2StatusCard.tsx
-var ot = {
-	neutral: "Thông tin",
-	info: "Thử nghiệm",
-	success: "Đã xác nhận",
-	warning: "Cần lưu ý",
-	danger: "Có lỗi"
-};
-function st({ viewModel: e, onDomainEvent: t }) {
-	let [n, r] = (0, l.useState)(!1), i = (0, l.useId)(), a = (0, l.useId)();
-	return /* @__PURE__ */ (0, O.jsxs)("section", {
-		className: `cl-status-card cl-status-card--${e.status}`,
-		"data-theme": e.theme,
-		"aria-labelledby": i,
-		children: [/* @__PURE__ */ (0, O.jsxs)("div", {
-			className: "cl-status-card__main",
-			children: [
-				/* @__PURE__ */ (0, O.jsxs)("span", {
-					className: "cl-status-card__badge",
-					children: [/* @__PURE__ */ (0, O.jsx)("span", {
-						"aria-hidden": "true",
-						className: "cl-status-card__dot"
-					}), ot[e.status]]
-				}),
-				/* @__PURE__ */ (0, O.jsx)("h2", {
-					id: i,
-					children: e.title
-				}),
-				/* @__PURE__ */ (0, O.jsx)("p", { children: e.message }),
-				e.loading ? /* @__PURE__ */ (0, O.jsxs)("p", {
-					className: "cl-status-card__feedback",
-					role: "status",
-					"aria-live": "polite",
-					children: [/* @__PURE__ */ (0, O.jsx)("span", {
-						className: "cl-status-card__spinner",
-						"aria-hidden": "true"
-					}), "Đang chuẩn bị component…"]
-				}) : null,
-				e.error ? /* @__PURE__ */ (0, O.jsx)("p", {
-					className: "cl-status-card__feedback cl-status-card__feedback--error",
-					role: "alert",
-					children: e.error
-				}) : null,
-				e.details.length > 0 ? /* @__PURE__ */ (0, O.jsxs)("div", {
-					className: "cl-status-card__disclosure",
-					children: [/* @__PURE__ */ (0, O.jsx)("button", {
-						type: "button",
-						className: "cl-status-card__link",
-						"aria-expanded": n,
-						"aria-controls": a,
-						onClick: () => r((e) => !e),
-						children: n ? "Ẩn chi tiết kỹ thuật" : "Xem chi tiết kỹ thuật"
-					}), n ? /* @__PURE__ */ (0, O.jsx)("ul", {
-						id: a,
-						children: e.details.map((e) => /* @__PURE__ */ (0, O.jsx)("li", { children: e }, e))
-					}) : null]
-				}) : null
-			]
-		}), e.action_label ? /* @__PURE__ */ (0, O.jsx)("div", {
-			className: "cl-status-card__actions",
-			children: /* @__PURE__ */ (0, O.jsx)("button", {
-				type: "button",
-				className: "cl-status-card__button",
-				disabled: e.loading || !!e.error,
-				onClick: () => t(Ae()),
-				children: e.action_label
-			})
-		}) : null]
-	});
-}
-//#endregion
 //#region src/WorkflowPanel.tsx
-var ct = {
+var rt = {
 	upcoming: "·",
 	current: "→",
 	complete: "✓",
 	warning: "!",
 	error: "×"
 };
-function lt({ viewModel: e }) {
-	return /* @__PURE__ */ (0, O.jsxs)("section", {
+function it({ viewModel: e }) {
+	return /* @__PURE__ */ (0, k.jsxs)("section", {
 		className: "cl-mobile-workflow",
 		"data-theme": e.theme,
 		"aria-labelledby": "cl-mobile-workflow-title",
 		children: [
-			/* @__PURE__ */ (0, O.jsx)("p", {
+			/* @__PURE__ */ (0, k.jsx)("p", {
 				className: "cl-page-header__eyebrow",
 				children: "Luồng xử lý"
 			}),
-			/* @__PURE__ */ (0, O.jsx)("h2", {
+			/* @__PURE__ */ (0, k.jsx)("h2", {
 				id: "cl-mobile-workflow-title",
 				children: "Quy trình thẩm định"
 			}),
-			/* @__PURE__ */ (0, O.jsx)("ol", { children: e.workflow.map((e, t) => /* @__PURE__ */ (0, O.jsxs)("li", {
+			/* @__PURE__ */ (0, k.jsx)("ol", { children: e.workflow.map((e, t) => /* @__PURE__ */ (0, k.jsxs)("li", {
 				className: `cl-workflow__step cl-workflow__step--${e.state}`,
-				children: [/* @__PURE__ */ (0, O.jsx)("span", {
+				children: [/* @__PURE__ */ (0, k.jsx)("span", {
 					className: "cl-workflow__marker",
 					"aria-hidden": "true",
-					children: e.state === "upcoming" ? t + 1 : ct[e.state]
-				}), /* @__PURE__ */ (0, O.jsxs)("div", { children: [
-					/* @__PURE__ */ (0, O.jsx)("strong", { children: e.label }),
-					/* @__PURE__ */ (0, O.jsx)("p", { children: e.description }),
-					/* @__PURE__ */ (0, O.jsx)("span", {
+					children: e.state === "upcoming" ? t + 1 : rt[e.state]
+				}), /* @__PURE__ */ (0, k.jsxs)("div", { children: [
+					/* @__PURE__ */ (0, k.jsx)("strong", { children: e.label }),
+					/* @__PURE__ */ (0, k.jsx)("p", { children: e.description }),
+					/* @__PURE__ */ (0, k.jsx)("span", {
 						className: "cl-workflow__status",
 						"aria-current": e.state === "current" ? "step" : void 0,
 						children: e.status_label
 					})
 				] })]
 			}, e.key)) }),
-			/* @__PURE__ */ (0, O.jsx)("div", {
+			/* @__PURE__ */ (0, k.jsx)("div", {
 				className: "cl-mobile-workflow__cards",
-				children: e.process_cards.map((e, t) => /* @__PURE__ */ (0, O.jsxs)("article", {
+				children: e.process_cards.map((e, t) => /* @__PURE__ */ (0, k.jsxs)("article", {
 					className: `cl-process-card cl-process-card--${e.state}`,
 					children: [
-						/* @__PURE__ */ (0, O.jsxs)("div", {
+						/* @__PURE__ */ (0, k.jsxs)("div", {
 							className: "cl-process-card__topline",
-							children: [/* @__PURE__ */ (0, O.jsx)("span", { children: String(t + 1).padStart(2, "0") }), /* @__PURE__ */ (0, O.jsx)("span", { children: e.state === "complete" ? "Hoàn tất" : e.state === "current" ? "Hiện tại" : e.state === "warning" ? "Cần xem xét" : e.state === "error" ? "Có lỗi" : "Sắp tới" })]
+							children: [/* @__PURE__ */ (0, k.jsx)("span", { children: String(t + 1).padStart(2, "0") }), /* @__PURE__ */ (0, k.jsx)("span", { children: e.state === "complete" ? "Hoàn tất" : e.state === "current" ? "Hiện tại" : e.state === "warning" ? "Cần xem xét" : e.state === "error" ? "Có lỗi" : "Sắp tới" })]
 						}),
-						/* @__PURE__ */ (0, O.jsx)("h3", { children: e.label }),
-						/* @__PURE__ */ (0, O.jsx)("p", { children: e.description })
+						/* @__PURE__ */ (0, k.jsx)("h3", { children: e.label }),
+						/* @__PURE__ */ (0, k.jsx)("p", { children: e.description })
 					]
 				}, e.key))
 			})
@@ -11667,36 +11564,30 @@ function lt({ viewModel: e }) {
 }
 //#endregion
 //#region src/index.tsx
-var ut = ({ data: e, parentElement: t, setTriggerValue: n }) => {
+var at = ({ data: e, parentElement: t, setTriggerValue: n }) => {
 	let r = t.querySelector("[data-creditlens-v2-root]");
 	if (!r) return;
 	let i = (0, u.createRoot)(r);
 	try {
-		let t = De(e), r = (e) => n("event", e);
-		t.component === "app_shell" ? i.render(/* @__PURE__ */ (0, O.jsx)(Le, {
+		let t = D(e), r = (e) => n("event", e);
+		t.component === "app_shell" ? i.render(/* @__PURE__ */ (0, k.jsx)(Ne, {
 			viewModel: t,
 			onDomainEvent: r
-		})) : t.component === "demo_panel" ? i.render(/* @__PURE__ */ (0, O.jsx)(at, {
+		})) : t.component === "demo_panel" ? i.render(/* @__PURE__ */ (0, k.jsx)(nt, {
 			viewModel: t,
 			onDomainEvent: r
-		})) : t.component === "v2_status_card" ? i.render(/* @__PURE__ */ (0, O.jsx)(st, {
+		})) : t.component === "workflow_panel" ? i.render(/* @__PURE__ */ (0, k.jsx)(it, { viewModel: t })) : t.component === "core_business_page" ? i.render(/* @__PURE__ */ (0, k.jsx)(Ke, { viewModel: t })) : t.component === "summary_page" ? i.render(/* @__PURE__ */ (0, k.jsx)(Je, { viewModel: t })) : t.component === "methodology_page" ? i.render(/* @__PURE__ */ (0, k.jsx)(Ye, { viewModel: t })) : t.component === "evaluation_page" ? i.render(/* @__PURE__ */ (0, k.jsx)(Ze, {
 			viewModel: t,
 			onDomainEvent: r
-		})) : t.component === "workflow_panel" ? i.render(/* @__PURE__ */ (0, O.jsx)(lt, { viewModel: t })) : t.component === "core_business_page" ? i.render(/* @__PURE__ */ (0, O.jsx)(Ye, { viewModel: t })) : t.component === "summary_page" ? i.render(/* @__PURE__ */ (0, O.jsx)(Ze, { viewModel: t })) : t.component === "methodology_page" ? i.render(/* @__PURE__ */ (0, O.jsx)(Qe, { viewModel: t })) : t.component === "evaluation_page" ? i.render(/* @__PURE__ */ (0, O.jsx)(et, {
-			viewModel: t,
-			onDomainEvent: r
-		})) : t.component === "settings_page" && i.render(/* @__PURE__ */ (0, O.jsx)(it, { viewModel: t }));
+		})) : t.component === "settings_page" && i.render(/* @__PURE__ */ (0, k.jsx)(tt, { viewModel: t }));
 	} catch {
-		i.render(/* @__PURE__ */ (0, O.jsx)("section", {
-			className: "cl-status-card cl-status-card--danger",
+		i.render(/* @__PURE__ */ (0, k.jsx)("section", {
+			className: "cl-render-error",
 			role: "alert",
-			children: /* @__PURE__ */ (0, O.jsxs)("div", {
-				className: "cl-status-card__main",
-				children: [/* @__PURE__ */ (0, O.jsx)("h2", { children: "Không thể hiển thị UI v2" }), /* @__PURE__ */ (0, O.jsx)("p", { children: "Dữ liệu component không hợp lệ. Giao diện hiện tại vẫn an toàn để sử dụng." })]
-			})
+			children: /* @__PURE__ */ (0, k.jsxs)("div", { children: [/* @__PURE__ */ (0, k.jsx)("h2", { children: "Không thể hiển thị UI v2" }), /* @__PURE__ */ (0, k.jsx)("p", { children: "Dữ liệu component không hợp lệ. Giao diện hiện tại vẫn an toàn để sử dụng." })] })
 		}));
 	}
 	return () => i.unmount();
 };
 //#endregion
-export { ut as default };
+export { at as default };

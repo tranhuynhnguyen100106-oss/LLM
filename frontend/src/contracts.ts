@@ -1,6 +1,5 @@
 export const SCHEMA_VERSION = "1.0" as const;
 export const COMPONENT_VERSION = "0.5.0" as const;
-export const STATUS_COMPONENT = "v2_status_card" as const;
 export const SHELL_COMPONENT = "app_shell" as const;
 export const DEMO_COMPONENT = "demo_panel" as const;
 export const WORKFLOW_COMPONENT = "workflow_panel" as const;
@@ -22,17 +21,6 @@ interface ContractBase {
   schema_version: typeof SCHEMA_VERSION;
   component_version: typeof COMPONENT_VERSION;
   theme: ThemeMode;
-}
-
-export interface V2StatusCardViewModel extends ContractBase {
-  component: typeof STATUS_COMPONENT;
-  status: StatusTone;
-  title: string;
-  message: string;
-  details: string[];
-  action_label: string | null;
-  loading: boolean;
-  error: string | null;
 }
 
 export interface NavigationItem {
@@ -383,15 +371,6 @@ export interface V2SettingsPageViewModel extends ContractBase {
   error_message: string | null;
 }
 
-export interface V2DomainEvent {
-  schema_version: typeof SCHEMA_VERSION;
-  component_version: typeof COMPONENT_VERSION;
-  component: typeof STATUS_COMPONENT;
-  type: "status_card.action";
-  action: "acknowledge";
-  event_id: string;
-}
-
 export interface V2NavigationEvent {
   schema_version: typeof SCHEMA_VERSION;
   component_version: typeof COMPONENT_VERSION;
@@ -421,9 +400,8 @@ export interface V2EvaluationEvent {
   event_id: string;
 }
 
-export type V2UIEvent = V2DomainEvent | V2NavigationEvent | V2DemoEvent | V2EvaluationEvent;
+export type V2UIEvent = V2NavigationEvent | V2DemoEvent | V2EvaluationEvent;
 export type V2ViewModel =
-  | V2StatusCardViewModel
   | V2AppShellViewModel
   | V2DemoPanelViewModel
   | V2WorkflowPanelViewModel
@@ -497,29 +475,6 @@ function parseCaseContext(value: unknown): CaseContext {
     status_label: parseText(value.status_label, "status_label", 100) as string,
     status_tone: value.status_tone as StatusTone,
     summary: parseText(value.summary, "summary", 180) as string
-  };
-}
-
-export function parseStatusCardViewModel(value: unknown): V2StatusCardViewModel {
-  assertNoProhibitedKeys(value);
-  if (!isRecord(value)) throw new Error("View model must be an object.");
-  const base = parseBase(value);
-  if (value.component !== STATUS_COMPONENT) throw new Error("Unexpected component kind.");
-  if (typeof value.status !== "string" || !STATUS_TONES.has(value.status as StatusTone)) throw new Error("Invalid status.");
-  if (!Array.isArray(value.details) || value.details.length > 6) throw new Error("Invalid details.");
-  if (typeof value.loading !== "boolean") throw new Error("Invalid loading state.");
-  return {
-    schema_version: SCHEMA_VERSION,
-    component_version: COMPONENT_VERSION,
-    component: STATUS_COMPONENT,
-    theme: base.theme,
-    status: value.status as StatusTone,
-    title: parseText(value.title, "title", 120) as string,
-    message: parseText(value.message, "message", 500) as string,
-    details: value.details.map((item, index) => parseText(item, `details[${index}]`, 180) as string),
-    action_label: parseText(value.action_label, "action_label", 60, true),
-    loading: value.loading,
-    error: parseText(value.error, "error", 300, true)
   };
 }
 
@@ -1191,7 +1146,6 @@ export function parseSettingsPageViewModel(value: unknown): V2SettingsPageViewMo
 
 export function parseViewModel(value: unknown): V2ViewModel {
   if (!isRecord(value)) throw new Error("View model must be an object.");
-  if (value.component === STATUS_COMPONENT) return parseStatusCardViewModel(value);
   if (value.component === SHELL_COMPONENT) return parseAppShellViewModel(value);
   if (value.component === DEMO_COMPONENT) return parseDemoPanelViewModel(value);
   if (value.component === WORKFLOW_COMPONENT) return parseWorkflowPanelViewModel(value);
@@ -1212,17 +1166,6 @@ function eventId(eventIdFactory: () => string): string {
   const value = eventIdFactory();
   if (!/^[A-Za-z0-9_-]{8,96}$/.test(value)) throw new Error("Invalid event id.");
   return value;
-}
-
-export function createStatusCardEvent(eventIdFactory: () => string = defaultEventId): V2DomainEvent {
-  return {
-    schema_version: SCHEMA_VERSION,
-    component_version: COMPONENT_VERSION,
-    component: STATUS_COMPONENT,
-    type: "status_card.action",
-    action: "acknowledge",
-    event_id: eventId(eventIdFactory)
-  };
 }
 
 export function createNavigationEvent(page: string, eventIdFactory: () => string = defaultEventId): V2NavigationEvent {

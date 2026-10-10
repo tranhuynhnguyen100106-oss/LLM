@@ -10,7 +10,6 @@ import {
   parseViewModel,
   SETTINGS_PAGE_COMPONENT,
   SHELL_COMPONENT,
-  STATUS_COMPONENT,
   SUMMARY_PAGE_COMPONENT,
   WORKFLOW_COMPONENT,
   type V2UIEvent
@@ -19,7 +18,6 @@ import { EvaluationPage, MethodologyPage, SummaryPage } from "./Cluster5Pages";
 import { SettingsPage } from "./Cluster6SettingsPage";
 import { CoreBusinessPage } from "./CoreBusinessPage";
 import { DemoCasePanel } from "./DemoCasePanel";
-import { V2StatusCard } from "./V2StatusCard";
 import { WorkflowPanel } from "./WorkflowPanel";
 import "./styles.css";
 
@@ -35,8 +33,6 @@ const render: FrontendRenderer = ({ data, parentElement, setTriggerValue }) => {
       root.render(<AppShell viewModel={viewModel} onDomainEvent={emitDomainEvent} />);
     } else if (viewModel.component === DEMO_COMPONENT) {
       root.render(<DemoCasePanel viewModel={viewModel} onDomainEvent={emitDomainEvent} />);
-    } else if (viewModel.component === STATUS_COMPONENT) {
-      root.render(<V2StatusCard viewModel={viewModel} onDomainEvent={emitDomainEvent} />);
     } else if (viewModel.component === WORKFLOW_COMPONENT) {
       root.render(<WorkflowPanel viewModel={viewModel} />);
     } else if (viewModel.component === CORE_PAGE_COMPONENT) {
@@ -52,8 +48,8 @@ const render: FrontendRenderer = ({ data, parentElement, setTriggerValue }) => {
     }
   } catch {
     root.render(
-      <section className="cl-status-card cl-status-card--danger" role="alert">
-        <div className="cl-status-card__main">
+      <section className="cl-render-error" role="alert">
+        <div>
           <h2>Không thể hiển thị UI v2</h2>
           <p>Dữ liệu component không hợp lệ. Giao diện hiện tại vẫn an toàn để sử dụng.</p>
         </div>

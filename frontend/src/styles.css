@@ -4,286 +4,33 @@
   font-family: "Be Vietnam Pro", Inter, "Segoe UI", Arial, sans-serif;
 }
 
-.cl-status-card {
-  --cl-surface: #ffffff;
-  --cl-text: #0f172a;
-  --cl-muted: #526071;
-  --cl-state-fg: #1e40af;
-  --cl-state-bg: #eff6ff;
-  --cl-state-border: #93c5fd;
-  --cl-focus: #2563eb;
-  --cl-action: #203469;
-  --cl-on-action: #ffffff;
+.cl-render-error {
   box-sizing: border-box;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 24px;
   width: 100%;
-  padding: 20px 24px;
-  border: 1px solid var(--cl-state-border);
+  padding: 16px 20px;
+  border: 1px solid #fca5a5;
   border-radius: 12px;
-  background: var(--cl-surface);
-  color: var(--cl-text);
-  box-shadow: 0 1px 2px rgba(15, 23, 42, 0.06);
+  background: #fef2f2;
+  color: #991b1b;
 }
 
-.cl-status-card[data-theme="dark"] {
-  --cl-surface: #101d39;
-  --cl-text: #f8fafc;
-  --cl-muted: #aeb8cb;
-  --cl-focus: #93c5fd;
-  --cl-action: #b4c5ff;
-  --cl-on-action: #0b1734;
-}
-
-.cl-status-card--neutral {
-  --cl-state-fg: #475569;
-  --cl-state-bg: #f8fafc;
-  --cl-state-border: #cbd5e1;
-}
-
-.cl-status-card--success {
-  --cl-state-fg: #166534;
-  --cl-state-bg: #f0fdf4;
-  --cl-state-border: #86efac;
-}
-
-.cl-status-card--warning {
-  --cl-state-fg: #92400e;
-  --cl-state-bg: #fffbeb;
-  --cl-state-border: #fcd34d;
-}
-
-.cl-status-card--danger {
-  --cl-state-fg: #991b1b;
-  --cl-state-bg: #fef2f2;
-  --cl-state-border: #fca5a5;
-}
-
-.cl-status-card[data-theme="dark"].cl-status-card--neutral {
-  --cl-state-fg: #cbd5e1;
-  --cl-state-bg: #1e293b;
-  --cl-state-border: #475569;
-}
-
-.cl-status-card[data-theme="dark"].cl-status-card--info {
-  --cl-state-fg: #bfdbfe;
-  --cl-state-bg: #0b254a;
-  --cl-state-border: #1d4ed8;
-}
-
-.cl-status-card[data-theme="dark"].cl-status-card--success {
-  --cl-state-fg: #86efac;
-  --cl-state-bg: #052e1a;
-  --cl-state-border: #166534;
-}
-
-.cl-status-card[data-theme="dark"].cl-status-card--warning {
-  --cl-state-fg: #fde68a;
-  --cl-state-bg: #3b2305;
-  --cl-state-border: #92400e;
-}
-
-.cl-status-card[data-theme="dark"].cl-status-card--danger {
-  --cl-state-fg: #fca5a5;
-  --cl-state-bg: #3b0a0a;
-  --cl-state-border: #991b1b;
-}
-
-@media (prefers-color-scheme: dark) {
-  .cl-status-card[data-theme="system"] {
-    --cl-surface: #101d39;
-    --cl-text: #f8fafc;
-    --cl-muted: #aeb8cb;
-    --cl-focus: #93c5fd;
-    --cl-action: #b4c5ff;
-    --cl-on-action: #0b1734;
-  }
-
-  .cl-status-card[data-theme="system"].cl-status-card--neutral {
-    --cl-state-fg: #cbd5e1;
-    --cl-state-bg: #1e293b;
-    --cl-state-border: #475569;
-  }
-
-  .cl-status-card[data-theme="system"].cl-status-card--info {
-    --cl-state-fg: #bfdbfe;
-    --cl-state-bg: #0b254a;
-    --cl-state-border: #1d4ed8;
-  }
-
-  .cl-status-card[data-theme="system"].cl-status-card--success {
-    --cl-state-fg: #86efac;
-    --cl-state-bg: #052e1a;
-    --cl-state-border: #166534;
-  }
-
-  .cl-status-card[data-theme="system"].cl-status-card--warning {
-    --cl-state-fg: #fde68a;
-    --cl-state-bg: #3b2305;
-    --cl-state-border: #92400e;
-  }
-
-  .cl-status-card[data-theme="system"].cl-status-card--danger {
-    --cl-state-fg: #fca5a5;
-    --cl-state-bg: #3b0a0a;
-    --cl-state-border: #991b1b;
-  }
-}
-
-.cl-status-card *,
-.cl-status-card *::before,
-.cl-status-card *::after {
-  box-sizing: inherit;
-}
-
-.cl-status-card__main {
-  min-width: 0;
-}
-
-.cl-status-card__badge {
-  display: inline-flex;
-  align-items: center;
-  min-height: 24px;
-  margin-bottom: 8px;
-  padding: 2px 10px;
-  gap: 6px;
-  border: 1px solid var(--cl-state-border);
-  border-radius: 999px;
-  background: var(--cl-state-bg);
-  color: var(--cl-state-fg);
-  font-size: 12px;
-  line-height: 18px;
-  font-weight: 600;
-  letter-spacing: 0.04em;
-}
-
-.cl-status-card__dot {
-  width: 8px;
-  height: 8px;
-  border-radius: 999px;
-  background: currentColor;
-}
-
-.cl-status-card h2 {
+.cl-render-error h2 {
   margin: 0;
-  color: var(--cl-text);
   font-size: 18px;
   line-height: 26px;
-  font-weight: 600;
 }
 
-.cl-status-card p,
-.cl-status-card li {
-  color: var(--cl-muted);
+.cl-render-error p {
+  margin: 4px 0 0;
   font-size: 14px;
   line-height: 22px;
 }
 
-.cl-status-card p {
-  margin: 4px 0 0;
-}
-
-.cl-status-card ul {
-  margin: 8px 0 0;
-  padding-left: 20px;
-}
-
-.cl-status-card__actions {
-  flex: 0 0 auto;
-}
-
-.cl-status-card__button,
-.cl-status-card__link {
-  min-height: 44px;
-  border-radius: 8px;
-  font: inherit;
-  font-size: 14px;
-  font-weight: 600;
-  cursor: pointer;
-  transition: background-color 160ms cubic-bezier(0.2, 0, 0, 1), color 160ms cubic-bezier(0.2, 0, 0, 1);
-}
-
-.cl-status-card__button {
-  padding: 0 16px;
-  border: 1px solid var(--cl-action);
-  background: var(--cl-action);
-  color: var(--cl-on-action);
-}
-
-.cl-status-card__button:hover:not(:disabled) {
-  filter: brightness(0.92);
-}
-
-.cl-status-card__button:disabled {
-  cursor: not-allowed;
-  opacity: 0.58;
-}
-
-.cl-status-card__link {
-  margin-top: 4px;
-  padding: 0 4px;
-  border: 0;
-  background: transparent;
-  color: var(--cl-state-fg);
-  text-decoration: underline;
-  text-underline-offset: 3px;
-}
-
-.cl-status-card__button:focus-visible,
-.cl-status-card__link:focus-visible {
-  outline: 2px solid var(--cl-focus);
-  outline-offset: 2px;
-}
-
-.cl-status-card__feedback {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-}
-
-.cl-status-card__feedback--error {
-  color: var(--cl-state-fg) !important;
-}
-
-.cl-status-card__spinner {
-  width: 16px;
-  height: 16px;
-  border: 2px solid var(--cl-state-border);
-  border-top-color: var(--cl-state-fg);
-  border-radius: 999px;
-  animation: cl-spin 800ms linear infinite;
-}
-
-@keyframes cl-spin {
-  to {
-    transform: rotate(360deg);
-  }
-}
-
-@media (max-width: 767px) {
-  .cl-status-card {
-    align-items: stretch;
-    flex-direction: column;
-    padding: 16px;
-    gap: 16px;
-  }
-
-  .cl-status-card__button {
-    width: 100%;
-    min-height: 48px;
-  }
-}
-
-@media (prefers-reduced-motion: reduce) {
-  .cl-status-card__button,
-  .cl-status-card__link {
-    transition-duration: 0ms;
-  }
-
-  .cl-status-card__spinner {
-    animation: none;
+@media (prefers-color-scheme: dark) {
+  .cl-render-error {
+    border-color: #991b1b;
+    background: #3b0a0a;
+    color: #fca5a5;
   }
 }
 

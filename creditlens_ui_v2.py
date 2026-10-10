@@ -1,4 +1,4 @@
-"""Cầu nối an toàn giữa Streamlit/Python và component React thử nghiệm.
+"""Cầu nối an toàn giữa Streamlit/Python và UI v2 React production.
 
 Python tiếp tục là nguồn sự thật duy nhất. Module này chỉ chuyển một view model
 đã lọc sang lớp trình bày và xác thực sự kiện miền tối thiểu gửi về từ React.
@@ -16,8 +16,8 @@ from typing import Any, Literal, Mapping, Protocol, TypeAlias
 
 SCHEMA_VERSION = "1.0"
 COMPONENT_VERSION = "0.5.0"
+# Registry identity is retained for Streamlit session compatibility.
 COMPONENT_NAME = "creditlens_v2_status_card"
-COMPONENT_KIND = "v2_status_card"
 SHELL_COMPONENT_KIND = "app_shell"
 DEMO_COMPONENT_KIND = "demo_panel"
 WORKFLOW_COMPONENT_KIND = "workflow_panel"
@@ -26,8 +26,6 @@ SUMMARY_PAGE_COMPONENT_KIND = "summary_page"
 METHODOLOGY_PAGE_COMPONENT_KIND = "methodology_page"
 EVALUATION_PAGE_COMPONENT_KIND = "evaluation_page"
 SETTINGS_PAGE_COMPONENT_KIND = "settings_page"
-EVENT_TYPE = "status_card.action"
-EVENT_ACTION = "acknowledge"
 UI_V2_FLAG = "UI_V2_ENABLED"
 
 _DEFAULT_ASSET_DIR = Path(__file__).resolve().parent / "frontend" / "dist"
@@ -66,32 +64,6 @@ class ComponentRenderer(Protocol):
 
 
 _RENDERER_CACHE: dict[tuple[int, str], ComponentRenderer] = {}
-
-
-@dataclass(frozen=True, slots=True)
-class V2StatusCardViewModel:
-    """Dữ liệu trình bày tối thiểu; không chứa đối tượng miền hay bí mật."""
-
-    title: str
-    message: str
-    status: Literal["neutral", "info", "success", "warning", "danger"] = "info"
-    theme: Literal["system", "light", "dark"] = "system"
-    details: tuple[str, ...] = ()
-    action_label: str | None = None
-    loading: bool = False
-    error: str | None = None
-
-
-@dataclass(frozen=True, slots=True)
-class V2DomainEvent:
-    """Sự kiện miền duy nhất được component mẫu phép phát."""
-
-    event_id: str
-    action: Literal["acknowledge"] = EVENT_ACTION
-    type: Literal["status_card.action"] = EVENT_TYPE
-    component: Literal["v2_status_card"] = COMPONENT_KIND
-    schema_version: Literal["1.0"] = SCHEMA_VERSION
-    component_version: Literal["0.5.0"] = COMPONENT_VERSION
 
 
 @dataclass(frozen=True, slots=True)
@@ -510,7 +482,7 @@ class V2EvaluationEvent:
     component_version: Literal["0.5.0"] = COMPONENT_VERSION
 
 
-V2UIEvent: TypeAlias = V2DomainEvent | V2NavigationEvent | V2DemoEvent | V2EvaluationEvent
+V2UIEvent: TypeAlias = V2NavigationEvent | V2DemoEvent | V2EvaluationEvent
 
 
 def ui_v2_enabled(environ: Mapping[str, str] | None = None) -> bool:
@@ -546,51 +518,6 @@ def _clean_text(value: str, *, field: str, maximum: int, allow_empty: bool = Fal
     if len(cleaned) > maximum:
         raise UIContractError(f"{field} vượt quá độ dài cho phép.")
     return cleaned
-
-
-def serialize_view_model(view_model: V2StatusCardViewModel) -> dict[str, JsonValue]:
-    """Tạo allowlisted JSON payload và chặn NaN/bí mật trước khi sang trình duyệt."""
-
-    if view_model.theme not in _THEMES:
-        raise UIContractError("theme không hợp lệ.")
-    if view_model.status not in _STATUS_TONES:
-        raise UIContractError("status không hợp lệ.")
-    if len(view_model.details) > 6:
-        raise UIContractError("details chỉ cho phép tối đa 6 mục.")
-
-    payload: dict[str, JsonValue] = {
-        "schema_version": SCHEMA_VERSION,
-        "component_version": COMPONENT_VERSION,
-        "component": COMPONENT_KIND,
-        "theme": view_model.theme,
-        "status": view_model.status,
-        "title": _clean_text(view_model.title, field="title", maximum=120),
-        "message": _clean_text(view_model.message, field="message", maximum=500),
-        "details": [
-            _clean_text(item, field=f"details[{index}]", maximum=180)
-            for index, item in enumerate(view_model.details)
-        ],
-        "action_label": (
-            _clean_text(view_model.action_label, field="action_label", maximum=60)
-            if view_model.action_label is not None
-            else None
-        ),
-        "loading": bool(view_model.loading),
-        "error": (
-            _clean_text(view_model.error, field="error", maximum=300)
-            if view_model.error is not None
-            else None
-        ),
-    }
-    _assert_no_prohibited_keys(payload)
-    try:
-        encoded = json.dumps(payload, ensure_ascii=False, allow_nan=False)
-        decoded = json.loads(encoded)
-    except (TypeError, ValueError) as exc:
-        raise UIContractError("View model không thể tuần tự hóa an toàn.") from exc
-    if not isinstance(decoded, dict):
-        raise UIContractError("View model phải là một JSON object.")
-    return decoded
 
 
 def _json_object(payload: dict[str, JsonValue], *, label: str) -> dict[str, JsonValue]:
@@ -1460,7 +1387,7 @@ def _validate_event_base(raw_event: Mapping[str, Any], extra_keys: set[str]) -> 
 
 
 def parse_ui_event(raw_event: Any) -> V2UIEvent | None:
-    """Xác thực nghiêm ngặt mọi event Cụm 2–3 từ trình duyệt."""
+    """Xác thực nghiêm ngặt mọi event production từ trình duyệt."""
 
     if raw_event is None:
         return None
@@ -1470,9 +1397,6 @@ def parse_ui_event(raw_event: Any) -> V2UIEvent | None:
     event_type = raw_event.get("type")
     action = raw_event.get("action")
 
-    if component == COMPONENT_KIND and event_type == EVENT_TYPE and action == EVENT_ACTION:
-        event_id = _validate_event_base(raw_event, set())
-        return V2DomainEvent(event_id=event_id)
     if component == SHELL_COMPONENT_KIND and event_type == "navigation.select" and action == "select":
         event_id = _validate_event_base(raw_event, {"page"})
         page = _clean_text(raw_event.get("page"), field="event.page", maximum=100)
@@ -1497,15 +1421,6 @@ def parse_ui_event(raw_event: Any) -> V2UIEvent | None:
         event_id = _validate_event_base(raw_event, set())
         return V2EvaluationEvent(event_id=event_id)
     raise UIContractError("Loại event hoặc component không được phép.")
-
-
-def parse_domain_event(raw_event: Any) -> V2DomainEvent | None:
-    """Giữ contract Cụm 2 cho status card trên parser chung."""
-
-    event = parse_ui_event(raw_event)
-    if event is None or isinstance(event, V2DomainEvent):
-        return event
-    raise UIContractError("Event không thuộc status card.")
 
 
 def load_component_assets(asset_dir: str | Path | None = None) -> tuple[str, str]:
@@ -1553,27 +1468,6 @@ def _event_from_result(result: Any) -> Any:
     if isinstance(result, Mapping):
         return result.get("event")
     return getattr(result, "event", None)
-
-
-def render_status_card(
-    st_module: Any,
-    view_model: V2StatusCardViewModel,
-    *,
-    key: str = "creditlens_v2_status_card",
-    renderer: ComponentRenderer | None = None,
-    asset_dir: str | Path | None = None,
-) -> V2DomainEvent | None:
-    """Gửi props an toàn và nhận tối đa một event miền đã xác thực."""
-
-    payload = serialize_view_model(view_model)
-    component = renderer or get_component_renderer(st_module, asset_dir)
-    result = component(
-        key=key,
-        data=payload,
-        width="stretch",
-        height="content",
-    )
-    return parse_domain_event(_event_from_result(result))
 
 
 def _render_payload(
@@ -1733,16 +1627,6 @@ def queue_v2_upload_action(session_state: Any) -> bool:
     session_state["ui_v2_error"] = ""
     session_state["ui_v2_warning"] = ""
     session_state["ui_v2_notice"] = ""
-    return True
-
-
-def handle_domain_event(session_state: Any, event: V2DomainEvent) -> bool:
-    """Xử lý idempotent event hợp lệ; hoàn toàn không gọi provider/LLM."""
-
-    if session_state.get("ui_v2_last_event_id") == event.event_id:
-        return False
-    session_state["ui_v2_last_event_id"] = event.event_id
-    session_state["ui_v2_status_card_acknowledged"] = True
     return True
 
 
@@ -2963,6 +2847,11 @@ def v2_host_styles(theme: Literal["system", "light", "dark"]) -> str:
 .stMainBlockContainer button[kind="primary"] {{
   min-height:44px; border-radius:8px; background:var(--cl-primary); color:var(--cl-on-primary);
 }}
+.stMainBlockContainer button[kind="secondary"] {{
+  border-color:var(--cl-border) !important; background:var(--cl-surface) !important;
+  color:var(--cl-text) !important;
+}}
+.stMainBlockContainer button[kind="secondary"] p {{ color:inherit !important; }}
 .stMainBlockContainer button:focus-visible, .stMainBlockContainer input:focus-visible {{
   outline:2px solid #2563EB !important; outline-offset:2px !important;
 }}
@@ -3256,7 +3145,7 @@ def render_settings_native_controls(st_module: Any, settings: dict[str, Any]) ->
 
 
 def chay_ung_dung_streamlit_v2(st_module: Any | None = None) -> None:
-    """Chạy App Shell v2; Cụm 6 adds a safe Settings summary over native controls."""
+    """Chạy App Shell v2 và tám trang production trên source of truth Python."""
 
     if st_module is None:
         import streamlit as st_module
@@ -3437,33 +3326,6 @@ def chay_ung_dung_streamlit_v2(st_module: Any | None = None) -> None:
     )
 
 
-def render_experimental_v2(st_module: Any | None = None) -> None:
-    """Mount component mẫu trước legacy app khi feature flag đang bật."""
-
-    if st_module is None:
-        import streamlit as st_module
-
-    acknowledged = bool(st_module.session_state.get("ui_v2_status_card_acknowledged", False))
-    view_model = V2StatusCardViewModel(
-        title="Nền tảng UI v2 đã sẵn sàng" if acknowledged else "Bản thử nghiệm UI v2",
-        message=(
-            "Cầu nối React ↔ Python đã được xác nhận. Giao diện hiện tại vẫn là luồng chính."
-            if acknowledged
-            else "Component mẫu này kiểm chứng cầu nối kỹ thuật; chưa thay thế bất kỳ trang nào."
-        ),
-        status="success" if acknowledged else "info",
-        details=(
-            "Python tạo view model và giữ toàn bộ logic nghiệp vụ.",
-            "React chỉ trình bày và phát sự kiện đã định kiểu.",
-            "Tắt UI_V2_ENABLED để trở về nguyên trạng giao diện cũ.",
-        ),
-        action_label=None if acknowledged else "Xác nhận cầu nối",
-    )
-    event = render_status_card(st_module, view_model)
-    if event is not None and handle_domain_event(st_module.session_state, event):
-        st_module.rerun()
-
-
 def show_v2_fallback_notice(st_module: Any | None = None) -> None:
     """Thông báo chung, không rò chi tiết lỗi hoặc dữ liệu nhạy cảm."""
 
@@ -3479,6 +3341,6 @@ def show_v2_fallback_notice(st_module: Any | None = None) -> None:
             unsafe_allow_html=True,
         )
     st_module.warning(
-        "UI v2 thử nghiệm hiện không khả dụng; CreditLens đang dùng giao diện ổn định hiện tại.",
+        "UI v2 hiện không khả dụng; CreditLens đang dùng giao diện dự phòng ổn định.",
         icon="⚠️",
     )

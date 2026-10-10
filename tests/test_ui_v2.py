@@ -14,12 +14,11 @@ from creditlens_ui_v2 import (
     V2ComponentUnavailable,
     V2DemoCaseItem,
     V2DemoPanelViewModel,
-    V2DomainEvent,
     V2EvaluationEvent,
     V2NavigationItem,
     V2ProcessCard,
-    V2StatusCardViewModel,
     V2SettingsPageViewModel,
+    _claim_ui_event,
     build_core_page_view_model,
     build_evaluation_page_view_model,
     build_methodology_page_view_model,
@@ -28,15 +27,11 @@ from creditlens_ui_v2 import (
     V2WorkflowStep,
     build_workflow_steps,
     get_component_renderer,
-    handle_domain_event,
     load_component_assets,
-    parse_domain_event,
     parse_ui_event,
     queue_v2_upload_action,
-    render_experimental_v2,
     render_core_page,
     render_evaluation_page,
-    render_status_card,
     render_settings_page,
     serialize_demo_panel_view_model,
     serialize_core_page_view_model,
@@ -45,7 +40,6 @@ from creditlens_ui_v2 import (
     serialize_shell_view_model,
     serialize_summary_page_view_model,
     serialize_settings_page_view_model,
-    serialize_view_model,
     show_v2_fallback_notice,
     ui_v2_enabled,
 )
@@ -68,13 +62,14 @@ from credit_underwriting_colab import (
 from evaluation.evaluator import run_evaluation
 
 
-VALID_EVENT = {
+VALID_NAVIGATION_EVENT = {
     "schema_version": "1.0",
     "component_version": "0.5.0",
-    "component": "v2_status_card",
-    "type": "status_card.action",
-    "action": "acknowledge",
+    "component": "app_shell",
+    "type": "navigation.select",
+    "action": "select",
     "event_id": "evt_12345678",
+    "page": "Tổng quan",
 }
 
 
@@ -143,47 +138,37 @@ class UIContractsTests(unittest.TestCase):
         for value in ("1", "true", "TRUE", " yes ", "on"):
             self.assertTrue(ui_v2_enabled({"UI_V2_ENABLED": value}))
 
-    def test_view_model_serialization_is_allowlisted_json(self) -> None:
-        payload = serialize_view_model(
-            V2StatusCardViewModel(
-                title="Bản thử nghiệm UI v2",
-                message="Python giữ logic nghiệp vụ.",
-                details=("React chỉ trình bày.",),
-                action_label="Xác nhận cầu nối",
-            )
-        )
-        self.assertEqual(payload["component"], "v2_status_card")
-        self.assertEqual(payload["schema_version"], "1.0")
-        self.assertIsInstance(json.dumps(payload, allow_nan=False), str)
-        self.assertFalse({"api_key", "secret", "token"} & set(payload))
-
-    def test_python_to_react_props_and_react_to_python_event(self) -> None:
-        captured: dict[str, object] = {}
-
-        def renderer(**kwargs: object) -> dict[str, object]:
-            captured.update(kwargs)
-            return {"event": VALID_EVENT}
-
-        event = render_status_card(
-            FakeStreamlit(),
-            V2StatusCardViewModel(title="Component mẫu", message="Cầu nối an toàn."),
-            renderer=renderer,
-        )
-        self.assertEqual(captured["data"]["title"], "Component mẫu")  # type: ignore[index]
-        self.assertEqual(event, V2DomainEvent(event_id="evt_12345678"))
-
     def test_invalid_or_secret_shaped_event_is_rejected(self) -> None:
+        valid_event = {
+            "schema_version": "1.0",
+            "component_version": "0.5.0",
+            "component": "app_shell",
+            "type": "navigation.select",
+            "action": "select",
+            "event_id": "evt_12345678",
+            "page": "Tổng quan",
+        }
         with self.assertRaises(UIContractError):
-            parse_domain_event({**VALID_EVENT, "token": "never-accept"})
+            parse_ui_event({**valid_event, "token": "never-accept"})
         with self.assertRaises(UIContractError):
-            parse_domain_event({**VALID_EVENT, "action": "recompute_credit"})
+            parse_ui_event({**valid_event, "action": "recompute_credit"})
+        with self.assertRaises(UIContractError):
+            parse_ui_event(
+                {
+                    "schema_version": "1.0",
+                    "component_version": "0.5.0",
+                    "component": "v2_status_card",
+                    "type": "status_card.action",
+                    "action": "acknowledge",
+                    "event_id": "evt_12345678",
+                }
+            )
 
     def test_domain_event_handler_is_idempotent(self) -> None:
         state: dict[str, object] = {}
-        event = V2DomainEvent(event_id="evt_12345678")
-        self.assertTrue(handle_domain_event(state, event))
-        self.assertFalse(handle_domain_event(state, event))
-        self.assertTrue(state["ui_v2_status_card_acknowledged"])
+        self.assertTrue(_claim_ui_event(state, "evt_12345678"))
+        self.assertFalse(_claim_ui_event(state, "evt_12345678"))
+        self.assertEqual(state["ui_v2_last_event_id"], "evt_12345678")
 
     def test_cluster_3_events_are_typed_and_strict(self) -> None:
         navigation = parse_ui_event(
@@ -304,19 +289,11 @@ class UIContractsTests(unittest.TestCase):
             with self.assertRaisesRegex(V2ComponentUnavailable, "chưa sẵn sàng"):
                 load_component_assets(Path("missing-assets"))
 
-    @patch("creditlens_ui_v2.get_component_renderer")
-    def test_experimental_component_handles_one_valid_domain_event(self, get_renderer: Mock) -> None:
-        get_renderer.return_value = lambda **_kwargs: {"event": VALID_EVENT}
-        st = FakeStreamlit()
-        render_experimental_v2(st)
-        self.assertTrue(st.session_state["ui_v2_status_card_acknowledged"])
-        st.rerun.assert_called_once_with()
-
     def test_fallback_notice_never_exposes_exception_details(self) -> None:
         st = FakeStreamlit()
         show_v2_fallback_notice(st)
         message = st.warning.call_args.args[0]
-        self.assertIn("giao diện ổn định hiện tại", message)
+        self.assertIn("giao diện dự phòng ổn định", message)
         self.assertNotIn("Exception", message)
 
 
@@ -451,7 +428,7 @@ class Cluster4CorePagesTests(unittest.TestCase):
         )
 
         def renderer(**_kwargs: object) -> dict[str, object]:
-            return {"event": VALID_EVENT}
+            return {"event": VALID_NAVIGATION_EVENT}
 
         with self.assertRaisesRegex(UIContractError, "không được phát domain event"):
             render_core_page(FakeStreamlit(), view_model, renderer=renderer)
@@ -752,7 +729,7 @@ class Cluster6SettingsAndChatTests(unittest.TestCase):
         self.assertNotIn("api_key", serialized.casefold())
 
         def invalid_renderer(**_kwargs: object) -> dict[str, object]:
-            return {"event": VALID_EVENT}
+            return {"event": VALID_NAVIGATION_EVENT}
 
         with self.assertRaisesRegex(UIContractError, "không được phát domain event"):
             render_settings_page(FakeStreamlit(), view_model, renderer=invalid_renderer)
