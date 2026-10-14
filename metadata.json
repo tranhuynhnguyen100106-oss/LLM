@@ -1,0 +1,8 @@
+{
+  "name": "CreditLens - Hệ thống Thẩm định Tín dụng Xác định",
+  "description": "Hệ thống hỗ trợ thẩm định tín dụng có thể kiểm chứng (Verifiable Credit Underwriting) với phân tích dữ liệu xác định, đối chiếu chéo bằng chứng và đánh giá rủi ro minh bạch.",
+  "permissions": [],
+  "capabilities": [
+    "MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"
+  ]
+}

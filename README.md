@@ -1,99 +1,81 @@
-# CreditLens Streamlit phiên bản công khai
+# CreditLens - Hệ thống Thẩm định Tín dụng Xác định (React SPA)
 
-CreditLens là AI Credit Underwriting Copilot hỗ trợ đọc hồ sơ PDF, chuẩn hóa dữ kiện, tính chỉ số bằng Python, phát hiện mâu thuẫn, liên kết bằng chứng và tạo báo cáo Word, Excel hoặc PDF.
+CreditLens là hệ thống AI Credit Underwriting Copilot hỗ trợ đọc hồ sơ tài liệu PDF, chuẩn hóa dữ kiện có cấu trúc, tính toán các chỉ số tài chính xác định (DTI, DSR, thu nhập khả dụng, đệm số dư), phát hiện mâu thuẫn đa tài liệu, liên kết bằng chứng minh bạch và tạo báo cáo quyết định cấp tín dụng.
 
-Ứng dụng không phê duyệt hoặc từ chối khoản vay. Các ngưỡng chỉ dùng để minh họa học thuật. Quyết định cuối cùng bắt buộc do con người xem xét.
+> **Nguyên tắc an toàn:** Ứng dụng hỗ trợ thẩm định và phân tích xác định; không tự phê duyệt hoặc từ chối khoản vay. Mọi quyết định cuối cùng bắt buộc do chuyên viên và Hội đồng Tín dụng xem xét.
 
-## Tính năng của bản này
+---
 
-- Nhận diện đồng thương hiệu HUB × CreditLens theo navy `#203469` và đỏ `#A71B28`; tài sản PNG nền trong suốt, favicon HUB và watermark CreditLens thích ứng giao diện sáng/tối.
-- Giao diện tiếng Việt với 5 chế độ: Theo hệ thống, Sáng, Tối, Ấm áp và Hiện đại. Chế độ Theo hệ thống tự thích nghi với thiết bị sáng hoặc tối.
-- Thẻ quy trình, trạng thái xử lý, hover, focus, pressed-state và chuyển trang có phản hồi trực quan; tự giảm chuyển động khi hệ điều hành bật `prefers-reduced-motion`.
-- Upload từng tệp hoặc chọn trực tiếp một thư mục gồm 3–4 PDF của cùng một khách hàng: đơn đề nghị vay, chứng từ thu nhập, sao kê và tài liệu nghĩa vụ nợ tùy chọn.
-- Trích xuất có cấu trúc; độ tin cậy được chuyển thành nhãn “Tin cậy cao”, “Cần đối chiếu”, “Cần xác minh” hoặc “Thiếu dữ liệu” và phân biệt bằng màu.
-- Python tính DTI, DSR, thu nhập còn lại trước khoản vay mới, hệ số đệm số dư và biến động thu nhập; “Thu nhập dùng để tính” luôn hiển thị nguồn/cơ sở và trạng thái xác minh độc lập.
-- Phát hiện chênh lệch thu nhập, doanh nghiệp, chức danh, thời gian làm việc và nghĩa vụ nợ.
-- Evidence traceability đến tài liệu, trang, trường và giá trị.
-- Kho kết nối theo phiên giữ một API Key đã xác minh cho mỗi provider OpenAI/GPT, Google Gemini, Anthropic Claude hoặc DeepSeek; form có nút “Kết nối và tải danh sách model” rõ ràng, không cần tổ hợp phím.
-- Nhận diện provider an toàn từ tiền tố khi có thể, xác thực key và tải trực tiếp danh sách model mà key được quyền sử dụng; người dùng chọn model từ danh sách, không nhập phiên bản thủ công.
-- Trang **Cài đặt** tách thành 4 tab: Kết nối AI, Giao diện, Ngưỡng minh họa, Guardrails và cấu hình.
-- Chuyên viên chọn xuất báo cáo `.docx`, `.xlsx` hoặc `.pdf`.
-- Có `render.yaml` để triển khai trên dịch vụ web hỗ trợ Blueprint và `packages.txt` để cài font PDF tiếng Việt.
+## Kiến trúc và Công nghệ
 
-## Chạy thử trong một ô Colab hoặc Jupyter
+Dự án được xây dựng hoàn toàn dưới dạng **React SPA (Vite + TypeScript)** theo tiêu chuẩn hiện đại:
 
-Tệp `CreditLens_Public_OneCell.py` ở ngoài gói project là ô bootstrap. Dán toàn bộ nội dung của tệp đó vào một ô Python và chạy. Ô này sẽ:
+- **Framework:** React 19 + TypeScript 5
+- **Build Tool:** Vite
+- **Hệ thống Design Tokens:** CSS Variables theo thiết kế đồng thương hiệu HUB × CreditLens (`#203469` Navy và `#A71B28` Accent Red)
+- **Hỗ trợ giao diện:** 3 chế độ Theme (Theo hệ thống, Sáng, Tối)
+- **Khả năng tiếp cận:** Hỗ trợ phím tắt, Skip Link, đầy đủ nhãn ARIA và tự động giảm chuyển động khi bật `prefers-reduced-motion`
 
-1. Tạo thư mục `creditlens_public`.
-2. Giải nén source code.
-3. Cài dependencies.
-4. Chạy Streamlit để kiểm thử trong phiên notebook.
-5. Tạo sẵn `creditlens_public_deploy.zip` để tải lên GitHub.
+---
 
-URL xem trong Colab chỉ tồn tại khi runtime còn hoạt động. Không sử dụng URL Colab làm URL public chính thức.
+## 8 Phân hệ Chức năng Chính
 
-## Triển khai công khai miễn phí bằng Streamlit Community Cloud
+1. **Tổng quan và Hồ sơ (`1_overview`):**
+   - Vùng tiếp nhận tài liệu (Intake Area) hỗ trợ kéo thả hoặc chọn nhiều tệp PDF (Đơn vay, Chứng từ thu nhập, Sao kê ngân hàng, Nghĩa vụ nợ).
+   - Bộ chọn 10 tình huống thử nghiệm (Demo Cases) tổng hợp xác định.
+   - Stepper quy trình 4 chặng: Tiếp nhận → Tính toán xác định → Đối chiếu đa chứng từ → Con người xem xét.
 
-1. Chạy ô bootstrap và tải `creditlens_public_deploy.zip` xuống máy.
-2. Giải nén ZIP. Bên trong phải có `app.py`, `credit_underwriting_colab.py`, `requirements.txt`, `packages.txt`, thư mục `.streamlit` và các tài sản thương hiệu trong `static/` (`hub-creditlens-lockup.png`, `hub-favicon.png`, `creditlens-logo-hub.png`, `creditlens-watermark.png`).
-3. Tạo một repository GitHub mới, ví dụ `creditlens-underwriting`.
-4. Đặt repository ở chế độ Public nếu muốn source code mở.
-5. Upload toàn bộ nội dung bên trong thư mục project lên nhánh `main`. Không upload `.env`, `secrets.toml` hoặc API Key.
-6. Đăng nhập Streamlit Community Cloud bằng GitHub.
-7. Chọn Create app, sau đó chọn repository, branch `main` và main file `app.py`.
-8. Chọn URL mong muốn và bấm Deploy.
-9. Sau khi app chạy, đặt quyền chia sẻ Public. Bất kỳ ai có URL đều có thể truy cập.
+2. **Trích xuất tài liệu (`2_extraction`):**
+   - Danh mục tài liệu với trạng thái, số trang, loại nhận diện và điểm tin cậy (Confidence score).
+   - 20 trường dữ kiện chuẩn hóa theo vai trò nguồn (Kê khai / Quan sát từ chứng từ / Tính toán).
+   - Chi tiết bằng chứng nguồn (Evidence Disclosure) trích xuất từ tài liệu và số trang cụ thể.
 
-Streamlit Community Cloud chạy trên máy chủ từ xa nên app không tắt khi máy cá nhân tắt. Tuy nhiên, gói miễn phí cho app ngủ sau thời gian không có truy cập; người dùng có quyền truy cập có thể đánh thức app. Nếu yêu cầu không có trạng thái ngủ, hãy dùng một gói hosting trả phí hoặc VPS luôn hoạt động.
+3. **Phân tích tín dụng (`3_analysis`):**
+   - Thẻ nguồn thu nhập cơ sở dùng để tính toán và trạng thái xác minh độc lập.
+   - Lưới 6 chỉ số tài chính trọng yếu: DTI hiện hữu, DSR dự kiến, Thu nhập còn lại, Hệ số đệm số dư, Chênh lệch thu nhập, Biến động thu nhập.
+   - Bảng đối chiếu chéo dữ liệu đa chứng từ (Thu nhập 3 nguồn, Đơn vị công tác, Nghĩa vụ nợ).
 
-## Triển khai luôn hoạt động
+4. **Cảnh báo rủi ro (`4_risk`):**
+   - Động cơ quy tắc xác định phát hiện mâu thuẫn: `INCOME_MISMATCH`, `EMPLOYER_MISMATCH`, `POSSIBLE_UNDECLARED_DEBT`, `HIGH_DTI_DEMO`, `HIGH_DSR_DEMO`, `LOW_BALANCE_BUFFER`, `HIGH_INCOME_VOLATILITY`, `LOW_EXTRACTION_CONFIDENCE`.
+   - Phân loại mức độ nghiêm trọng: CAO (HIGH), TRUNG BÌNH (MEDIUM), THẤP (LOW), THÔNG TIN (INFO).
+   - Trích dẫn bằng chứng đính kèm từng cảnh báo.
 
-Project có `render.yaml` và mặc định chọn `plan: free` để tránh phát sinh chi phí ngoài ý muốn. Gói Render Free ngủ sau thời gian không có truy cập; nếu cần không sleep, hãy nâng chính web service đó lên một compute plan trả phí. Lệnh chạy là:
+5. **Tóm tắt thẩm định (`5_summary`):**
+   - Bảng tổng hợp quyết định cấp tín dụng (Decision-Support Hero) với thông tin khách hàng, khoản vay đề nghị.
+   - Phân tách rõ ràng giữa *Deterministic findings* (kết quả tính toán xác định) và *Human review checklist* (câu hỏi và thông tin cần bổ sung).
+   - Tùy chọn tạo diễn giải ngôn ngữ tự nhiên bằng AI hỗ trợ.
+   - Nút xuất báo cáo: Tải Markdown (`.md`), Tải JSON có cấu trúc (`.json`), In / Lưu PDF.
 
-```bash
-streamlit run app.py --server.address 0.0.0.0 --server.port $PORT --server.headless true
-```
+6. **Phương pháp và Giới hạn (`6_methodology`):**
+   - Kiến trúc 3 tầng: Dữ kiện → Phân tích xác định → Diễn giải AI.
+   - 6 thẻ công thức tài chính kèm ý nghĩa và giới hạn đo lường.
+   - Bảng ma trận năng lực xử lý các loại định dạng PDF.
+   - Nhóm các giới hạn hệ thống và trách nhiệm con người.
 
-Không có nền tảng miễn phí nào nên được xem là cam kết uptime 24/7. Để đáp ứng đúng nghĩa “không ngưng hoạt động”, cần gói trả phí không spin-down hoặc VPS.
+7. **Evaluation Benchmark (`7_evaluation`):**
+   - Bộ kiểm thử chất lượng chạy trên 12 kịch bản synthetic gold dataset độc lập.
+   - Scorecards độ chính xác trích xuất và phân loại.
+   - Ma trận nhầm lẫn (Confusion Matrix) 3x3 cho trạng thái thẩm định.
+   - Bảng Grounding consistency và so sánh với baseline con người / LLM zero-shot.
+   - Danh mục 6 trường hợp ngoại lệ (Failure Cases) kèm nguyên nhân và giải pháp khắc phục.
+   - Xuất kết quả đánh giá ra định dạng CSV và JSON.
 
-## API Key và lựa chọn chatbot trên web công khai
+8. **Cài đặt & Trợ lý AI (`8_settings`):**
+   - Quản lý trạng thái kết nối các nhà cung cấp mô hình (Gemini, OpenAI, Claude, DeepSeek).
+   - Thanh trượt tinh chỉnh 8 ngưỡng rủi ro minh họa trong phiên với tính năng **tính toán lại tức thì** trên toàn bộ ứng dụng.
+   - Khung chat tương tác với trợ lý CreditLens trả lời câu hỏi nghiệp vụ dựa trên dữ kiện hồ sơ.
 
-Mỗi người dùng mở **Cài đặt → Kết nối AI**, chọn **Tự động nhận diện an toàn** hoặc một nhà cung cấp cụ thể, rồi dán key của họ. Ứng dụng hỗ trợ:
+---
 
-- OpenAI · GPT
-- Google · Gemini
-- Anthropic · Claude
-- DeepSeek
-
-Với tiền tố đặc trưng như `sk-proj-`, `sk-ant-` hoặc `AIza`, ứng dụng có thể nhận diện nhà cung cấp. Tiền tố `sk-` có thể thuộc nhiều nhà cung cấp nên ứng dụng yêu cầu người dùng chọn đúng hãng thay vì gửi thử khóa sang nhiều nơi. Sau khi xác thực, danh sách model được lấy từ API chính thức và hiển thị trong selectbox.
-
-Một API key có thể truy cập nhiều model; vì vậy key không thể tự cho biết một “phiên bản duy nhất”. CreditLens tự chọn model đầu tiên khả dụng và cho người dùng đổi model từ danh sách đã xác minh, không còn ô nhập tên model thủ công. Nếu phiên có nhiều provider, danh sách **API Key sử dụng ngay** quyết định kết nối mà trang Tóm tắt sẽ dùng.
-
-Key chỉ nằm trong `st.session_state` của phiên, tối đa một key cho mỗi provider, và có nút xóa riêng. Key không được đưa vào JSON cấu hình, source, báo cáo hoặc log. Không đặt một API Key chung vào source public vì người lạ có thể gây phát sinh chi phí.
-
-Nếu chỉ demo riêng cho giảng viên, có thể dùng secret của nền tảng nhưng phải thêm giới hạn truy cập và hạn mức chi phí. Không commit `.streamlit/secrets.toml`.
-
-## Xuất báo cáo
-
-Mở Tóm tắt thẩm định, chọn một định dạng rồi tải:
-
-- Word: báo cáo trình bày theo mục, có bảng chỉ số, cảnh báo, bằng chứng và dữ kiện trích xuất.
-- Excel: nhiều sheet, giữ kiểu số và phần trăm để tiếp tục phân tích.
-- PDF: báo cáo Unicode tiếng Việt nhúng Noto Sans/DejaVu Sans, có header, footer và số trang.
-
-Báo cáo được tạo trong RAM. Ứng dụng không lưu tệp báo cáo vào thư mục máy chủ.
-
-## Kiểm thử
+## Hướng dẫn Khởi chạy
 
 ```bash
-CREDITLENS_SELF_TEST=1 python credit_underwriting_colab.py
+# Cài đặt dependencies
+npm install
+
+# Khởi chạy máy chủ phát triển (Port 3000)
+npm run dev
+
+# Kiểm tra build sản phẩm
+npm run build
 ```
-
-## Quyền riêng tư
-
-- Chỉ dùng dữ liệu tổng hợp hoặc đã ẩn danh.
-- Giới hạn mỗi PDF là 10 MB.
-- Tệp tạm bị xóa sau khi đọc.
-- Không log API Key hoặc nội dung PDF.
-- Có nút xóa hồ sơ khỏi phiên.
-- Public demo không phù hợp với dữ liệu khách hàng thật.

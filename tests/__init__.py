@@ -1,1 +1,0 @@
-"""CreditLens regression test package."""
