@@ -2,6 +2,7 @@ import express, { type Request, type Response } from "express";
 import cors from "cors";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
+import fs from "node:fs";
 import { GoogleGenAI } from "@google/genai";
 
 const __filename = fileURLToPath(import.meta.url);
@@ -14,15 +15,37 @@ const app = express();
 app.use(cors());
 app.use(express.json({ limit: "10mb" }));
 
-// Initialize GoogleGenAI client with standard User-Agent header
-const ai = new GoogleGenAI({
-  apiKey: process.env.GEMINI_API_KEY,
-  httpOptions: {
-    headers: {
-      "User-Agent": "aistudio-build"
+// Helper to reliably resolve the Gemini API key across dev container & production environments
+function resolveGeminiApiKey(): string | undefined {
+  const isInvalid = (k?: string) => !k || k === "MY_GEMINI_API_KEY" || k.trim() === "";
+
+  if (!isInvalid(process.env.GEMINI_API_KEY)) {
+    return process.env.GEMINI_API_KEY?.trim();
+  }
+
+  // Check candidate configuration files in container environments
+  const candidatePaths = [
+    "/app/.dev.env.json",
+    path.resolve(process.cwd(), ".dev.env.json"),
+    path.resolve(__dirname, ".dev.env.json"),
+    path.resolve(__dirname, "../.dev.env.json")
+  ];
+
+  for (const p of candidatePaths) {
+    try {
+      if (fs.existsSync(p)) {
+        const parsed = JSON.parse(fs.readFileSync(p, "utf-8"));
+        if (!isInvalid(parsed.GEMINI_API_KEY)) {
+          return parsed.GEMINI_API_KEY.trim();
+        }
+      }
+    } catch {
+      // Continue to next candidate
     }
   }
-});
+
+  return undefined;
+}
 
 // Roles & System Instructions configuration
 const SYSTEM_ROLES: Record<string, string> = {
@@ -97,7 +120,9 @@ Quy tắc phản hồi:
       parts: [{ text: m.content || "" }]
     }));
 
-    if (!process.env.GEMINI_API_KEY) {
+    const apiKey = resolveGeminiApiKey();
+
+    if (!apiKey) {
       // Graceful fallback when API key is not yet set in environment
       res.status(200).json({
         success: true,
@@ -108,23 +133,53 @@ Quy tắc phản hồi:
       return;
     }
 
-    // Call Gemini with @google/genai SDK
-    const response = await ai.models.generateContent({
-      model: selectedModel,
-      contents,
-      config: {
-        systemInstruction,
-        temperature: 0.25,
-        topP: 0.95
+    // Initialize GoogleGenAI client with standard User-Agent header
+    const ai = new GoogleGenAI({
+      apiKey,
+      httpOptions: {
+        headers: {
+          "User-Agent": "aistudio-build"
+        }
       }
     });
+
+    // Call Gemini with @google/genai SDK with resilient fallback
+    let response;
+    let actualModel = selectedModel;
+    try {
+      response = await ai.models.generateContent({
+        model: selectedModel,
+        contents,
+        config: {
+          systemInstruction,
+          temperature: 0.25,
+          topP: 0.95
+        }
+      });
+    } catch (modelErr: any) {
+      if (selectedModel !== "gemini-3.1-flash-lite") {
+        console.warn(`Primary model ${selectedModel} failed or busy, falling back to gemini-3.1-flash-lite:`, modelErr?.message);
+        actualModel = "gemini-3.1-flash-lite";
+        response = await ai.models.generateContent({
+          model: "gemini-3.1-flash-lite",
+          contents,
+          config: {
+            systemInstruction,
+            temperature: 0.25,
+            topP: 0.95
+          }
+        });
+      } else {
+        throw modelErr;
+      }
+    }
 
     const replyText = response.text || "Không nhận được phản hồi từ mô hình.";
 
     res.status(200).json({
       success: true,
       text: replyText,
-      modelUsed: selectedModel
+      modelUsed: actualModel
     });
   } catch (error: any) {
     console.error("Gemini API error:", error);
@@ -157,9 +212,14 @@ async function startServer() {
     });
     app.use(vite.middlewares);
   } else {
-    app.use(express.static(path.resolve(__dirname, "dist")));
-    app.get("*", (_req, res) => {
-      res.sendFile(path.resolve(__dirname, "dist", "index.html"));
+    const distPath = path.resolve(__dirname, "dist");
+    app.use(express.static(distPath));
+    app.use((req, res) => {
+      if (req.path.startsWith("/api/")) {
+        res.status(404).json({ error: "Endpoint not found" });
+        return;
+      }
+      res.sendFile(path.resolve(distPath, "index.html"));
     });
   }
 
