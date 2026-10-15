@@ -8,6 +8,7 @@ export const SUMMARY_PAGE_COMPONENT = "summary_page" as const;
 export const METHODOLOGY_PAGE_COMPONENT = "methodology_page" as const;
 export const EVALUATION_PAGE_COMPONENT = "evaluation_page" as const;
 export const SETTINGS_PAGE_COMPONENT = "settings_page" as const;
+export const PRIVACY_PAGE_COMPONENT = "privacy_gateway_page" as const;
 
 export type ThemeMode = "system" | "light" | "dark";
 export type StatusTone = "neutral" | "info" | "success" | "warning" | "danger";
@@ -28,6 +29,16 @@ export interface NavigationItem {
   label: string;
   group: "Hồ sơ" | "Kiểm chứng" | "Hệ thống";
   ordinal: number;
+  locked?: boolean;
+  lock_reason?: string;
+}
+
+export type PrivacyState = "pending" | "review" | "done";
+
+export interface PrivacyBadge {
+  state: PrivacyState;
+  label: string;
+  count: number;
 }
 
 export interface WorkflowStep {
@@ -64,6 +75,39 @@ export interface V2AppShellViewModel extends ContractBase {
   overview: boolean;
   page_state: PageState;
   state_message: string;
+  privacy?: PrivacyBadge;
+}
+
+export interface PrivacyPreviewRow {
+  pii_type: string;
+  masked_value: string;
+  replacement: string;
+  document: string;
+  page: number | null;
+  source: string;
+  required: boolean;
+}
+
+export interface PrivacyAuditRow {
+  time: string;
+  event: string;
+  provider: string;
+  fields: number;
+  result: string;
+}
+
+export interface V2PrivacyGatewayViewModel extends ContractBase {
+  component: typeof PRIVACY_PAGE_COMPONENT;
+  state: "empty" | "review" | "done";
+  badge_label: string;
+  field_count: number;
+  public_warning: string;
+  consent_text: string;
+  consent_given: boolean;
+  case_id: string | null;
+  rows: PrivacyPreviewRow[];
+  counts: { label: string; count: number }[];
+  audit: PrivacyAuditRow[];
 }
 
 export interface DemoCaseItem {
@@ -409,7 +453,8 @@ export type V2ViewModel =
   | V2SummaryPageViewModel
   | V2MethodologyPageViewModel
   | V2EvaluationPageViewModel
-  | V2SettingsPageViewModel;
+  | V2SettingsPageViewModel
+  | V2PrivacyGatewayViewModel;
 
 const THEMES = new Set<ThemeMode>(["system", "light", "dark"]);
 const STATUS_TONES = new Set<StatusTone>(["neutral", "info", "success", "warning", "danger"]);
@@ -499,12 +544,18 @@ export function parseAppShellViewModel(value: unknown): V2AppShellViewModel {
     if (!Number.isInteger(raw.ordinal) || Number(raw.ordinal) < 1 || Number(raw.ordinal) > 8) {
       throw new Error("Invalid navigation ordinal.");
     }
-    return {
+    const item: NavigationItem = {
       page: parseText(raw.page, "navigation.page", 100) as string,
       label: parseText(raw.label, "navigation.label", 80) as string,
       group,
       ordinal: Number(raw.ordinal)
     };
+    if (raw.locked !== undefined) {
+      if (typeof raw.locked !== "boolean") throw new Error("Invalid navigation lock.");
+      item.locked = raw.locked;
+      item.lock_reason = raw.locked && typeof raw.lock_reason === "string" ? raw.lock_reason.trim().slice(0, 180) : "";
+    }
+    return item;
   });
   const activePage = parseText(value.active_page, "active_page", 100) as string;
   if (!navigation.some((item) => item.page === activePage)) throw new Error("Active page is not in navigation.");
@@ -548,7 +599,82 @@ export function parseAppShellViewModel(value: unknown): V2AppShellViewModel {
     logo_data_uri: value.logo_data_uri,
     overview: value.overview,
     page_state: value.page_state as PageState,
-    state_message: parseText(value.state_message, "state_message", 300) as string
+    state_message: parseText(value.state_message, "state_message", 300) as string,
+    ...(value.privacy !== undefined ? { privacy: parsePrivacyBadge(value.privacy) } : {})
+  };
+}
+
+const PRIVACY_STATES = new Set<PrivacyState>(["pending", "review", "done"]);
+
+function parsePrivacyBadge(value: unknown): PrivacyBadge {
+  if (!isRecord(value) || typeof value.state !== "string" || !PRIVACY_STATES.has(value.state as PrivacyState)) {
+    throw new Error("Invalid privacy badge.");
+  }
+  if (!Number.isInteger(value.count) || Number(value.count) < 0) throw new Error("Invalid privacy count.");
+  return {
+    state: value.state as PrivacyState,
+    label: parseText(value.label, "privacy.label", 80) as string,
+    count: Number(value.count)
+  };
+}
+
+function parseOptionalText(value: unknown, field: string, maximum: number): string {
+  if (value === "") return "";
+  return parseText(value, field, maximum) as string;
+}
+
+export function parsePrivacyGatewayViewModel(value: unknown): V2PrivacyGatewayViewModel {
+  assertNoProhibitedKeys(value);
+  if (!isRecord(value)) throw new Error("Privacy Gateway view model must be an object.");
+  const base = parseBase(value);
+  if (value.component !== PRIVACY_PAGE_COMPONENT) throw new Error("Unexpected component kind.");
+  if (!["empty", "review", "done"].includes(String(value.state))) throw new Error("Invalid privacy state.");
+  if (!Array.isArray(value.rows) || value.rows.length > 200) throw new Error("Invalid privacy rows.");
+  if (!Array.isArray(value.counts) || !Array.isArray(value.audit)) throw new Error("Invalid privacy summary.");
+  if (!Number.isInteger(value.field_count) || Number(value.field_count) < 0) throw new Error("Invalid field count.");
+  if (typeof value.consent_given !== "boolean") throw new Error("Invalid consent flag.");
+  const rows = value.rows.map((raw): PrivacyPreviewRow => {
+    if (!isRecord(raw) || typeof raw.required !== "boolean") throw new Error("Invalid privacy row.");
+    if (raw.page !== null && (!Number.isInteger(raw.page) || Number(raw.page) < 1)) throw new Error("Invalid privacy page.");
+    return {
+      pii_type: parseText(raw.pii_type, "privacy.pii_type", 60) as string,
+      masked_value: parseText(raw.masked_value, "privacy.masked_value", 160) as string,
+      replacement: parseText(raw.replacement, "privacy.replacement", 80) as string,
+      document: parseText(raw.document, "privacy.document", 160) as string,
+      page: raw.page === null ? null : Number(raw.page),
+      source: parseText(raw.source, "privacy.source", 40) as string,
+      required: raw.required
+    };
+  });
+  const counts = value.counts.map((raw) => {
+    if (!isRecord(raw) || !Number.isInteger(raw.count) || Number(raw.count) < 0) throw new Error("Invalid privacy count.");
+    return { label: parseText(raw.label, "privacy.count_label", 60) as string, count: Number(raw.count) };
+  });
+  const audit = value.audit.map((raw): PrivacyAuditRow => {
+    if (!isRecord(raw) || !Number.isInteger(raw.fields) || Number(raw.fields) < 0) throw new Error("Invalid audit row.");
+    return {
+      time: parseText(raw.time, "privacy.audit_time", 40) as string,
+      event: parseText(raw.event, "privacy.audit_event", 60) as string,
+      provider: parseOptionalText(raw.provider, "privacy.audit_provider", 40),
+      fields: Number(raw.fields),
+      result: parseOptionalText(raw.result, "privacy.audit_result", 60)
+    };
+  });
+  return {
+    schema_version: SCHEMA_VERSION,
+    component_version: COMPONENT_VERSION,
+    component: PRIVACY_PAGE_COMPONENT,
+    theme: base.theme,
+    state: value.state as V2PrivacyGatewayViewModel["state"],
+    badge_label: parseText(value.badge_label, "privacy.badge_label", 80) as string,
+    field_count: Number(value.field_count),
+    public_warning: parseText(value.public_warning, "privacy.public_warning", 200) as string,
+    consent_text: parseText(value.consent_text, "privacy.consent_text", 240) as string,
+    consent_given: value.consent_given,
+    case_id: parseText(value.case_id, "privacy.case_id", 80, true),
+    rows,
+    counts,
+    audit
   };
 }
 
@@ -1154,6 +1280,7 @@ export function parseViewModel(value: unknown): V2ViewModel {
   if (value.component === METHODOLOGY_PAGE_COMPONENT) return parseMethodologyPageViewModel(value);
   if (value.component === EVALUATION_PAGE_COMPONENT) return parseEvaluationPageViewModel(value);
   if (value.component === SETTINGS_PAGE_COMPONENT) return parseSettingsPageViewModel(value);
+  if (value.component === PRIVACY_PAGE_COMPONENT) return parsePrivacyGatewayViewModel(value);
   throw new Error("Unknown component kind.");
 }
 

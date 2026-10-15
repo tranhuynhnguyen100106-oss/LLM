@@ -7,6 +7,7 @@ import unittest
 from unittest.mock import Mock, patch
 
 import app
+from privacy_gateway import PseudonymVault
 from creditlens_ui_v2 import (
     V2AppShellViewModel,
     V2CaseContext,
@@ -113,7 +114,13 @@ class NullContext:
 class FakeChatStreamlit:
     def __init__(self, prompts: list[str | None], messages: list[dict[str, str]] | None = None) -> None:
         self.prompts = list(prompts)
-        self.session_state = AttrState(llm_chat_messages=list(messages or []))
+        # Chat chỉ mở sau Bước 0 · Privacy Gateway; fixture mô phỏng cổng đã hoàn tất.
+        self.session_state = AttrState(
+            llm_chat_messages=list(messages or []),
+            privacy_gateway_done=True,
+            privacy_vault=PseudonymVault.empty(),
+            result=object(),
+        )
         self.subheader = Mock()
         self.info = Mock()
         self.markdown = Mock()

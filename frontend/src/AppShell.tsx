@@ -58,10 +58,12 @@ export function AppShell({ viewModel, onDomainEvent }: AppShellProps) {
     menuButtonRef.current?.focus();
   };
 
-  const selectPage = (page: string) => {
+  const selectPage = (page: string, locked: boolean) => {
+    if (locked) return;
     setNavigationOpen(false);
     onDomainEvent(createNavigationEvent(page));
   };
+  const privacy = viewModel.privacy ?? { state: "pending" as const, label: "Chưa qua Bước 0", count: 0 };
 
   const skipToMainContent = (event: ReactMouseEvent<HTMLAnchorElement>) => {
     event.preventDefault();
@@ -98,6 +100,13 @@ export function AppShell({ viewModel, onDomainEvent }: AppShellProps) {
           <span aria-hidden="true" className="cl-shell__header-dot" />
           Quy trình xác định · Không tự động phê duyệt
         </div>
+        <span
+          className={`cl-privacy-badge cl-privacy-badge--${privacy.state} cl-shell__privacy-badge`}
+          aria-label={`Trạng thái bảo mật hồ sơ: ${privacy.label}`}
+        >
+          <span aria-hidden="true">{privacy.state === "done" ? "✓" : "🔒"}</span>
+          {privacy.label}
+        </span>
       </header>
 
       {navigationOpen ? (
@@ -122,19 +131,23 @@ export function AppShell({ viewModel, onDomainEvent }: AppShellProps) {
                 .filter((item) => item.group === group)
                 .map((item) => {
                   const active = item.page === viewModel.active_page;
+                  const locked = item.locked === true;
+                  const reason = locked ? item.lock_reason || "Hoàn tất Bước 0 để mở trang này." : "";
                   return (
                     <button
                       type="button"
                       ref={active ? activeNavigationRef : undefined}
-                      className={`cl-shell__nav-item${active ? " is-active" : ""}`}
+                      className={`cl-shell__nav-item${active ? " is-active" : ""}${locked ? " is-locked" : ""}`}
                       aria-current={active ? "page" : undefined}
-                      aria-label={item.label}
-                      title={item.label}
-                      onClick={() => selectPage(item.page)}
+                      aria-label={locked ? `${item.label} — ${reason}` : item.label}
+                      aria-disabled={locked || undefined}
+                      disabled={locked}
+                      title={locked ? reason : item.label}
+                      onClick={() => selectPage(item.page, locked)}
                       key={item.page}
                     >
                       <span className="cl-shell__nav-index" aria-hidden="true">
-                        {item.ordinal}
+                        {locked ? "🔒" : item.ordinal}
                       </span>
                       <span className="cl-shell__nav-label">{item.label}</span>
                     </button>

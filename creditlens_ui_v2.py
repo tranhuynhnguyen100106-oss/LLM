@@ -26,6 +26,7 @@ SUMMARY_PAGE_COMPONENT_KIND = "summary_page"
 METHODOLOGY_PAGE_COMPONENT_KIND = "methodology_page"
 EVALUATION_PAGE_COMPONENT_KIND = "evaluation_page"
 SETTINGS_PAGE_COMPONENT_KIND = "settings_page"
+PRIVACY_PAGE_COMPONENT_KIND = "privacy_gateway_page"
 UI_V2_FLAG = "UI_V2_ENABLED"
 
 _DEFAULT_ASSET_DIR = Path(__file__).resolve().parent / "frontend" / "dist"
@@ -72,6 +73,8 @@ class V2NavigationItem:
     label: str
     group: Literal["Hồ sơ", "Kiểm chứng", "Hệ thống"]
     ordinal: int
+    locked: bool = False
+    lock_reason: str = ""
 
 
 @dataclass(frozen=True, slots=True)
@@ -112,6 +115,37 @@ class V2AppShellViewModel:
     overview: bool = True
     page_state: Literal["empty", "ready", "processing", "success", "warning", "error", "disabled"] = "empty"
     state_message: str = "Chưa có hồ sơ đang mở."
+    privacy_state: Literal["pending", "review", "done"] = "pending"
+    privacy_label: str = "Chưa qua Bước 0"
+    privacy_count: int = 0
+
+
+@dataclass(frozen=True, slots=True)
+class V2PrivacyRow:
+    """Một dòng bảng xem trước — chỉ chứa giá trị ĐÃ CHE, không bao giờ chứa giá trị thật."""
+
+    pii_type: str
+    masked_value: str
+    replacement: str
+    document: str
+    page: int | None
+    source: str
+    required: bool
+
+
+@dataclass(frozen=True, slots=True)
+class V2PrivacyGatewayViewModel:
+    state: Literal["empty", "review", "done"]
+    badge_label: str
+    field_count: int
+    public_warning: str
+    consent_text: str
+    consent_given: bool
+    rows: tuple[V2PrivacyRow, ...] = ()
+    counts: tuple[tuple[str, int], ...] = ()
+    audit: tuple[tuple[str, str, str, int, str], ...] = ()
+    case_id: str | None = None
+    theme: Literal["system", "light", "dark"] = "system"
 
 
 @dataclass(frozen=True, slots=True)
@@ -576,6 +610,8 @@ def serialize_shell_view_model(view_model: V2AppShellViewModel) -> dict[str, Jso
                 "label": _clean_text(item.label, field="navigation.label", maximum=80),
                 "group": item.group,
                 "ordinal": item.ordinal,
+                "locked": bool(item.locked),
+                "lock_reason": _clean_text(item.lock_reason, field="navigation.lock_reason", maximum=180, allow_empty=True),
             }
         )
     pages = {str(item["page"]) for item in navigation if isinstance(item, dict)}
@@ -623,8 +659,68 @@ def serialize_shell_view_model(view_model: V2AppShellViewModel) -> dict[str, Jso
         "overview": bool(view_model.overview),
         "page_state": view_model.page_state,
         "state_message": _clean_text(view_model.state_message, field="state_message", maximum=300),
+        "privacy": {
+            "state": view_model.privacy_state if view_model.privacy_state in {"pending", "review", "done"} else "pending",
+            "label": _clean_text(view_model.privacy_label, field="privacy.label", maximum=80),
+            "count": max(0, int(view_model.privacy_count)),
+        },
     }
     return _json_object(payload, label="App Shell view model")
+
+
+def serialize_privacy_gateway_view_model(view_model: V2PrivacyGatewayViewModel) -> dict[str, JsonValue]:
+    """Bước 0 sang React: chỉ giá trị đã che, mã thay thế và số liệu; vault không bao giờ được gửi."""
+
+    if view_model.theme not in _THEMES or view_model.state not in {"empty", "review", "done"}:
+        raise UIContractError("Privacy Gateway view model không hợp lệ.")
+    if len(view_model.rows) > 200:
+        raise UIContractError("Bảng xem trước vượt giới hạn.")
+    rows: list[JsonValue] = []
+    for row in view_model.rows:
+        rows.append(
+            {
+                "pii_type": _clean_text(row.pii_type, field="privacy.pii_type", maximum=60),
+                "masked_value": _clean_text(row.masked_value, field="privacy.masked_value", maximum=160),
+                "replacement": _clean_text(row.replacement, field="privacy.replacement", maximum=80),
+                "document": _clean_text(row.document, field="privacy.document", maximum=160),
+                "page": row.page if isinstance(row.page, int) and row.page > 0 else None,
+                "source": _clean_text(row.source, field="privacy.source", maximum=40),
+                "required": bool(row.required),
+            }
+        )
+    payload: dict[str, JsonValue] = {
+        "schema_version": SCHEMA_VERSION,
+        "component_version": COMPONENT_VERSION,
+        "component": PRIVACY_PAGE_COMPONENT_KIND,
+        "theme": view_model.theme,
+        "state": view_model.state,
+        "badge_label": _clean_text(view_model.badge_label, field="privacy.badge_label", maximum=80),
+        "field_count": max(0, int(view_model.field_count)),
+        "public_warning": _clean_text(view_model.public_warning, field="privacy.public_warning", maximum=200),
+        "consent_text": _clean_text(view_model.consent_text, field="privacy.consent_text", maximum=240),
+        "consent_given": bool(view_model.consent_given),
+        "case_id": (
+            _clean_text(view_model.case_id, field="privacy.case_id", maximum=80)
+            if view_model.case_id
+            else None
+        ),
+        "rows": rows,
+        "counts": [
+            {"label": _clean_text(label, field="privacy.count_label", maximum=60), "count": max(0, int(count))}
+            for label, count in view_model.counts[:20]
+        ],
+        "audit": [
+            {
+                "time": _clean_text(time_value, field="privacy.audit_time", maximum=40),
+                "event": _clean_text(event, field="privacy.audit_event", maximum=60),
+                "provider": _clean_text(provider, field="privacy.audit_provider", maximum=40, allow_empty=True),
+                "fields": max(0, int(fields)),
+                "result": _clean_text(outcome, field="privacy.audit_result", maximum=60, allow_empty=True),
+            }
+            for time_value, event, provider, fields, outcome in view_model.audit[-10:]
+        ],
+    }
+    return _json_object(payload, label="Privacy Gateway view model")
 
 
 def serialize_demo_panel_view_model(view_model: V2DemoPanelViewModel) -> dict[str, JsonValue]:
@@ -1617,6 +1713,97 @@ def render_settings_page(
         raise UIContractError("Settings page không được phát domain event.")
 
 
+def render_privacy_gateway_page(
+    st_module: Any,
+    view_model: V2PrivacyGatewayViewModel,
+    *,
+    renderer: ComponentRenderer | None = None,
+) -> None:
+    """Hiển thị Bước 0; mọi hành động (xác nhận, tải tệp, giả danh hóa) vẫn là control native."""
+
+    event = _render_payload(
+        st_module,
+        serialize_privacy_gateway_view_model(view_model),
+        key="creditlens_v2_privacy_gateway",
+        renderer=renderer,
+    )
+    if event is not None:
+        raise UIContractError("Privacy Gateway page không được phát domain event.")
+
+
+def build_privacy_gateway_view_model(
+    *,
+    session_state: Any,
+    theme: Literal["system", "light", "dark"],
+) -> V2PrivacyGatewayViewModel:
+    from privacy_gateway import (
+        CONSENT_TEXT,
+        KEY_CONSENT,
+        PUBLIC_WARNING,
+        bang_xem_truoc,
+        cong_hoan_tat,
+        ho_so_cho_xac_nhan,
+        lay_vault,
+        nhan_huy_hieu,
+    )
+
+    badge_state, badge_label, count = nhan_huy_hieu(session_state)
+    pending = ho_so_cho_xac_nhan(session_state)
+    vault = lay_vault(session_state)
+    rows: tuple[V2PrivacyRow, ...] = ()
+    counts: tuple[tuple[str, int], ...] = ()
+    case_id: str | None = None
+    if pending is not None:
+        preview = bang_xem_truoc(pending["findings"])
+        rows = tuple(
+            V2PrivacyRow(
+                pii_type=item["loai"],
+                masked_value=item["gia_tri_che"],
+                replacement=item["ma_thay_the"],
+                document=item["tai_lieu"],
+                page=item["trang"],
+                source=item["nguon"],
+                required=item["bat_buoc"],
+            )
+            for item in preview
+        )
+        tally: dict[str, int] = {}
+        for item in preview:
+            tally[item["loai"]] = tally.get(item["loai"], 0) + 1
+        counts = tuple(tally.items())
+        case_id = str(getattr(pending["result"], "ma_ho_so", "") or "") or None
+    elif vault is not None and cong_hoan_tat(session_state):
+        counts = tuple(vault.dem_theo_loai.items())
+        result = session_state.get("result")
+        case_id = str(getattr(result, "ma_ho_so", "") or "") or None
+    audit = tuple(
+        (
+            str(entry["thoi_diem"]),
+            str(entry["su_kien"]),
+            str(entry["provider"]),
+            int(entry["so_truong"]),
+            str(entry["ket_qua"]),
+        )
+        for entry in (vault.nhat_ky if vault is not None else [])
+    )
+    state: Literal["empty", "review", "done"] = (
+        "done" if badge_state == "done" else "review" if badge_state == "review" else "empty"
+    )
+    return V2PrivacyGatewayViewModel(
+        state=state,
+        badge_label=badge_label,
+        field_count=count,
+        public_warning=PUBLIC_WARNING,
+        consent_text=CONSENT_TEXT,
+        consent_given=bool(session_state.get(KEY_CONSENT, False)),
+        rows=rows,
+        counts=counts,
+        audit=audit,
+        case_id=case_id,
+        theme=theme,
+    )
+
+
 def queue_v2_upload_action(session_state: Any) -> bool:
     """Khóa một upload action trước rerun để chặn duplicate submit."""
 
@@ -1745,6 +1932,8 @@ def build_app_shell_view_model(
     session_state: Any,
     status_labels: Mapping[str, str],
 ) -> V2AppShellViewModel:
+    from privacy_gateway import LOCK_REASON, ho_so_cho_xac_nhan, nhan_huy_hieu, trang_bi_khoa
+
     navigation: list[V2NavigationItem] = []
     for index, page in enumerate(pages, start=1):
         if index <= 5:
@@ -1755,7 +1944,17 @@ def build_app_shell_view_model(
             group = "Hệ thống"
         raw_label = page_labels[page]
         label = raw_label.split(".  ", 1)[-1]
-        navigation.append(V2NavigationItem(page=page, label=label, group=group, ordinal=index))
+        locked = trang_bi_khoa(page, session_state)
+        navigation.append(
+            V2NavigationItem(
+                page=page,
+                label=label,
+                group=group,
+                ordinal=index,
+                locked=locked,
+                lock_reason=LOCK_REASON if locked else "",
+            )
+        )
 
     processing = bool(session_state.get("ui_v2_processing", False))
     error = str(session_state.get("ui_v2_error") or "")[:300]
@@ -1769,6 +1968,9 @@ def build_app_shell_view_model(
     elif processing:
         page_state = "processing"
         state_message = "Đang xử lý hồ sơ bằng pipeline Python hiện hành."
+    elif result is None and ho_so_cho_xac_nhan(session_state) is not None:
+        page_state = "ready"
+        state_message = notice or "Hồ sơ đang chờ giả danh hóa tại Bước 0 · Bảo mật hồ sơ."
     elif result is None and has_upload:
         page_state = "ready"
         state_message = "Tài liệu đã được chọn; có thể chạy quy trình thẩm định."
@@ -1788,6 +1990,7 @@ def build_app_shell_view_model(
         str(session_state.get("ui_v2_case_source") or "") or None,
         status_labels,
     )
+    privacy_state, privacy_label, privacy_count = nhan_huy_hieu(session_state)
     return V2AppShellViewModel(
         active_page=active_page,
         navigation=tuple(navigation),
@@ -1799,6 +2002,9 @@ def build_app_shell_view_model(
         overview=active_page == pages[0],
         page_state=page_state,  # type: ignore[arg-type]
         state_message=state_message,
+        privacy_state=privacy_state,  # type: ignore[arg-type]
+        privacy_label=privacy_label,
+        privacy_count=privacy_count,
     )
 
 
@@ -2934,7 +3140,9 @@ def _handle_demo_event(
         st_module.session_state.ui_v2_case_source = "Hồ sơ minh họa"
         st_module.session_state.ui_v2_error = ""
         st_module.session_state.ui_v2_warning = ""
-        st_module.session_state.ui_v2_notice = f"Đã mở {event.case_name}."
+        st_module.session_state.ui_v2_notice = (
+            f"Đã quét {event.case_name}. Kiểm tra bảng xem trước ở Bước 0 rồi bấm “Giả danh hóa và tiếp tục”."
+        )
     st_module.rerun()
 
 
@@ -2960,6 +3168,9 @@ def render_summary_native_actions(
         tom_tat_ai_hieu_luc,
     )
 
+    from privacy_gateway import chon_phien_ban_bao_cao, hien_thi_noi_dung_ai, ket_qua_cho_bao_cao, lay_vault
+
+    vault = lay_vault(st_module.session_state)
     connection = ket_noi_llm_dang_dung(st_module)
     ai_text = tom_tat_ai_hieu_luc(
         st_module,
@@ -2967,7 +3178,6 @@ def render_summary_native_actions(
         result.ma_ho_so,
         str(settings["system_prompt"]),
     )
-    deterministic = bao_cao_markdown(result)
 
     with st_module.container(border=True, key="ui_v2_export_actions"):
         st_module.subheader("Export actions")
@@ -2984,11 +3194,14 @@ def render_summary_native_actions(
             horizontal=True,
             key="report_format",
         )
+        report_version = chon_phien_ban_bao_cao(st_module)
+        report_result, report_ai_text = ket_qua_cho_bao_cao(result, ai_text, vault, report_version)
+        deterministic = bao_cao_markdown(report_result)
         extension, mime_type, generator = DINH_DANG_BAO_CAO[selected_format]
         try:
             report_bytes = generator(
-                result,
-                ai_text,
+                report_result,
+                report_ai_text,
                 float(nguong_hieu_luc(settings.get("nguong"))["do_tin_cay_thap"]),
             )
             st_module.download_button(
@@ -3020,7 +3233,7 @@ def render_summary_native_actions(
             )
             json_column.download_button(
                 "Tải JSON có cấu trúc",
-                json.dumps(result.model_dump(mode="json"), ensure_ascii=False, indent=2),
+                json.dumps(report_result.model_dump(mode="json"), ensure_ascii=False, indent=2),
                 file_name=f"{result.ma_ho_so}_ket_qua.json",
                 mime="application/json",
                 on_click="ignore",
@@ -3058,6 +3271,7 @@ def render_summary_native_actions(
                         provider,
                         model,
                         str(settings["system_prompt"]),
+                        vault,
                     )
                     st_module.session_state.ai_summary = generated_summary
                     st_module.session_state.ai_summary_context = ngu_canh_tom_tat_ai(
@@ -3068,6 +3282,10 @@ def render_summary_native_actions(
                     st_module.rerun()
             except (ValueError, RuntimeError) as exc:
                 st_module.error(str(exc))
+        if ai_text:
+            st_module.caption("Diễn giải AI ở trên hiển thị dạng mã giả danh hóa.")
+            with st_module.expander("Xem diễn giải AI cho chuyên viên"):
+                hien_thi_noi_dung_ai(st_module, ai_text, vault, key="privacy_show_real")
 
 
 def _handle_evaluation_event(
@@ -3205,6 +3423,16 @@ def chay_ung_dung_streamlit_v2(st_module: Any | None = None) -> None:
     if navigation_event is not None:
         _handle_navigation_event(st_module, navigation_event, pages)
 
+    from privacy_gateway import hien_thi_trang_bi_khoa, trang_bi_khoa
+
+    if trang_bi_khoa(active_page, st_module.session_state):
+        # Truy cập trực tiếp trang sau khi chưa qua cổng: không render dữ liệu, chỉ hiện lý do khóa.
+        hien_thi_trang_bi_khoa(st_module)
+        if st_module.button("Đi tới Bước 0 · Bảo mật hồ sơ", type="primary", key="privacy_go_step0"):
+            st_module.session_state.ui_v2_active_page = pages[0]
+            st_module.rerun()
+        return
+
     core_pages: dict[str, Literal["extraction", "analysis", "risk"]] = {
         pages[1]: "extraction",
         pages[2]: "analysis",
@@ -3286,15 +3514,23 @@ def chay_ung_dung_streamlit_v2(st_module: Any | None = None) -> None:
         hien_thi_noi_dung_trang(st_module, active_page, thresholds, settings)
         return
 
+    from privacy_gateway import hien_thi_xac_nhan_bao_mat, hien_thi_xem_truoc_va_xac_nhan
+
     demo_event: V2DemoEvent | None = None
     action_completed = False
+    render_privacy_gateway_page(
+        st_module,
+        build_privacy_gateway_view_model(session_state=st_module.session_state, theme=theme),
+        renderer=renderer,
+    )
     with st_module.container(key="ui_v2_intake_workspace"):
         upload_column, demo_column = st_module.columns([2, 1], gap="large", wrap=True)
         with upload_column.container(border=True, key="ui_v2_upload_surface"):
-            st_module.subheader("Bộ hồ sơ tài liệu")
+            st_module.subheader("Bước 0 · Tải hồ sơ qua cổng bảo mật")
             st_module.caption(
-                "Tải lên các tài liệu hiện có. Uploader Streamlit native tiếp tục xử lý file bytes và validation."
+                "Tài liệu chỉ vào hệ thống qua cổng này. Uploader Streamlit native tiếp tục xử lý file bytes và validation."
             )
+            hien_thi_xac_nhan_bao_mat(st_module, show_warning=False)
             action_completed = hien_thi_uploader_ho_so(st_module, thresholds, v2_mode=True)
         with demo_column:
             demo_view_model = build_demo_panel_view_model(
@@ -3315,6 +3551,9 @@ def chay_ung_dung_streamlit_v2(st_module: Any | None = None) -> None:
         )
     if action_completed:
         st_module.rerun()
+    with st_module.container(border=True, key="ui_v2_privacy_actions"):
+        if hien_thi_xem_truoc_va_xac_nhan(st_module, v2_mode=True):
+            st_module.rerun()
     render_workflow_panel(
         st_module,
         V2WorkflowPanelViewModel(

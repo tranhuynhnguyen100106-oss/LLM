@@ -2345,8 +2345,11 @@ def xu_ly_thu_muc_tai_lieu(
     return phan_tich_tai_lieu(lam_sach_ma_ho_so(ma_ho_so), docs, thresholds), docs, errors
 
 
-def du_lieu_gui_llm(result: KetQuaThamDinh) -> str:
-    payload = result.model_dump(mode="json")
+def du_lieu_gui_llm(result: KetQuaThamDinh, vault: Any | None = None) -> str:
+    """JSON gửi LLM — luôn là bản đã giả danh hóa (Privacy Gateway), không bao giờ là bản gốc."""
+    from privacy_gateway import payload_cho_llm
+
+    payload, _active_vault = payload_cho_llm(result, vault)
     return json.dumps(payload, ensure_ascii=False, indent=2)
 
 
@@ -2482,12 +2485,12 @@ def lay_danh_sach_model(provider: str, api_key: str) -> list[str]:
     return models
 
 
-def _noi_dung_yeu_cau_llm(result: KetQuaThamDinh) -> str:
+def _noi_dung_yeu_cau_llm(result: KetQuaThamDinh, vault: Any | None = None) -> str:
     return (
         "Hãy soạn Credit Review Summary theo đúng 10 mục: tổng quan khách hàng, "
         "đề nghị vay, thông tin tài chính đã xác minh, chỉ số, kiểm tra nhất quán, "
         "cảnh báo, thông tin thiếu, câu hỏi xác minh, bằng chứng và trạng thái xem xét.\n\n"
-        + du_lieu_gui_llm(result)
+        + du_lieu_gui_llm(result, vault)
     )
 
 
@@ -2517,6 +2520,7 @@ def tao_dien_giai_bang_ai(
     provider: str,
     model: str,
     system_prompt: str,
+    vault: Any | None = None,
 ) -> str:
     if not api_key or len(api_key.strip()) < 12:
         raise ValueError("API Key chưa được nhập hoặc không hợp lệ.")
@@ -2525,8 +2529,14 @@ def tao_dien_giai_bang_ai(
     if not _model_hop_le(provider, model or ""):
         raise ValueError("Tên model không hợp lệ.")
     key = api_key.strip()
-    prompt = system_prompt[:8000]
-    user_input = _noi_dung_yeu_cau_llm(result)
+    from privacy_gateway import PRIVACY_PROMPT_NOTE, assert_no_pii, build_vault, detect_pii
+
+    active_vault = vault if vault is not None else build_vault(detect_pii(None, result))
+    prompt = system_prompt[:8000] + "\n\n" + PRIVACY_PROMPT_NOTE
+    user_input = _noi_dung_yeu_cau_llm(result, active_vault)
+    # Fail-closed: còn giá trị thật thì chặn trước khi tạo bất kỳ client/request nào.
+    assert_no_pii(prompt + "\n" + user_input, active_vault)
+    active_vault.ghi_nhat_ky("Gửi Credit Review Summary", provider=provider, ket_qua="PASS")
     try:
         if provider == "openai":
             from openai import OpenAI
@@ -2647,8 +2657,9 @@ def tao_phan_hoi_chat_ai(
     api_key: str,
     provider: str,
     model: str,
+    vault: Any | None = None,
 ) -> str:
-    """Gửi đúng một request chat đến provider/model đang hoạt động."""
+    """Gửi đúng một request chat đến provider/model đang hoạt động (đã giả danh hóa)."""
     key = (api_key or "").strip()
     if len(key) < 12:
         raise ValueError("API Key chưa được nhập hoặc không hợp lệ.")
@@ -2659,6 +2670,16 @@ def tao_phan_hoi_chat_ai(
     history = chuan_hoa_lich_su_chat(messages)
     if not history or history[-1]["role"] != "user":
         raise ValueError("Tin nhắn người dùng đang trống hoặc không hợp lệ.")
+    from privacy_gateway import assert_no_pii, pseudonymize_text
+
+    history = [
+        {"role": message["role"], "content": pseudonymize_text(message["content"], vault)}
+        for message in history
+    ]
+    # Fail-closed: chặn trước khi tạo client; không gửi bản chưa che.
+    assert_no_pii(json.dumps(history, ensure_ascii=False), vault)
+    if vault is not None:
+        vault.ghi_nhat_ky("Gửi chat", provider=provider, ket_qua="PASS")
 
     try:
         if provider == "openai":
@@ -2862,8 +2883,11 @@ def cap_nhat_ho_so_phien(st, result: KetQuaThamDinh, docs: dict[str, TaiLieu]) -
 def mo_ho_so_minh_hoa(st, demo_choice: str, thresholds: Mapping[str, Any]) -> KetQuaThamDinh:
     """Dùng lại đường xử lý demo xác định cho legacy và UI v2."""
 
+    from privacy_gateway import dua_vao_cong
+
     result, docs = du_lieu_demo(demo_choice, thresholds)
-    cap_nhat_ho_so_phien(st, result, docs)
+    # Bước 0: hồ sơ chỉ được mở sau khi chuyên viên xác nhận giả danh hóa.
+    dua_vao_cong(st, result, docs, "Hồ sơ minh họa")
     return result
 
 
@@ -2924,9 +2948,12 @@ def hien_thi_uploader_ho_so(st, thresholds: Mapping[str, Any], *, v2_mode: bool 
     folder_count_invalid = upload_mode == "Tải một thư mục" and len(folder_files) not in {3, 4}
     missing_case_id = not case_id.strip()
     processing = bool(st.session_state.get("ui_v2_processing", False)) if v2_mode else False
+    consent_missing = not bool(st.session_state.get("privacy_consent", False))
 
     if v2_mode:
-        if missing_case_id:
+        if consent_missing:
+            disabled_reason = "Tick xác nhận bảo mật ở Bước 0 trước khi tải hồ sơ."
+        elif missing_case_id:
             disabled_reason = "Nhập mã hồ sơ trước khi bắt đầu."
         elif folder_count_invalid:
             disabled_reason = "Chọn đúng 3–4 PDF của cùng một hồ sơ để bắt đầu."
@@ -2951,12 +2978,16 @@ def hien_thi_uploader_ho_so(st, thresholds: Mapping[str, Any], *, v2_mode: bool 
         )
         run_requested = bool(st.session_state.pop("ui_v2_upload_requested", False))
     else:
-        run_requested = st.button("Chạy quy trình thẩm định", type="primary", width="stretch")
+        if consent_missing:
+            st.caption("Tick xác nhận bảo mật ở Bước 0 trước khi tải hồ sơ.")
+        run_requested = st.button(
+            "Chạy quy trình thẩm định", type="primary", width="stretch", disabled=consent_missing
+        )
 
     if not run_requested:
         return False
 
-    if no_files or (v2_mode and (folder_count_invalid or missing_case_id)):
+    if no_files or consent_missing or (v2_mode and (folder_count_invalid or missing_case_id)):
         message = "Hãy tải lên ít nhất một PDF hoặc chọn hồ sơ minh họa."
         if v2_mode:
             st.session_state.ui_v2_processing = False
@@ -2978,16 +3009,22 @@ def hien_thi_uploader_ho_so(st, thresholds: Mapping[str, Any], *, v2_mode: bool 
                 )
             st.write("Chuẩn hóa dữ kiện, tính chỉ số và liên kết cảnh báo với bằng chứng…")
             process_status.update(label="Đã hoàn tất quy trình thẩm định", state="complete", expanded=False)
-        cap_nhat_ho_so_phien(st, result, docs)
+        from privacy_gateway import dua_vao_cong
+
+        findings = dua_vao_cong(st, result, docs, "Tài liệu")
+        ready_message = (
+            f"Đã quét {len(findings)} giá trị định danh. Kiểm tra bảng xem trước và bấm "
+            "“Giả danh hóa và tiếp tục” để mở khóa các bước sau."
+        )
         if v2_mode:
             st.session_state.ui_v2_case_source = "Tài liệu"
             st.session_state.ui_v2_error = ""
             st.session_state.ui_v2_warning = " · ".join(errors) if errors else ""
-            st.session_state.ui_v2_notice = "Đã hoàn tất. Các trang phân tích và bằng chứng đã sẵn sàng."
+            st.session_state.ui_v2_notice = ready_message
         else:
             if errors:
                 st.warning("Một số tệp không xử lý được: " + " · ".join(errors))
-            st.success("Đã hoàn tất. Các trang phân tích và bằng chứng đã sẵn sàng.")
+            st.success(ready_message)
     except ValueError as exc:
         if v2_mode:
             st.session_state.ui_v2_error = str(exc)
@@ -3001,6 +3038,8 @@ def hien_thi_uploader_ho_so(st, thresholds: Mapping[str, Any], *, v2_mode: bool 
 
 
 def trang_ho_so(st, thresholds: Mapping[str, Any]) -> None:
+    from privacy_gateway import hien_thi_xac_nhan_bao_mat, hien_thi_xem_truoc_va_xac_nhan
+
     st.header("Tạo hồ sơ thẩm định mới")
     st.markdown(
         "<div class='credit-process-grid' aria-label='Quy trình CreditLens'>"
@@ -3019,11 +3058,13 @@ def trang_ho_so(st, thresholds: Mapping[str, Any]) -> None:
         "</div>",
         unsafe_allow_html=True,
     )
+    st.subheader("Bước 0 · Bảo mật hồ sơ")
     st.markdown(
         "<div class='credit-privacy'><b>Hệ thống minh họa.</b> Không tải lên thông tin ngân hàng thật hoặc dữ liệu mật. "
         "Tệp tạm được xóa ngay sau khi đọc; kết quả chỉ giữ trong phiên Streamlit.</div>",
         unsafe_allow_html=True,
     )
+    hien_thi_xac_nhan_bao_mat(st)
     hien_thi_uploader_ho_so(st, thresholds)
 
     st.divider()
@@ -3031,7 +3072,10 @@ def trang_ho_so(st, thresholds: Mapping[str, Any]) -> None:
     demo_choice = st.selectbox("Chọn tình huống", list(DEMO_CASES), index=2)
     if st.button("Mở hồ sơ minh họa", width="stretch"):
         mo_ho_so_minh_hoa(st, demo_choice, thresholds)
-        st.success(f"Đã mở {demo_choice}.")
+        st.success(f"Đã quét {demo_choice}. Kiểm tra bảng xem trước bên dưới.")
+    st.divider()
+    if hien_thi_xem_truoc_va_xac_nhan(st):
+        st.rerun()
     hien_thi_trang_thai(st, st.session_state.result)
 
 
@@ -3145,6 +3189,9 @@ def trang_tom_tat(st, result: KetQuaThamDinh | None, settings: dict[str, Any]) -
     if result is None:
         st.warning("Chưa có hồ sơ để tạo báo cáo.")
         return
+    from privacy_gateway import chon_phien_ban_bao_cao, hien_thi_noi_dung_ai, ket_qua_cho_bao_cao, lay_vault
+
+    vault = lay_vault(st.session_state)
     deterministic = bao_cao_markdown(result)
     st.markdown(deterministic)
     connection = ket_noi_llm_dang_dung(st)
@@ -3163,11 +3210,13 @@ def trang_tom_tat(st, result: KetQuaThamDinh | None, settings: dict[str, Any]) -
         horizontal=True,
         key="report_format",
     )
+    report_version = chon_phien_ban_bao_cao(st)
+    report_result, report_ai_text = ket_qua_cho_bao_cao(result, ai_text, vault, report_version)
     extension, mime_type, generator = DINH_DANG_BAO_CAO[selected_format]
     try:
         report_bytes = generator(
-            result,
-            ai_text,
+            report_result,
+            report_ai_text,
             float(nguong_hieu_luc(settings.get("nguong"))["do_tin_cay_thap"]),
         )
         file_name = f"{lam_sach_ma_ho_so(result.ma_ho_so)}_bao_cao_tham_dinh.{extension}"
@@ -3186,8 +3235,8 @@ def trang_tom_tat(st, result: KetQuaThamDinh | None, settings: dict[str, Any]) -
 
     with st.expander("Dữ liệu kỹ thuật dành cho kiểm thử"):
         col1, col2 = st.columns(2)
-        col1.download_button("Tải Markdown", deterministic, file_name=f"{result.ma_ho_so}_tom_tat_tham_dinh.md", mime="text/markdown", width="stretch")
-        col2.download_button("Tải JSON có cấu trúc", json.dumps(result.model_dump(mode="json"), ensure_ascii=False, indent=2), file_name=f"{result.ma_ho_so}_ket_qua.json", mime="application/json", width="stretch")
+        col1.download_button("Tải Markdown", bao_cao_markdown(report_result), file_name=f"{result.ma_ho_so}_tom_tat_tham_dinh.md", mime="text/markdown", width="stretch")
+        col2.download_button("Tải JSON có cấu trúc", json.dumps(report_result.model_dump(mode="json"), ensure_ascii=False, indent=2), file_name=f"{result.ma_ho_so}_ket_qua.json", mime="application/json", width="stretch")
 
     st.divider()
     st.subheader("Diễn giải bổ sung bằng LLM")
@@ -3211,6 +3260,7 @@ def trang_tom_tat(st, result: KetQuaThamDinh | None, settings: dict[str, Any]) -
                     provider,
                     model,
                     settings["system_prompt"],
+                    vault,
                 )
                 st.session_state.ai_summary = generated_summary
                 st.session_state.ai_summary_context = ngu_canh_tom_tat_ai(
@@ -3228,7 +3278,7 @@ def trang_tom_tat(st, result: KetQuaThamDinh | None, settings: dict[str, Any]) -
         settings["system_prompt"],
     )
     if current_ai_text:
-        st.markdown(current_ai_text)
+        hien_thi_noi_dung_ai(st, current_ai_text, vault, key="privacy_show_real")
 
 
 def trang_danh_gia(st) -> None:
@@ -3542,8 +3592,17 @@ def xoa_ket_noi_llm(st, provider: str) -> None:
 def hien_thi_chat_ai(st, connection: Mapping[str, Any] | None) -> None:
     """Hiển thị chat nhiều lượt; chỉ gọi inference khi người dùng submit."""
     st.subheader("Trò chuyện với AI")
+    from privacy_gateway import CHAT_LOCK_REASON, PrivacyLeakError, cong_hoan_tat, lay_vault, reidentify_for_display
+
     messages = chuan_hoa_lich_su_chat(st.session_state.get("llm_chat_messages", []))
     st.session_state.llm_chat_messages = messages
+
+    if not cong_hoan_tat(st.session_state):
+        st.info(CHAT_LOCK_REASON)
+        st.chat_input("Nhập câu hỏi của bạn...", key="llm_chat_prompt", disabled=True)
+        return
+    vault = lay_vault(st.session_state)
+    show_real = bool(st.session_state.get("privacy_show_real", False))
 
     if connection is None:
         st.info("Vui lòng kết nối API Key trước khi bắt đầu trò chuyện.")
@@ -3563,7 +3622,8 @@ def hien_thi_chat_ai(st, connection: Mapping[str, Any] | None) -> None:
             st.markdown("Xin chào, tôi có thể hỗ trợ gì cho bạn?")
     for message in messages:
         with st.chat_message(message["role"]):
-            st.markdown(message["content"])
+            content = message["content"]
+            st.markdown(reidentify_for_display(content, vault) if show_real and message["role"] == "assistant" else content)
 
     submitted = st.chat_input("Nhập câu hỏi của bạn...", key="llm_chat_prompt")
     prompt = (submitted or "").strip()
@@ -3578,11 +3638,14 @@ def hien_thi_chat_ai(st, connection: Mapping[str, Any] | None) -> None:
     with st.chat_message("assistant"):
         try:
             with st.spinner("Đang tạo phản hồi..."):
-                response = tao_phan_hoi_chat_ai(messages, api_key, provider, model)
+                response = tao_phan_hoi_chat_ai(messages, api_key, provider, model, vault)
+        except PrivacyLeakError as exc:
+            st.error(str(exc))
+            return
         except (ValueError, RuntimeError):
             st.error("Không thể nhận phản hồi từ model. Vui lòng kiểm tra kết nối hoặc API Key.")
             return
-        st.markdown(response)
+        st.markdown(reidentify_for_display(response, vault) if show_real else response)
     messages.append({"role": "assistant", "content": response})
     st.session_state.llm_chat_messages = messages
 
@@ -3892,6 +3955,13 @@ def khoi_tao_trang_thai_phien(st) -> None:
         st.session_state.llm_connection_error = ""
     if "llm_chat_messages" not in st.session_state:
         st.session_state.llm_chat_messages = []
+    for privacy_key, privacy_default in (
+        ("privacy_vault", None),
+        ("privacy_pending", None),
+        ("privacy_gateway_done", False),
+    ):
+        if privacy_key not in st.session_state:
+            st.session_state[privacy_key] = privacy_default
 
 
 def hien_thi_noi_dung_trang(
@@ -3902,8 +3972,13 @@ def hien_thi_noi_dung_trang(
 ) -> None:
     """Điều phối nội dung trang hiện hành để legacy và shell v2 cùng tái sử dụng."""
 
+    from privacy_gateway import hien_thi_trang_bi_khoa, trang_bi_khoa
+
     result = st.session_state.result
     docs = st.session_state.docs
+    if trang_bi_khoa(page, st.session_state):
+        hien_thi_trang_bi_khoa(st)
+        return
     if page == "Trang chủ & hồ sơ":
         trang_ho_so(st, thresholds)
     elif page == "Trích xuất tài liệu":
@@ -3967,10 +4042,10 @@ def chay_ung_dung_streamlit() -> None:
         st.sidebar.caption("AI chưa kết nối · Phân tích Python vẫn hoạt động")
     st.sidebar.divider()
     if st.sidebar.button("Xóa hồ sơ khỏi phiên", width="stretch"):
-        st.session_state.result = None
-        st.session_state.docs = {}
-        st.session_state.ai_summary = ""
-        st.session_state.ai_summary_context = {}
+        from privacy_gateway import xoa_ho_so_phien
+
+        # Xóa cả vault giả danh hóa cùng kết quả, tài liệu và diễn giải AI.
+        xoa_ho_so_phien(st.session_state)
         st.rerun()
     st.sidebar.caption("Ngưỡng minh họa · Không phải chính sách ngân hàng · Bắt buộc con người xem xét")
 

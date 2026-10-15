@@ -67,6 +67,46 @@ Dự án được xây dựng hoàn toàn dưới dạng **React SPA (Vite + Typ
 
 ---
 
+## Quyền riêng tư
+
+CreditLens dùng **Privacy Gateway — Bước 0 · Bảo mật hồ sơ** (`privacy_gateway.py`) làm cửa duy nhất để đưa tài liệu vào hệ thống. Kỹ thuật là **giả danh hóa (pseudonymization/tokenization)**: thay thông tin định danh bằng mã. Hệ thống không mã hóa toàn bộ hồ sơ, vì LLM cần đọc được số liệu để diễn giải.
+
+**Luồng xử lý**
+
+1. Chuyên viên tick xác nhận bảo mật, rồi tải thư mục 3–4 PDF, tải từng tệp hoặc mở hồ sơ minh họa. Trang Bước 0 luôn hiển thị cảnh báo: *"Bản công khai chỉ dành cho dữ liệu tổng hợp hoặc đã ẩn danh. Không tải hồ sơ khách hàng thật."*
+2. Hệ thống quét PII theo hai cách: lấy giá trị đã trích xuất vào `DuLieuHoSo`, và dùng regex Việt Nam để tìm CCCD 12 số, CMND 9 số, số điện thoại `0[35789]…`/`+84`, email, số tài khoản 8–19 số, cùng các dòng có nhãn như "Họ và tên:", "Địa chỉ:", "Ngày sinh:".
+3. Bảng xem trước hiển thị loại PII, giá trị đã che, mã thay thế và tài liệu/trang. Chuyên viên có thể che thêm giá trị thủ công (mã `TC_xx`), nhưng không thể bỏ che các trường bắt buộc.
+4. Khi bấm **"Giả danh hóa và tiếp tục"**, hệ thống tạo vault cho phiên và mở khóa các trang Trích xuất, Phân tích, Rủi ro, Tóm tắt và Chat. App Shell hiện huy hiệu "Đã giả danh hóa · N trường".
+
+**Quy tắc thay thế**
+
+| Loại | Xử lý | Ví dụ |
+|---|---|---|
+| Họ tên khách hàng / người liên quan | Thay bằng mã | `KH_01`, `NLQ_01` |
+| CCCD/CMND/hộ chiếu | Che hoàn toàn, không lưu | `[CCCD_ĐÃ_CHE]` |
+| Số tài khoản, số thẻ | Chỉ giữ 4 số cuối | `TK_****1234` |
+| Số điện thoại, email | Che hoàn toàn | `[SĐT_ĐÃ_CHE]` |
+| Địa chỉ | Chỉ giữ tỉnh/thành | `ĐC_01 (TP.HCM)` |
+| Đơn vị công tác | Thay bằng mã, nhất quán giữa các tài liệu | `DN_A` |
+| Ngày sinh | Chuyển thành nhóm tuổi | `30–35 tuổi` |
+| Ngày bắt đầu làm việc | Chỉ giữ tháng/năm | `03/2021` |
+| Số tiền, tỷ lệ, kỳ hạn | Giữ nguyên | — |
+
+Trước khi gán mã, giá trị được chuẩn hóa (bỏ dấu, viết thường, gộp khoảng trắng). Nhờ vậy cùng một giá trị luôn nhận cùng một mã trên mọi tài liệu, và cảnh báo "đơn vị kê khai ≠ chứng từ" vẫn hoạt động (`DN_A ≠ DN_B`).
+
+**Bảo đảm kỹ thuật**
+
+- Mọi phép tính DTI/DSR, rule engine và nhãn rủi ro đều chạy trên kết quả gốc. Bản giả danh hóa chỉ là bản sao dùng để gửi LLM, xuất báo cáo và hiển thị.
+- `du_lieu_gui_llm()` và khung chat chỉ gửi bản đã giả danh hóa. Ngay trước **mọi** request, hệ thống gọi `assert_no_pii()` theo cơ chế fail-closed: nếu payload còn giá trị thật, request bị chặn (0 inference) và chuyên viên nhận thông báo. System prompt được bổ sung câu: *"Dữ liệu đã được giả danh hóa. Giữ nguyên các mã như KH_01, DN_A; không suy đoán danh tính thật."*
+- Vault chỉ nằm trong `st.session_state`: không ghi file, không ghi log, không tuần tự hóa, không gửi sang React. Với CCCD, số điện thoại, email và số tài khoản, vault chỉ giữ dấu vân tay HMAC theo phiên, không giữ giá trị thật.
+- Kết quả AI mặc định hiển thị dạng mã. Nút "Hiện thông tin thật" chỉ có tác dụng trong phiên. Báo cáo Word/Excel/PDF mặc định là **Bản giả danh hóa**; có thể chọn **Bản đầy đủ**.
+- Nút "Xóa hồ sơ khỏi phiên" xóa luôn vault. Nhật ký kiểm soát chỉ ghi số liệu (số trường theo loại, thời điểm, provider, kết quả assert), không ghi giá trị.
+- Mỗi PDF giới hạn 10 MB (`GIOI_HAN_TEP` và `server.maxUploadSize = 10`). `.streamlit/secrets.toml` nằm trong `.gitignore`. API Key chỉ nằm trong phiên.
+
+**Giới hạn:** máy chủ vẫn đọc file gốc trong bộ nhớ để trích xuất. Regex có thể bỏ sót PII viết tự do hoặc nằm trong PDF scan (không có OCR). Số liệu kết hợp với ngữ cảnh vẫn có thể giúp tái nhận dạng. Bản công khai chỉ dùng cho dữ liệu tổng hợp.
+
+---
+
 ## Hướng dẫn Khởi chạy
 
 ```bash

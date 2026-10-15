@@ -8,6 +8,7 @@ import {
   EVALUATION_PAGE_COMPONENT,
   METHODOLOGY_PAGE_COMPONENT,
   parseViewModel,
+  PRIVACY_PAGE_COMPONENT,
   SETTINGS_PAGE_COMPONENT,
   SHELL_COMPONENT,
   SUMMARY_PAGE_COMPONENT,
@@ -18,6 +19,7 @@ import { EvaluationPage, MethodologyPage, SummaryPage } from "./Cluster5Pages";
 import { SettingsPage } from "./Cluster6SettingsPage";
 import { CoreBusinessPage } from "./CoreBusinessPage";
 import { DemoCasePanel } from "./DemoCasePanel";
+import { PrivacyGatewayPage } from "./PrivacyGatewayPage";
 import { WorkflowPanel } from "./WorkflowPanel";
 import "./styles.css";
 
@@ -45,6 +47,8 @@ const render: FrontendRenderer = ({ data, parentElement, setTriggerValue }) => {
       root.render(<EvaluationPage viewModel={viewModel} onDomainEvent={emitDomainEvent} />);
     } else if (viewModel.component === SETTINGS_PAGE_COMPONENT) {
       root.render(<SettingsPage viewModel={viewModel} />);
+    } else if (viewModel.component === PRIVACY_PAGE_COMPONENT) {
+      root.render(<PrivacyGatewayPage viewModel={viewModel} />);
     }
   } catch {
     root.render(
