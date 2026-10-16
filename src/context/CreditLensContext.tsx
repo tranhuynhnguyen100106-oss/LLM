@@ -41,6 +41,8 @@ export interface ChatMessage {
   content: string;
   modelUsed?: string;
   timestamp?: number;
+  /** Lỗi 5xx phía Google (bản Streamlit): cho phép người dùng bấm thử lại. */
+  retry?: { id: string; label: string; alt_label: string | null };
 }
 
 export interface CreditLensContextType {
@@ -72,6 +74,8 @@ export interface CreditLensContextType {
   chatModel: ChatModelKey;
   setChatModel: (model: ChatModelKey) => void;
   sendChatMessage: (msg: string) => Promise<void>;
+  /** Bản Streamlit: gửi lại câu hỏi vừa lỗi 5xx (alt = dùng model Flash khác). 1 lần bấm = 1 request. */
+  retryChatMessage?: (retryId: string, alt: boolean) => void;
   clearChatMessages: () => void;
   providers: ProviderStatus[];
   activeProvider: string;

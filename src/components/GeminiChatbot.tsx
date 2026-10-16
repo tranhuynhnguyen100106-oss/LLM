@@ -88,6 +88,7 @@ export function GeminiChatbot({ embedded = false, onClose }: GeminiChatbotProps)
     chatModel,
     setChatModel,
     sendChatMessage,
+    retryChatMessage,
     clearChatMessages,
     result,
     serverMode,
@@ -374,6 +375,29 @@ export function GeminiChatbot({ embedded = false, onClose }: GeminiChatbotProps)
               <div className="cl-gemini-msg__body">
                 {isUser ? msg.content : <Markdown text={msg.content} />}
               </div>
+
+              {!isUser && msg.retry && retryChatMessage && index === chatMessages.length - 1 ? (
+                <div className="cl-gemini-msg__retry">
+                  <button
+                    type="button"
+                    className="cl-gemini-msg__retry-btn"
+                    disabled={chatLoading}
+                    onClick={() => retryChatMessage(msg.retry!.id, false)}
+                  >
+                    ↻ Thử lại
+                  </button>
+                  {msg.retry.alt_label ? (
+                    <button
+                      type="button"
+                      className="cl-gemini-msg__retry-btn"
+                      disabled={chatLoading}
+                      onClick={() => retryChatMessage(msg.retry!.id, true)}
+                    >
+                      Thử bằng {msg.retry.alt_label}
+                    </button>
+                  ) : null}
+                </div>
+              ) : null}
 
               <div className="cl-gemini-msg__footer">
                 <button

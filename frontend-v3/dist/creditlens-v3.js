@@ -359,14 +359,14 @@ var e = (e, t) => () => (t || (e((t = { exports: {} }).exports, t), e = null), t
 			t !== null && n.types !== null && (t.types = n.types), w.T = t;
 		}
 	}
-	function D(e) {
+	function fe(e) {
 		var t = w.T;
 		if (t !== null) {
 			var n = t.types;
 			n === null ? t.types = [e] : n.indexOf(e) === -1 && n.push(e);
-		} else de(D.bind(null, e));
+		} else de(fe.bind(null, e));
 	}
-	var fe = {
+	var pe = {
 		map: E,
 		forEach: function(e, t, n) {
 			E(e, function() {
@@ -389,12 +389,12 @@ var e = (e, t) => () => (t || (e((t = { exports: {} }).exports, t), e = null), t
 			return e;
 		}
 	};
-	e.Activity = f, e.Children = fe, e.Component = y, e.Fragment = r, e.Profiler = a, e.PureComponent = x, e.StrictMode = i, e.Suspense = l, e.ViewTransition = p, e.__CLIENT_INTERNALS_DO_NOT_USE_OR_WARN_USERS_THEY_CANNOT_UPGRADE = w, e.__COMPILER_RUNTIME = {
+	e.Activity = f, e.Children = pe, e.Component = y, e.Fragment = r, e.Profiler = a, e.PureComponent = x, e.StrictMode = i, e.Suspense = l, e.ViewTransition = p, e.__CLIENT_INTERNALS_DO_NOT_USE_OR_WARN_USERS_THEY_CANNOT_UPGRADE = w, e.__COMPILER_RUNTIME = {
 		__proto__: null,
 		c: function(e) {
 			return w.H.useMemoCache(e);
 		}
-	}, e.addTransitionType = D, e.cache = function(e) {
+	}, e.addTransitionType = fe, e.cache = function(e) {
 		return function() {
 			return e.apply(null, arguments);
 		};
@@ -805,7 +805,7 @@ var e = (e, t) => () => (t || (e((t = { exports: {} }).exports, t), e = null), t
 		}
 		return null;
 	}
-	var T = Object.assign, ne = Symbol.for("react.element"), re = Symbol.for("react.transitional.element"), ie = Symbol.for("react.portal"), ae = Symbol.for("react.fragment"), oe = Symbol.for("react.strict_mode"), se = Symbol.for("react.profiler"), ce = Symbol.for("react.consumer"), E = Symbol.for("react.context"), le = Symbol.for("react.forward_ref"), ue = Symbol.for("react.suspense"), de = Symbol.for("react.suspense_list"), D = Symbol.for("react.memo"), fe = Symbol.for("react.lazy"), pe = Symbol.for("react.activity"), me = Symbol.for("react.legacy_hidden"), he = Symbol.for("react.memo_cache_sentinel"), ge = Symbol.for("react.view_transition"), _e = Symbol.for("react.recoverable"), ve = Symbol.iterator;
+	var T = Object.assign, ne = Symbol.for("react.element"), re = Symbol.for("react.transitional.element"), ie = Symbol.for("react.portal"), ae = Symbol.for("react.fragment"), oe = Symbol.for("react.strict_mode"), se = Symbol.for("react.profiler"), ce = Symbol.for("react.consumer"), E = Symbol.for("react.context"), le = Symbol.for("react.forward_ref"), ue = Symbol.for("react.suspense"), de = Symbol.for("react.suspense_list"), fe = Symbol.for("react.memo"), pe = Symbol.for("react.lazy"), D = Symbol.for("react.activity"), me = Symbol.for("react.legacy_hidden"), he = Symbol.for("react.memo_cache_sentinel"), ge = Symbol.for("react.view_transition"), _e = Symbol.for("react.recoverable"), ve = Symbol.iterator;
 	function ye(e) {
 		return typeof e != "object" || !e ? null : (e = ve && e[ve] || e["@@iterator"], typeof e == "function" ? e : null);
 	}
@@ -820,7 +820,7 @@ var e = (e, t) => () => (t || (e((t = { exports: {} }).exports, t), e = null), t
 			case oe: return "StrictMode";
 			case ue: return "Suspense";
 			case de: return "SuspenseList";
-			case pe: return "Activity";
+			case D: return "Activity";
 			case ge: return "ViewTransition";
 		}
 		if (typeof e == "object") switch (e.$$typeof) {
@@ -830,8 +830,8 @@ var e = (e, t) => () => (t || (e((t = { exports: {} }).exports, t), e = null), t
 			case le:
 				var t = e.render;
 				return e = e.displayName, e ||= (e = t.displayName || t.name || "", e === "" ? "ForwardRef" : "ForwardRef(" + e + ")"), e;
-			case D: return t = e.displayName || null, t === null ? xe(e.type) || "Memo" : t;
-			case fe:
+			case fe: return t = e.displayName || null, t === null ? xe(e.type) || "Memo" : t;
+			case pe:
 				t = e._payload, e = e._init;
 				try {
 					return xe(e(t));
@@ -2156,7 +2156,7 @@ var e = (e, t) => () => (t || (e((t = { exports: {} }).exports, t), e = null), t
 		if (r = e, typeof r == "function") Vi(r) && (o = 1);
 		else if (typeof r == "string") o = qm(e, n, Oe.current) ? 26 : e === "html" || e === "head" || e === "body" ? 27 : 5;
 		else a: switch (r) {
-			case pe: return e = Bi(31, n, t, i), e.elementType = pe, e.lanes = a, e;
+			case D: return e = Bi(31, n, t, i), e.elementType = D, e.lanes = a, e;
 			case ae: return Gi(n.children, i, a, t);
 			case oe:
 				o = 8, i |= 24;
@@ -2182,10 +2182,10 @@ var e = (e, t) => () => (t || (e((t = { exports: {} }).exports, t), e = null), t
 					case le:
 						o = 11;
 						break a;
-					case D:
+					case fe:
 						o = 14;
 						break a;
-					case fe:
+					case pe:
 						o = 16, r = null;
 						break a;
 				}
@@ -2634,7 +2634,7 @@ var e = (e, t) => () => (t || (e((t = { exports: {} }).exports, t), e = null), t
 		}
 		function l(e, t, n, r) {
 			var a = n.type;
-			return a === ae ? (e = d(e, t, n.props.children, r, n.key), ho(e, n), e) : t !== null && (t.elementType === a || typeof a == "object" && a && a.$$typeof === fe && so(a) === t.type) ? (t = i(t, n.props), ho(t, n), t.return = e, t) : (t = Wi(n.type, n.key, n.props, null, e.mode, r), ho(t, n), t.return = e, t);
+			return a === ae ? (e = d(e, t, n.props.children, r, n.key), ho(e, n), e) : t !== null && (t.elementType === a || typeof a == "object" && a && a.$$typeof === pe && so(a) === t.type) ? (t = i(t, n.props), ho(t, n), t.return = e, t) : (t = Wi(n.type, n.key, n.props, null, e.mode, r), ho(t, n), t.return = e, t);
 		}
 		function u(e, t, n, r) {
 			return t === null || t.tag !== 4 || t.stateNode.containerInfo !== n.containerInfo || t.stateNode.implementation !== n.implementation ? (t = Ji(n, e.mode, r), t.return = e, t) : (t = i(t, n.children || []), t.return = e, t);
@@ -2648,7 +2648,7 @@ var e = (e, t) => () => (t || (e((t = { exports: {} }).exports, t), e = null), t
 				switch (t.$$typeof) {
 					case re: return n = Wi(t.type, t.key, t.props, null, e.mode, n), ho(n, t), n.return = e, n;
 					case ie: return t = Ji(t, e.mode, n), t.return = e, t;
-					case fe: return t = so(t), f(e, t, n);
+					case pe: return t = so(t), f(e, t, n);
 				}
 				if (Se(t) || ye(t)) return t = Gi(t, e.mode, n, null), t.return = e, t;
 				if (typeof t.then == "function") return f(e, mo(t), n);
@@ -2664,7 +2664,7 @@ var e = (e, t) => () => (t || (e((t = { exports: {} }).exports, t), e = null), t
 				switch (n.$$typeof) {
 					case re: return n.key === i ? l(e, t, n, r) : null;
 					case ie: return n.key === i ? u(e, t, n, r) : null;
-					case fe: return n = so(n), p(e, t, n, r);
+					case pe: return n = so(n), p(e, t, n, r);
 				}
 				if (Se(n) || ye(n)) return i === null ? d(e, t, n, r, null) : null;
 				if (typeof n.then == "function") return p(e, t, mo(n), r);
@@ -2679,7 +2679,7 @@ var e = (e, t) => () => (t || (e((t = { exports: {} }).exports, t), e = null), t
 				switch (r.$$typeof) {
 					case re: return e = e.get(r.key === null ? n : r.key) || null, l(t, e, r, i);
 					case ie: return e = e.get(r.key === null ? n : r.key) || null, u(t, e, r, i);
-					case fe: return r = so(r), m(e, t, n, r, i);
+					case pe: return r = so(r), m(e, t, n, r, i);
 				}
 				if (Se(r) || ye(r)) return e = e.get(n) || null, d(t, e, r, i, null);
 				if (typeof r.then == "function") return m(e, t, n, mo(r), i);
@@ -2741,7 +2741,7 @@ var e = (e, t) => () => (t || (e((t = { exports: {} }).exports, t), e = null), t
 											n(e, r.sibling), c = i(r, a.props.children), ho(c, a), c.return = e, e = c;
 											break a;
 										}
-									} else if (r.elementType === l || typeof l == "object" && l && l.$$typeof === fe && so(l) === r.type) {
+									} else if (r.elementType === l || typeof l == "object" && l && l.$$typeof === pe && so(l) === r.type) {
 										n(e, r.sibling), c = i(r, a.props), ho(c, a), c.return = e, e = c;
 										break a;
 									}
@@ -2769,7 +2769,7 @@ var e = (e, t) => () => (t || (e((t = { exports: {} }).exports, t), e = null), t
 							c = Ji(a, e.mode, c), c.return = e, e = c;
 						}
 						return o(e);
-					case fe: return a = so(a), _(e, r, a, c);
+					case pe: return a = so(a), _(e, r, a, c);
 				}
 				if (Se(a)) return h(e, r, a, c);
 				if (ye(a)) {
@@ -4387,7 +4387,7 @@ var e = (e, t) => () => (t || (e((t = { exports: {} }).exports, t), e = null), t
 								t.tag = 11, t = Rc(null, t, e, r, n);
 								break a;
 							}
-							if (i === D) {
+							if (i === fe) {
 								t.tag = 14, t = zc(null, t, e, r, n);
 								break a;
 							}
@@ -9191,15 +9191,15 @@ function ae(e) {
 	}
 }
 function oe({ payload: e, emit: t, children: n }) {
-	let [r, i] = (0, l.useState)(e.theme), [a, o] = (0, l.useState)(e.motion_level), [s, c] = (0, l.useState)(e.active_page), [u, d] = (0, l.useState)(e.selected_demo), [f, p] = (0, l.useState)(e.thresholds), [m, h] = (0, l.useState)(e.chat.role), [g, b] = (0, l.useState)(e.chat.model), [S, C] = (0, l.useState)(!1), [ee, ie] = (0, l.useState)(null), [oe, se] = (0, l.useState)(!1), [ce, E] = (0, l.useState)([]), [le, ue] = (0, l.useState)(null), de = (0, l.useRef)(null), D = (0, l.useCallback)((e, n = {}) => t({
+	let [r, i] = (0, l.useState)(e.theme), [a, o] = (0, l.useState)(e.motion_level), [s, c] = (0, l.useState)(e.active_page), [u, d] = (0, l.useState)(e.selected_demo), [f, p] = (0, l.useState)(e.thresholds), [m, h] = (0, l.useState)(e.chat.role), [g, b] = (0, l.useState)(e.chat.model), [S, C] = (0, l.useState)(!1), [ee, ie] = (0, l.useState)(null), [oe, se] = (0, l.useState)(null), [ce, E] = (0, l.useState)(!1), [le, ue] = (0, l.useState)([]), [de, fe] = (0, l.useState)(null), pe = (0, l.useRef)(null), D = (0, l.useCallback)((e, n = {}) => t({
 		event_id: w(),
 		type: e,
 		...n
 	}), [t]);
 	(0, l.useEffect)(() => {
-		i(e.theme), o(e.motion_level), c(e.active_page), d(e.selected_demo), p(e.thresholds), h(e.chat.role), b(e.chat.model), C(!1), ie(null), se(!1);
+		i(e.theme), o(e.motion_level), c(e.active_page), d(e.selected_demo), p(e.thresholds), h(e.chat.role), b(e.chat.model), C(!1), ie(null), se(null), E(!1);
 		let t = e.toasts.filter((e) => !te.has(e.id));
-		t.length && (t.forEach((e) => te.add(e.id)), E((e) => [...e, ...t.map((e) => ({
+		t.length && (t.forEach((e) => te.add(e.id)), ue((e) => [...e, ...t.map((e) => ({
 			...e,
 			timestamp: Date.now()
 		}))].slice(-4)));
@@ -9209,61 +9209,62 @@ function oe({ payload: e, emit: t, children: n }) {
 		let n = ne(t);
 		if (T.has(n) || (T.add(n), a === "off" || e.chat.messages.length <= 1)) return;
 		let r = t.content.length, i = 0;
-		ue({
+		fe({
 			key: n,
 			length: i
 		});
 		let o = Math.max(4, Math.ceil(r / 60)), s = setInterval(() => {
-			i += o, i >= r ? (clearInterval(s), ue(null)) : ue({
+			i += o, i >= r ? (clearInterval(s), fe(null)) : fe({
 				key: n,
 				length: i
 			});
 		}, 24);
 		return () => clearInterval(s);
 	}, [e.chat.messages, a]);
-	let fe = (0, l.useMemo)(() => {
-		let t = le ? e.chat.messages.map((e) => ne(e) === le.key ? {
+	let me = (0, l.useMemo)(() => {
+		let t = de ? e.chat.messages.map((e) => ne(e) === de.key ? {
 			...e,
-			content: e.content.slice(0, le.length)
-		} : e) : e.chat.messages;
-		return ee ? [...t, ee] : t;
+			content: e.content.slice(0, de.length)
+		} : e) : e.chat.messages, n = oe ? t.filter((e) => e.retry?.id !== oe) : t;
+		return ee ? [...n, ee] : n;
 	}, [
 		e.chat.messages,
-		le,
-		ee
-	]), pe = (0, l.useCallback)((e, t, n) => {
+		de,
+		ee,
+		oe
+	]), he = (0, l.useCallback)((e, t, n) => {
 		let r = `local-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`;
-		E((i) => [...i.slice(-3), {
+		ue((i) => [...i.slice(-3), {
 			id: r,
 			title: e,
 			description: t,
 			type: n,
 			timestamp: Date.now()
 		}]);
-	}, []), me = (0, l.useCallback)((e) => E((t) => t.filter((t) => t.id !== e)), []), he = (0, l.useCallback)((e) => {
+	}, []), ge = (0, l.useCallback)((e) => ue((t) => t.filter((t) => t.id !== e)), []), _e = (0, l.useCallback)((e) => {
 		i(e), D("theme", { mode: e });
-	}, [D]), ge = (0, l.useCallback)((e) => {
+	}, [D]), ve = (0, l.useCallback)((e) => {
 		o(e);
 		try {
 			localStorage.setItem("cl_motion_level", e);
 		} catch {}
 		D("motion", { level: e });
-	}, [D]), _e = (0, l.useCallback)((t) => {
+	}, [D]), ye = (0, l.useCallback)((t) => {
 		let n = e.navigation.find((e) => e.page === t);
 		n && !n.locked && (c(t), D("navigate", { page: t }));
-	}, [e.navigation, D]), ve = (0, l.useCallback)((e) => {
+	}, [e.navigation, D]), be = (0, l.useCallback)((e) => {
 		d(e), D("demo_select", { case_name: e });
-	}, [D]), ye = (0, l.useCallback)((e) => D("demo_open", { case_name: e }), [D]), be = (0, l.useCallback)(() => D("clear_case"), [D]), xe = (0, l.useCallback)((e, t) => {
+	}, [D]), xe = (0, l.useCallback)((e) => D("demo_open", { case_name: e }), [D]), Se = (0, l.useCallback)(() => D("clear_case"), [D]), O = (0, l.useCallback)((e, t) => {
 		p((n) => ({
 			...n,
 			[e]: t
-		})), de.current && clearTimeout(de.current), de.current = setTimeout(() => D("threshold", {
+		})), pe.current && clearTimeout(pe.current), pe.current = setTimeout(() => D("threshold", {
 			key: e,
 			value: t
 		}), 450);
-	}, [D]), Se = (0, l.useCallback)(() => D("threshold_reset"), [D]), O = (0, l.useCallback)(() => D("evaluation_run"), [D]), k = (0, l.useCallback)(async () => {
-		oe || (se(!0), D("ai_generate"));
-	}, [oe, D]), Ce = (0, l.useCallback)(async (e) => {
+	}, [D]), k = (0, l.useCallback)(() => D("threshold_reset"), [D]), Ce = (0, l.useCallback)(() => D("evaluation_run"), [D]), we = (0, l.useCallback)(async () => {
+		ce || (E(!0), D("ai_generate"));
+	}, [ce, D]), Te = (0, l.useCallback)(async (e) => {
 		let t = e.trim();
 		t && !S && (C(!0), ie({
 			role: "user",
@@ -9279,27 +9280,32 @@ function oe({ payload: e, emit: t, children: n }) {
 		g,
 		m,
 		D
-	]), we = (0, l.useCallback)(() => D("chat_clear"), [D]), Te = (0, l.useCallback)((e) => {
+	]), Ee = (0, l.useCallback)((e, t) => {
+		S || (C(!0), se(e), D("chat_retry", {
+			retry_id: e,
+			alt: t
+		}));
+	}, [S, D]), De = (0, l.useCallback)(() => D("chat_clear"), [D]), A = (0, l.useCallback)((e) => {
 		h(e), D("chat_role", { role: e });
-	}, [D]), Ee = (0, l.useCallback)((e) => {
+	}, [D]), Oe = (0, l.useCallback)((e) => {
 		b(e), D("chat_model", { model: e });
-	}, [D]), De = (0, l.useCallback)((e) => D("provider", { provider: e }), [D]), A = (0, l.useCallback)(async (e) => {
+	}, [D]), ke = (0, l.useCallback)((e) => D("provider", { provider: e }), [D]), Ae = (0, l.useCallback)(async (e) => {
 		let { accepted: t, skipped: n } = v(_(e));
-		n.length && pe("Đã bỏ qua tệp không dùng được", n.slice(0, 6).map((e) => `${e.path} (${e.reason})`).join(" · "), "warning");
+		n.length && he("Đã bỏ qua tệp không dùng được", n.slice(0, 6).map((e) => `${e.path} (${e.reason})`).join(" · "), "warning");
 		let r = t.map(y);
 		if (!r.length) return;
 		let i = ae(".st-key-v3_upload_area input[type=\"file\"]");
-		if (!i) pe("Chưa sẵn sàng tải tệp", "Dùng khung tải tệp gốc của Streamlit bên dưới trang.", "warning");
+		if (!i) he("Chưa sẵn sàng tải tệp", "Dùng khung tải tệp gốc của Streamlit bên dưới trang.", "warning");
 		else try {
 			let e = new DataTransfer();
-			r.forEach((t) => e.items.add(t)), i.files = e.files, i.dispatchEvent(new Event("change", { bubbles: !0 })), pe("Đang tải tài liệu", `${r.length} tệp được gửi tới máy chủ Python để trích xuất.`, "info");
+			r.forEach((t) => e.items.add(t)), i.files = e.files, i.dispatchEvent(new Event("change", { bubbles: !0 })), he("Đang tải tài liệu", `${r.length} tệp được gửi tới máy chủ Python để trích xuất.`, "info");
 		} catch {
 			i.click();
 		}
-	}, [pe]), Oe = (0, l.useCallback)((e) => {
+	}, [he]), je = (0, l.useCallback)((e) => {
 		let t = ae(`.st-key-v3_dl_${e} button`);
-		t ? t.click() : pe("Chưa thể tải xuống", "Mở khung xuất báo cáo bên dưới trang để tải tệp do Python tạo.", "warning");
-	}, [pe]), ke = (0, l.useCallback)(() => _e("8_settings"), [_e]), Ae = (0, l.useMemo)(() => ({
+		t ? t.click() : he("Chưa thể tải xuống", "Mở khung xuất báo cáo bên dưới trang để tải tệp do Python tạo.", "warning");
+	}, [he]), Me = (0, l.useCallback)(() => ye("8_settings"), [ye]), Ne = (0, l.useMemo)(() => ({
 		setConsent: (e) => D("privacy_consent", { value: e }),
 		confirm: () => D("privacy_confirm"),
 		cancel: () => D("privacy_cancel"),
@@ -9311,58 +9317,59 @@ function oe({ payload: e, emit: t, children: n }) {
 		}),
 		continueUpload: () => D("upload_continue"),
 		cancelUpload: () => D("upload_cancel")
-	}), [D]), je = (0, l.useCallback)((t) => e.assets[t] ?? "", [e.assets]), Me = {
+	}), [D]), Pe = (0, l.useCallback)((t) => e.assets[t] ?? "", [e.assets]), Fe = {
 		theme: r,
-		setTheme: he,
+		setTheme: _e,
 		motionLevel: a,
-		setMotionLevel: ge,
+		setMotionLevel: ve,
 		activePage: s,
-		setActivePage: _e,
+		setActivePage: ye,
 		selectedDemoCase: u,
-		setSelectedDemoCase: ve,
+		setSelectedDemoCase: be,
 		demoCases: e.demo_cases,
 		thresholds: f,
-		updateThreshold: xe,
-		resetThresholds: Se,
+		updateThreshold: O,
+		resetThresholds: k,
 		result: e.result,
-		openDemoCase: ye,
-		clearCase: be,
-		handleFileUpload: A,
+		openDemoCase: xe,
+		clearCase: Se,
+		handleFileUpload: Ae,
 		aiExplanation: e.ai.explanation,
-		aiLoading: oe,
-		generateAiExplanation: k,
+		aiLoading: ce,
+		generateAiExplanation: we,
 		evaluationReport: e.pages.evaluation ?? null,
-		runEvaluation: O,
-		chatMessages: fe,
+		runEvaluation: Ce,
+		chatMessages: me,
 		chatLoading: S,
 		chatRole: m,
-		setChatRole: Te,
+		setChatRole: A,
 		chatModel: g,
-		setChatModel: Ee,
-		sendChatMessage: Ce,
-		clearChatMessages: we,
+		setChatModel: Oe,
+		sendChatMessage: Te,
+		retryChatMessage: Ee,
+		clearChatMessages: De,
 		providers: e.providers,
 		activeProvider: e.active_provider,
-		setActiveProvider: De,
+		setActiveProvider: ke,
 		customCaseName: e.custom_case_name,
 		caseContext: e.case_context,
 		workflowSteps: e.workflow,
 		processCards: e.process_cards,
 		navigationItems: e.navigation,
-		toasts: ce,
-		addToast: pe,
-		dismissToast: me,
+		toasts: le,
+		addToast: he,
+		dismissToast: ge,
 		serverMode: !0,
-		exportFile: Oe,
+		exportFile: je,
 		aiConnection: e.ai_connection,
 		chatModels: e.chat.models,
-		openAiSettings: ke,
+		openAiSettings: Me,
 		privacy: e.privacy,
-		privacyActions: Ae,
-		assetUrl: je
+		privacyActions: Ne,
+		assetUrl: Pe
 	};
 	return /* @__PURE__ */ (0, x.jsx)(re.Provider, {
-		value: Me,
+		value: Fe,
 		children: n
 	});
 }
@@ -9931,7 +9938,7 @@ function de(e, t) {
 	}
 	return i < e.length && n.push(e.slice(i)), n;
 }
-function D({ text: e }) {
+function fe({ text: e }) {
 	let t = e.replace(/\r/g, "").split("\n"), n = [], r = null, i = () => {
 		if (!r) return;
 		let e = `l${n.length}`, t = r.items.map((t, n) => /* @__PURE__ */ (0, x.jsx)("li", { children: de(t, `${e}-${n}`) }, n));
@@ -9956,12 +9963,12 @@ function D({ text: e }) {
 }
 //#endregion
 //#region src/geminiStub.ts
-var fe = "gemini-3.8-flash", pe = "SERVER_ONLY: bản Streamlit gọi AI qua máy chủ Python.";
+var pe = "gemini-3.8-flash", D = "SERVER_ONLY: bản Streamlit gọi AI qua máy chủ Python.";
 function me() {
 	return "";
 }
-async function he(e, t = fe) {
-	throw Error(pe);
+async function he(e, t = pe) {
+	throw Error(D);
 }
 //#endregion
 //#region ../src/components/GeminiChatbot.tsx
@@ -10026,36 +10033,36 @@ var ge = [
 	}
 };
 function ye({ embedded: e = !1, onClose: t }) {
-	let { chatMessages: n, chatLoading: r, chatRole: i, setChatRole: a, chatModel: o, setChatModel: s, sendChatMessage: c, clearChatMessages: u, result: d, serverMode: f, aiConnection: p, chatModels: m, openAiSettings: h } = ie(), g = m ?? Object.keys(ve).map((e) => ({
+	let { chatMessages: n, chatLoading: r, chatRole: i, setChatRole: a, chatModel: o, setChatModel: s, sendChatMessage: c, retryChatMessage: u, clearChatMessages: d, result: f, serverMode: p, aiConnection: m, chatModels: h, openAiSettings: g } = ie(), _ = h ?? Object.keys(ve).map((e) => ({
 		id: e,
 		label: ve[e].label,
 		badge: ve[e].badge
-	})), _ = (e) => e ? g.find((t) => t.id === e)?.label ?? ve[e]?.label ?? e : "Chưa kết nối AI", v = p?.state === "connected", [y, b] = (0, l.useState)(""), [S, C] = (0, l.useState)(!1), [ee, w] = (0, l.useState)(null), [te, T] = (0, l.useState)(!1), [ne, re] = (0, l.useState)(() => me()), [ae, oe] = (0, l.useState)(() => !!me()), [se, ce] = (0, l.useState)(""), [E, le] = (0, l.useState)(!1), ue = async () => {
-		let e = ne.trim();
-		if (!e) oe(!1), ce("Đã xóa khóa khỏi trình duyệt.");
+	})), v = (e) => e ? _.find((t) => t.id === e)?.label ?? ve[e]?.label ?? e : "Chưa kết nối AI", y = m?.state === "connected", [b, S] = (0, l.useState)(""), [C, ee] = (0, l.useState)(!1), [w, te] = (0, l.useState)(null), [T, ne] = (0, l.useState)(!1), [re, ae] = (0, l.useState)(() => me()), [oe, se] = (0, l.useState)(() => !!me()), [ce, E] = (0, l.useState)(""), [le, ue] = (0, l.useState)(!1), de = async () => {
+		let e = re.trim();
+		if (!e) se(!1), E("Đã xóa khóa khỏi trình duyệt.");
 		else {
-			le(!0), ce("Đang kiểm tra kết nối với Gemini 3.8 Flash…");
+			ue(!0), E("Đang kiểm tra kết nối với Gemini 3.8 Flash…");
 			try {
-				await he(e), oe(!0), ce("✓ Kết nối thành công. Khóa chỉ lưu trong trình duyệt này."), setTimeout(() => T(!1), 900);
+				await he(e), se(!0), E("✓ Kết nối thành công. Khóa chỉ lưu trong trình duyệt này."), setTimeout(() => ne(!1), 900);
 			} catch (e) {
-				ce(`✕ Khóa không hợp lệ hoặc bị chặn: ${e?.message ?? "lỗi"}`);
+				E(`✕ Khóa không hợp lệ hoặc bị chặn: ${e?.message ?? "lỗi"}`);
 			} finally {
-				le(!1);
+				ue(!1);
 			}
 		}
-	}, de = n[n.length - 1]?.role === "user", fe = (0, l.useRef)(null), pe = (0, l.useRef)(null);
+	}, pe = n[n.length - 1]?.role === "user", D = (0, l.useRef)(null), ye = (0, l.useRef)(null);
 	(0, l.useEffect)(() => {
-		fe.current?.scrollIntoView({ behavior: "smooth" });
+		D.current?.scrollIntoView({ behavior: "smooth" });
 	}, [n, r]);
-	let ye = async (e) => {
-		if (e && e.preventDefault(), !y.trim() || r) return;
-		let t = y.trim();
-		b(""), await c(t);
-	}, be = (e) => {
-		e.key === "Enter" && !e.shiftKey && (e.preventDefault(), ye());
-	}, xe = (e, t) => {
-		navigator.clipboard?.writeText(e), w(t), setTimeout(() => w(null), 2e3);
+	let be = async (e) => {
+		if (e && e.preventDefault(), !b.trim() || r) return;
+		let t = b.trim();
+		S(""), await c(t);
+	}, xe = (e) => {
+		e.key === "Enter" && !e.shiftKey && (e.preventDefault(), be());
 	}, Se = (e, t) => {
+		navigator.clipboard?.writeText(e), te(t), setTimeout(() => te(null), 2e3);
+	}, O = (e, t) => {
 		t && t !== i && a(t), c(e);
 	};
 	return /* @__PURE__ */ (0, x.jsxs)("div", {
@@ -10075,7 +10082,7 @@ function ye({ embedded: e = !1, onClose: t }) {
 						className: "cl-gemini-chat__title-row",
 						children: [/* @__PURE__ */ (0, x.jsx)("h3", {
 							className: "cl-gemini-chat__title",
-							children: f ? `Trợ lý ${p?.provider_label ?? "AI"}` : "Trợ lý Gemini 3.8"
+							children: p ? `Trợ lý ${m?.provider_label ?? "AI"}` : "Trợ lý Gemini 3.8"
 						}), /* @__PURE__ */ (0, x.jsx)("span", {
 							className: "cl-gemini-chat__badge",
 							children: "AI"
@@ -10087,26 +10094,26 @@ function ye({ embedded: e = !1, onClose: t }) {
 				}), /* @__PURE__ */ (0, x.jsxs)("div", {
 					className: "cl-gemini-chat__header-actions",
 					children: [
-						f ? /* @__PURE__ */ (0, x.jsxs)("button", {
+						p ? /* @__PURE__ */ (0, x.jsxs)("button", {
 							type: "button",
-							className: `cl-gemini-chat__key-btn${v ? " is-on" : ""}`,
+							className: `cl-gemini-chat__key-btn${y ? " is-on" : ""}`,
 							onClick: () => {
-								h?.(), t?.();
+								g?.(), t?.();
 							},
 							title: "Cài đặt → Kết nối AI (khóa chỉ nằm ở máy chủ Python)",
-							children: ["🔑 ", v ? "Đã kết nối" : p?.state === "partial" ? "Key hợp lệ" : "Kết nối AI"]
+							children: ["🔑 ", y ? "Đã kết nối" : m?.state === "partial" ? "Key hợp lệ" : "Kết nối AI"]
 						}) : /* @__PURE__ */ (0, x.jsxs)("button", {
 							type: "button",
-							className: `cl-gemini-chat__key-btn${ae ? " is-on" : ""}`,
-							onClick: () => T((e) => !e),
-							"aria-expanded": te,
+							className: `cl-gemini-chat__key-btn${oe ? " is-on" : ""}`,
+							onClick: () => ne((e) => !e),
+							"aria-expanded": T,
 							title: "Cấu hình khóa Gemini API",
-							children: ["🔑 ", ae ? "Đã kết nối" : "Khóa API"]
+							children: ["🔑 ", oe ? "Đã kết nối" : "Khóa API"]
 						}),
 						/* @__PURE__ */ (0, x.jsx)("button", {
 							type: "button",
 							className: "cl-gemini-chat__btn-icon",
-							onClick: u,
+							onClick: d,
 							title: "Làm mới phiên hội thoại",
 							"aria-label": "Làm mới phiên hội thoại",
 							children: "↺"
@@ -10122,12 +10129,12 @@ function ye({ embedded: e = !1, onClose: t }) {
 					]
 				})]
 			}),
-			f && !v ? /* @__PURE__ */ (0, x.jsxs)("div", {
+			p && !y ? /* @__PURE__ */ (0, x.jsxs)("div", {
 				className: "cl-gemini-chat__key-panel",
 				role: "status",
-				children: [/* @__PURE__ */ (0, x.jsx)("strong", { children: p?.label ?? "Chưa kết nối AI" }), /* @__PURE__ */ (0, x.jsx)("small", { children: p?.message ?? "Mở Cài đặt → Kết nối AI để nhập khóa trên máy chủ." })]
+				children: [/* @__PURE__ */ (0, x.jsx)("strong", { children: m?.label ?? "Chưa kết nối AI" }), /* @__PURE__ */ (0, x.jsx)("small", { children: m?.message ?? "Mở Cài đặt → Kết nối AI để nhập khóa trên máy chủ." })]
 			}) : null,
-			!f && te && /* @__PURE__ */ (0, x.jsxs)("div", {
+			!p && T && /* @__PURE__ */ (0, x.jsxs)("div", {
 				className: "cl-gemini-chat__key-panel",
 				children: [
 					/* @__PURE__ */ (0, x.jsxs)("label", {
@@ -10142,14 +10149,14 @@ function ye({ embedded: e = !1, onClose: t }) {
 							autoComplete: "off",
 							spellCheck: !1,
 							placeholder: "AIza…",
-							value: ne,
-							onChange: (e) => re(e.target.value),
-							onKeyDown: (e) => e.key === "Enter" && ue()
+							value: re,
+							onChange: (e) => ae(e.target.value),
+							onKeyDown: (e) => e.key === "Enter" && de()
 						}), /* @__PURE__ */ (0, x.jsx)("button", {
 							type: "button",
-							onClick: ue,
-							disabled: E,
-							children: E ? "…" : "Lưu & kiểm tra"
+							onClick: de,
+							disabled: le,
+							children: le ? "…" : "Lưu & kiểm tra"
 						})]
 					}),
 					/* @__PURE__ */ (0, x.jsxs)("small", { children: [
@@ -10163,9 +10170,9 @@ function ye({ embedded: e = !1, onClose: t }) {
 						}),
 						". Khóa chỉ lưu trên trình duyệt của bạn và gửi thẳng tới Google."
 					] }),
-					se && /* @__PURE__ */ (0, x.jsx)("p", {
+					ce && /* @__PURE__ */ (0, x.jsx)("p", {
 						className: "cl-gemini-chat__key-status",
-						children: se
+						children: ce
 					})
 				]
 			}),
@@ -10173,13 +10180,13 @@ function ye({ embedded: e = !1, onClose: t }) {
 				className: "cl-gemini-chat__context-bar",
 				children: [/* @__PURE__ */ (0, x.jsx)("span", { className: "cl-gemini-chat__context-dot" }), /* @__PURE__ */ (0, x.jsx)("span", {
 					className: "cl-gemini-chat__context-text",
-					children: d ? /* @__PURE__ */ (0, x.jsxs)(x.Fragment, { children: [
+					children: f ? /* @__PURE__ */ (0, x.jsxs)(x.Fragment, { children: [
 						"Đang gắn ngữ cảnh: ",
-						/* @__PURE__ */ (0, x.jsx)("strong", { children: d.ma_ho_so }),
+						/* @__PURE__ */ (0, x.jsx)("strong", { children: f.ma_ho_so }),
 						" — ",
-						d.du_lieu.ho_ten_khach_hang || "Khách hàng",
+						f.du_lieu.ho_ten_khach_hang || "Khách hàng",
 						" (",
-						d.canh_bao.length,
+						f.canh_bao.length,
 						" rủi ro)"
 					] }) : "Chưa mở hồ sơ cụ thể (sử dụng kiến thức nghiệp vụ tín dụng tổng quát)"
 				})]
@@ -10216,10 +10223,10 @@ function ye({ embedded: e = !1, onClose: t }) {
 						className: "cl-gemini-chat__model-dropdown",
 						value: o,
 						onChange: (e) => s(e.target.value),
-						children: [g.length === 0 ? /* @__PURE__ */ (0, x.jsx)("option", {
+						children: [_.length === 0 ? /* @__PURE__ */ (0, x.jsx)("option", {
 							value: o,
 							children: "Chưa có model khả dụng"
-						}) : null, g.map((e) => /* @__PURE__ */ (0, x.jsxs)("option", {
+						}) : null, _.map((e) => /* @__PURE__ */ (0, x.jsxs)("option", {
 							value: e.id,
 							children: [
 								e.label,
@@ -10245,18 +10252,18 @@ function ye({ embedded: e = !1, onClose: t }) {
 				"aria-live": "polite",
 				children: [
 					n.map((e, t) => {
-						let n = e.role === "user";
+						let i = e.role === "user";
 						return /* @__PURE__ */ (0, x.jsxs)("article", {
-							className: `cl-gemini-msg ${n ? "cl-gemini-msg--user" : "cl-gemini-msg--bot"}`,
+							className: `cl-gemini-msg ${i ? "cl-gemini-msg--user" : "cl-gemini-msg--bot"}`,
 							children: [
 								/* @__PURE__ */ (0, x.jsxs)("div", {
 									className: "cl-gemini-msg__meta",
 									children: [
 										/* @__PURE__ */ (0, x.jsx)("span", {
 											className: "cl-gemini-msg__sender",
-											children: n ? "Chuyên viên thẩm định" : "Trợ lý tín dụng"
+											children: i ? "Chuyên viên thẩm định" : "Trợ lý tín dụng"
 										}),
-										!n && e.modelUsed && /* @__PURE__ */ (0, x.jsx)("span", {
+										!i && e.modelUsed && /* @__PURE__ */ (0, x.jsx)("span", {
 											className: "cl-gemini-msg__model-tag",
 											children: e.modelUsed
 										}),
@@ -10271,22 +10278,38 @@ function ye({ embedded: e = !1, onClose: t }) {
 								}),
 								/* @__PURE__ */ (0, x.jsx)("div", {
 									className: "cl-gemini-msg__body",
-									children: n ? e.content : /* @__PURE__ */ (0, x.jsx)(D, { text: e.content })
+									children: i ? e.content : /* @__PURE__ */ (0, x.jsx)(fe, { text: e.content })
 								}),
+								!i && e.retry && u && t === n.length - 1 ? /* @__PURE__ */ (0, x.jsxs)("div", {
+									className: "cl-gemini-msg__retry",
+									children: [/* @__PURE__ */ (0, x.jsx)("button", {
+										type: "button",
+										className: "cl-gemini-msg__retry-btn",
+										disabled: r,
+										onClick: () => u(e.retry.id, !1),
+										children: "↻ Thử lại"
+									}), e.retry.alt_label ? /* @__PURE__ */ (0, x.jsxs)("button", {
+										type: "button",
+										className: "cl-gemini-msg__retry-btn",
+										disabled: r,
+										onClick: () => u(e.retry.id, !0),
+										children: ["Thử bằng ", e.retry.alt_label]
+									}) : null]
+								}) : null,
 								/* @__PURE__ */ (0, x.jsx)("div", {
 									className: "cl-gemini-msg__footer",
 									children: /* @__PURE__ */ (0, x.jsx)("button", {
 										type: "button",
 										className: "cl-gemini-msg__action-btn",
-										onClick: () => xe(e.content, t),
+										onClick: () => Se(e.content, t),
 										title: "Sao chép nội dung",
-										children: ee === t ? "✓ Đã sao chép" : "Sao chép"
+										children: w === t ? "✓ Đã sao chép" : "Sao chép"
 									})
 								})
 							]
 						}, t);
 					}),
-					r && de && /* @__PURE__ */ (0, x.jsxs)("div", {
+					r && pe && /* @__PURE__ */ (0, x.jsxs)("div", {
 						className: "cl-gemini-msg cl-gemini-msg--bot cl-gemini-msg--loading",
 						children: [/* @__PURE__ */ (0, x.jsxs)("div", {
 							className: "cl-gemini-msg__meta",
@@ -10310,7 +10333,7 @@ function ye({ embedded: e = !1, onClose: t }) {
 							]
 						})]
 					}),
-					/* @__PURE__ */ (0, x.jsx)("div", { ref: fe })
+					/* @__PURE__ */ (0, x.jsx)("div", { ref: D })
 				]
 			}),
 			/* @__PURE__ */ (0, x.jsxs)("div", {
@@ -10323,29 +10346,29 @@ function ye({ embedded: e = !1, onClose: t }) {
 					children: ge.map((e, t) => /* @__PURE__ */ (0, x.jsx)("button", {
 						type: "button",
 						className: "cl-gemini-chat__quick-pill",
-						onClick: () => Se(e.text, e.role),
+						onClick: () => O(e.text, e.role),
 						disabled: r,
 						children: e.label
 					}, t))
 				})]
 			}),
 			/* @__PURE__ */ (0, x.jsxs)("form", {
-				onSubmit: ye,
+				onSubmit: be,
 				className: "cl-gemini-chat__form",
 				children: [/* @__PURE__ */ (0, x.jsxs)("div", {
 					className: "cl-gemini-chat__input-wrapper",
 					children: [/* @__PURE__ */ (0, x.jsx)("textarea", {
-						ref: pe,
+						ref: ye,
 						rows: 2,
-						value: y,
-						onChange: (e) => b(e.target.value),
-						onKeyDown: be,
+						value: b,
+						onChange: (e) => S(e.target.value),
+						onKeyDown: xe,
 						placeholder: "Đặt câu hỏi về DTI, rủi ro, đối chiếu thu nhập... (Enter để gửi, Shift+Enter xuống dòng)",
 						disabled: r,
 						className: "cl-gemini-chat__textarea"
 					}), /* @__PURE__ */ (0, x.jsx)("button", {
 						type: "submit",
-						disabled: !y.trim() || r,
+						disabled: !b.trim() || r,
 						className: "cl-gemini-chat__send-btn",
 						title: "Gửi câu hỏi",
 						"aria-label": "Gửi câu hỏi",
@@ -10353,7 +10376,7 @@ function ye({ embedded: e = !1, onClose: t }) {
 					})]
 				}), /* @__PURE__ */ (0, x.jsxs)("div", {
 					className: "cl-gemini-chat__footer-info",
-					children: [/* @__PURE__ */ (0, x.jsxs)("span", { children: ["Mô hình: ", _(o)] }), /* @__PURE__ */ (0, x.jsx)("span", { children: "Phản hồi có tính chất hỗ trợ quyết định" })]
+					children: [/* @__PURE__ */ (0, x.jsxs)("span", { children: ["Mô hình: ", v(o)] }), /* @__PURE__ */ (0, x.jsx)("span", { children: "Phản hồi có tính chất hỗ trợ quyết định" })]
 				})]
 			})
 		]
@@ -11832,7 +11855,7 @@ function He({ viewModel: e }) {
 								border: "1px solid var(--cl-border)",
 								whiteSpace: "normal"
 							},
-							children: [/* @__PURE__ */ (0, x.jsx)(D, { text: n }), /* @__PURE__ */ (0, x.jsx)("div", {
+							children: [/* @__PURE__ */ (0, x.jsx)(fe, { text: n }), /* @__PURE__ */ (0, x.jsx)("div", {
 								style: {
 									marginTop: "12px",
 									borderTop: "1px solid var(--cl-border)",

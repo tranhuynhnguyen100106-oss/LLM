@@ -2438,10 +2438,18 @@ def _loi_api_theo_status(provider: str, status_code: int) -> RuntimeError:
 class LoiNhaCungCapAI(RuntimeError):
     """Lỗi nhà cung cấp AI đã phân loại. Thông điệp an toàn: không chứa API Key hay nội dung hồ sơ."""
 
-    def __init__(self, ma: str, thong_diep: str) -> None:
+    def __init__(self, ma: str, thong_diep: str, *, google_status: str = "", http_status: int | None = None) -> None:
         super().__init__(f"{thong_diep} (mã {ma})")
         self.ma = ma
         self.thong_diep = thong_diep
+        # error.status trong body lỗi của Google (VD: UNAVAILABLE) — chỉ dùng cho log/chẩn đoán.
+        self.google_status = google_status
+        self.http_status = http_status
+
+    @property
+    def loi_phia_google(self) -> bool:
+        """HTTP 5xx: lỗi phía máy chủ Google, không phải lỗi API Key."""
+        return self.http_status is not None and self.http_status >= 500
 
 
 # maxOutputTokens của Gemini tính cả token "thinking"; 1800 có thể bị phần suy nghĩ dùng hết.
@@ -2462,7 +2470,27 @@ def cau_hinh_sinh_gemini(model: str) -> dict[str, Any]:
     return config
 
 
-def _loi_gemini_theo_status(status_code: int, model: str) -> LoiNhaCungCapAI:
+def trang_thai_loi_google(payload: Any) -> str:
+    """Đọc error.status (VD: UNAVAILABLE) từ body lỗi của Google; chỉ giữ mã dạng chữ in hoa."""
+
+    error = payload.get("error") if isinstance(payload, dict) else None
+    status = str(error.get("status") or "") if isinstance(error, dict) else ""
+    return status if re.fullmatch(r"[A-Z_]{2,40}", status) else ""
+
+
+def _loi_gemini_theo_status(status_code: int, model: str, google_status: str = "") -> LoiNhaCungCapAI:
+    if status_code >= 500:
+        messages = {
+            503: f"Model {model} đang quá tải phía Google (không phải lỗi API Key). Thử lại sau ít phút hoặc chọn model khác.",
+            500: "Gemini gặp lỗi nội bộ khi xử lý yêu cầu. Thử lại sau.",
+            504: "Gemini xử lý quá thời gian cho phép. Thử lại hoặc đặt câu hỏi ngắn hơn.",
+        }
+        return LoiNhaCungCapAI(
+            f"GEM-{status_code}",
+            messages.get(status_code, "Dịch vụ Gemini đang tạm thời không sẵn sàng."),
+            google_status=google_status,
+            http_status=status_code,
+        )
     if status_code == 400:
         return LoiNhaCungCapAI("GEM-400", f"Yêu cầu không hợp lệ với model {model}.")
     if status_code in {401, 403}:
@@ -2471,8 +2499,6 @@ def _loi_gemini_theo_status(status_code: int, model: str) -> LoiNhaCungCapAI:
         return LoiNhaCungCapAI("GEM-404", f"Model {model} không tồn tại hoặc không khả dụng với key này.")
     if status_code == 429:
         return LoiNhaCungCapAI("GEM-429", "Đã vượt hạn mức/quota của Gemini. Thử lại sau hoặc chọn model khác.")
-    if status_code >= 500:
-        return LoiNhaCungCapAI(f"GEM-{status_code}", "Dịch vụ Gemini đang tạm thời không sẵn sàng.")
     return LoiNhaCungCapAI(f"GEM-{status_code}", f"Gemini trả về mã lỗi HTTP {status_code}.")
 
 
@@ -2520,7 +2546,13 @@ def _goi_gemini(model: str, key: str, body: dict[str, Any]) -> str:
     except httpx.TransportError as exc:
         raise LoiNhaCungCapAI("GEM-NET", "Không kết nối được tới Gemini (lỗi mạng).") from exc
     if http_response.status_code >= 400:
-        raise _loi_gemini_theo_status(http_response.status_code, model)
+        google_status = ""
+        if http_response.status_code >= 500:
+            try:
+                google_status = trang_thai_loi_google(http_response.json())
+            except ValueError:
+                google_status = ""
+        raise _loi_gemini_theo_status(http_response.status_code, model, google_status)
     try:
         payload = http_response.json()
     except ValueError as exc:
@@ -2739,6 +2771,9 @@ def _ghi_log_loi_chat_an_toan(exc: Exception, provider: str, model: str, api_key
         message = message.replace(api_key, "[REDACTED]")
     message = re.sub(r"(?i)bearer\s+[A-Za-z0-9._-]+", "Bearer [REDACTED]", message)
     status_code = getattr(exc, "status_code", None) or getattr(exc, "ma", None)
+    if getattr(exc, "google_status", ""):
+        # Lỗi 5xx: chỉ ghi status code, error.status và model (không key, không nội dung hồ sơ).
+        status_code = f"{status_code} google_status={exc.google_status}"
     CHAT_LOGGER.error(
         "CHAT_API_ERROR provider=%s model=%s exception=%s status=%s message=%s",
         provider,

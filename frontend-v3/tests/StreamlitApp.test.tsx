@@ -129,6 +129,36 @@ describe("UI v3 trên Streamlit", () => {
     expect(document.querySelector('[data-testid="cl-folder-input"]')!.hasAttribute("webkitdirectory")).toBe(true);
   });
 
+  it("lỗi 5xx: nút Thử lại / Thử bằng model khác, mỗi lần bấm 1 event, bấm lặp không phát thêm", () => {
+    const base = parseV3Payload(fixtures.summary);
+    const notice = {
+      role: "assistant" as const,
+      content: "**Không nhận được phản hồi từ Gemini 3.8 Flash.** Model gemini-3.8-flash đang quá tải phía Google (không phải lỗi API Key). (mã GEM-503)",
+      modelUsed: "Hệ thống",
+      timestamp: 2,
+      retry: { id: "r123", label: "Gemini 3.8 Flash", alt_label: "Gemini 3.1 Flash Lite" }
+    };
+    const withRetry = { ...base, chat: { ...base.chat, messages: [{ role: "user" as const, content: "hello", timestamp: 1 }, notice] } };
+    const { emit, view } = mount(withRetry);
+    fireEvent.click(screen.getAllByRole("button", { name: "Mở Trợ lý Thẩm định Gemini" })[0]!);
+    fireEvent.click(screen.getByRole("button", { name: "Thử bằng Gemini 3.1 Flash Lite" }));
+    const retries = () => emit.mock.calls.filter(([e]) => e.type === "chat_retry");
+    expect(retries()).toHaveLength(1);
+    expect(retries()[0]![0]).toMatchObject({ retry_id: "r123", alt: true });
+    expect(screen.queryByRole("button", { name: /Thử lại/ })).toBeNull(); // đang chờ: thông báo cũ ẩn
+    view.unmount();
+    const noAlt = { ...withRetry, chat: { ...withRetry.chat, messages: [withRetry.chat.messages[0]!, { ...notice, retry: { ...notice.retry, alt_label: null } }] } };
+    const second = mount(noAlt);
+    fireEvent.click(screen.getAllByRole("button", { name: "Mở Trợ lý Thẩm định Gemini" })[0]!);
+    expect(screen.queryByRole("button", { name: /Thử bằng/ })).toBeNull();
+    const again = screen.getByRole("button", { name: "↻ Thử lại" });
+    fireEvent.click(again);
+    fireEvent.click(again);
+    const sent = second.emit.mock.calls.filter(([e]) => e.type === "chat_retry");
+    expect(sent).toHaveLength(1);
+    expect(sent[0]![0]).toMatchObject({ retry_id: "r123", alt: false });
+  });
+
   it("từ chối payload chứa khóa bị cấm", () => {
     expect(() => parseV3Payload({ ...fixtures.summary, api_key: "x" })).toThrow();
     expect(() => parseV3Payload({ ...fixtures.summary, chat: { ...fixtures.summary.chat, token: "x" } })).toThrow();

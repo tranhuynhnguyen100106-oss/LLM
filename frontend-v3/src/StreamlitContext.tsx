@@ -179,6 +179,7 @@ export function StreamlitCreditLensProvider({ payload, emit, children }: Provide
   const [chatModel, setChatModelState] = useState<string>(payload.chat.model);
   const [chatPending, setChatPending] = useState(false);
   const [pendingUser, setPendingUser] = useState<ChatMessage | null>(null);
+  const [retryingId, setRetryingId] = useState<string | null>(null);
   const [aiPending, setAiPending] = useState(false);
   const [localToasts, setLocalToasts] = useState<ToastItem[]>([]);
   const [typed, setTyped] = useState<{ key: string; length: number } | null>(null);
@@ -200,6 +201,7 @@ export function StreamlitCreditLensProvider({ payload, emit, children }: Provide
     setChatModelState(payload.chat.model);
     setChatPending(false);
     setPendingUser(null);
+    setRetryingId(null);
     setAiPending(false);
     const fresh = payload.toasts.filter((t) => !seenToastIds.has(t.id));
     if (fresh.length) {
@@ -238,8 +240,10 @@ export function StreamlitCreditLensProvider({ payload, emit, children }: Provide
       : payload.chat.messages.map((m) =>
           messageKey(m) === typed.key ? { ...m, content: m.content.slice(0, typed.length) } : m
         );
-    return pendingUser ? [...base, pendingUser] : base;
-  }, [payload.chat.messages, typed, pendingUser]);
+    // Đang thử lại: ẩn thông báo lỗi cũ để hiện trạng thái chờ ngay dưới câu hỏi.
+    const visible = retryingId ? base.filter((m) => m.retry?.id !== retryingId) : base;
+    return pendingUser ? [...visible, pendingUser] : visible;
+  }, [payload.chat.messages, typed, pendingUser, retryingId]);
 
   const addToast = useCallback((title: string, description?: string, type?: "info" | "success" | "warning") => {
     const id = `local-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`;
@@ -292,6 +296,12 @@ export function StreamlitCreditLensProvider({ payload, emit, children }: Provide
     setPendingUser({ role: "user", content: trimmed, timestamp: Date.now() });
     send("chat_send", { text: trimmed, role: chatRole, model: chatModel });
   }, [chatPending, chatModel, chatRole, send]);
+  const retryChatMessage = useCallback((retryId: string, alt: boolean) => {
+    if (chatPending) return; // đang chờ: không phát thêm event, không gọi thêm request
+    setChatPending(true);
+    setRetryingId(retryId);
+    send("chat_retry", { retry_id: retryId, alt });
+  }, [chatPending, send]);
   const clearChatMessages = useCallback(() => send("chat_clear"), [send]);
   const setChatRole = useCallback((role: ChatRoleKey) => {
     setChatRoleState(role);
@@ -388,6 +398,7 @@ export function StreamlitCreditLensProvider({ payload, emit, children }: Provide
     chatModel,
     setChatModel,
     sendChatMessage,
+    retryChatMessage,
     clearChatMessages,
     providers: payload.providers,
     activeProvider: payload.active_provider,

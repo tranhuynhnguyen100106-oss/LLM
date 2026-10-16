@@ -4038,3 +4038,9 @@
 .cl-upload-plan__issue { padding: 8px 12px; border-radius: 8px; border: 1px solid var(--cl-border); }
 .cl-upload-plan__issue--error { border-color: var(--cl-danger, #b91c1c); color: var(--cl-danger, #b91c1c); }
 .cl-upload-plan__issue--warning { border-color: var(--cl-warning, #b45309); }
+
+/* Nút thử lại sau lỗi 5xx phía Google */
+.cl-gemini-msg__retry { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 10px; }
+.cl-gemini-msg__retry-btn { min-height: 34px; padding: 0 12px; border: 1px solid var(--cl-primary); border-radius: 8px; background: var(--cl-surface); color: var(--cl-primary); font: inherit; font-size: 13px; font-weight: 600; cursor: pointer; }
+.cl-gemini-msg__retry-btn:hover:not(:disabled) { background: var(--cl-surface-muted); }
+.cl-gemini-msg__retry-btn:disabled { opacity: 0.55; cursor: not-allowed; }

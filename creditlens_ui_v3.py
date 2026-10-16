@@ -64,6 +64,7 @@ GEMINI_DEFAULT_MODEL = "gemini-3.8-flash"
 CHAT_HISTORY_LIMIT = 12
 PING_SYSTEM_PROMPT = "Kiểm tra kết nối. Trả lời đúng một từ: OK."
 PARTIAL_LABEL = "Key hợp lệ — chưa gọi được model"
+OVERLOADED_LABEL = "Key hợp lệ — model đang quá tải phía Google"
 
 CHAT_ROLES = ("underwriter", "risk_auditor", "advisor")
 # Nội dung chuyển nguyên văn từ src/lib/prompts.ts (bản AI Studio).
@@ -320,7 +321,7 @@ def _ai_connection_status(st: Any) -> dict[str, Any]:
         last_error = str(connection.get("generate_error") or "")
         return {
             "state": "partial",
-            "label": PARTIAL_LABEL,
+            "label": OVERLOADED_LABEL if connection.get("generate_overloaded") else PARTIAL_LABEL,
             "message": (
                 f"Lần kiểm tra gần nhất: {last_error} "
                 if last_error
@@ -405,7 +406,7 @@ def _chat_models(st: Any) -> list[dict[str, str]]:
     return output
 
 
-def _danh_dau_goi_model(st: Any, model: str, error: str = "") -> None:
+def _danh_dau_goi_model(st: Any, model: str, error: str = "", *, overloaded: bool = False) -> None:
     """Ghi kết quả gọi generateContent thật vào kết nối đang dùng (không chứa khóa trong thông điệp)."""
 
     state = st.session_state
@@ -417,6 +418,7 @@ def _danh_dau_goi_model(st: Any, model: str, error: str = "") -> None:
     connection["generate_verified"] = not error
     connection["generate_model"] = model
     connection["generate_error"] = error[:300]
+    connection["generate_overloaded"] = bool(error) and overloaded
     connections[provider] = connection
     state["llm_connections"] = connections
 
@@ -440,7 +442,7 @@ def kiem_tra_ket_noi_model(st: Any) -> tuple[bool, str]:
             system_prompt=PING_SYSTEM_PROMPT,
         )
     except (ValueError, RuntimeError) as exc:
-        _danh_dau_goi_model(st, model, str(exc))
+        _danh_dau_goi_model(st, model, str(exc), overloaded=bool(getattr(exc, "loi_phia_google", False)))
         return False, str(exc)
     _danh_dau_goi_model(st, model)
     return True, f"Đã gọi được model {model}."
@@ -684,10 +686,18 @@ def build_v3_payload(st: Any, settings: Mapping[str, Any]) -> dict[str, Any]:
     chat_model = str(state.get("v3_chat_model") or "")
     if models and chat_model not in {item["id"] for item in models}:
         chat_model = str(connection.get("model")) if connection else models[0]["id"]
-    chat_messages = [
-        {key: message[key] for key in ("role", "content", "modelUsed", "timestamp") if key in message}
-        for message in state.get("v3_chat_messages") or []
-    ]
+    chat_messages = []
+    for message in state.get("v3_chat_messages") or []:
+        item = {key: message[key] for key in ("role", "content", "modelUsed", "timestamp") if key in message}
+        retry = message.get("retry")
+        if isinstance(retry, dict):
+            alt = retry.get("alt_model")
+            item["retry"] = {
+                "id": str(retry.get("id") or ""),
+                "label": nhan_model(str(retry.get("model") or "")),
+                "alt_label": nhan_model(str(alt)) if alt else None,
+            }
+        chat_messages.append(item)
     state["v3_revision"] = int(state.get("v3_revision") or 0) + 1
     payload = {
         "schema_version": SCHEMA_VERSION,
@@ -788,20 +798,39 @@ def _recompute_result(st: Any, settings: Mapping[str, Any]) -> None:
     state["ai_summary_context"] = {}
 
 
-def _v3_chat_send(st: Any, text: str, role: str, model_requested: str) -> None:
+def _model_flash_khac(connection: Mapping[str, Any], model: str) -> str | None:
+    """Model Flash khả dụng đầu tiên (theo lay_danh_sach_model) khác model vừa lỗi."""
+
+    return next(
+        (item for item in connection.get("models") or [] if "flash" in str(item).lower() and item != model),
+        None,
+    )
+
+
+def _v3_chat_send(
+    st: Any, text: str, role: str, model_requested: str, *, retry_of: dict[str, Any] | None = None
+) -> None:
     from credit_underwriting_colab import ket_noi_llm_dang_dung, tao_phan_hoi_chat_ai
     from privacy_gateway import CHAT_LOCK_REASON, PrivacyLeakError, cong_hoan_tat, lay_vault
 
     state = st.session_state
     messages = list(state.get("v3_chat_messages") or [])
-    user_message: dict[str, Any] = {"role": "user", "content": text, "timestamp": _now_ms()}
-    messages.append(user_message)
+    if retry_of is not None:
+        # Gửi lại: dùng lại đúng tin của chuyên viên (không nhân đôi trong lịch sử).
+        user_message = retry_of
+        user_message.pop("failed", None)
+    else:
+        user_message = {"role": "user", "content": text, "timestamp": _now_ms()}
+        messages.append(user_message)
     state["v3_chat_messages"] = messages
 
-    def _fail(content: str) -> None:
+    def _fail(content: str, retry: dict[str, Any] | None = None) -> None:
         # Tin user của lần gửi lỗi được đánh dấu để không thành lượt user mồ côi ở lần gửi sau.
         user_message["failed"] = True
-        messages.append(_notice(content))
+        notice = _notice(content)
+        if retry:
+            notice["retry"] = retry
+        messages.append(notice)
 
     if not cong_hoan_tat(state):
         _fail(CHAT_LOCK_REASON)
@@ -833,15 +862,50 @@ def _v3_chat_send(st: Any, text: str, role: str, model_requested: str) -> None:
     except (ValueError, RuntimeError) as exc:
         # Thông điệp cụ thể + mã lỗi (VD: GEM-429); không chứa khóa hay nội dung hồ sơ.
         message = str(exc).replace(str(connection.get("api_key") or "") or "\0", "[REDACTED]")
-        _fail(f"**Không nhận được phản hồi từ {nhan_model(model)}.** {message}")
+        retry = None
+        if getattr(exc, "loi_phia_google", False):
+            # Lỗi 5xx phía Google: chỉ đề nghị thử lại, người dùng bấm mới gửi (không tự retry).
+            retry = {"id": f"r{_now_ms()}{len(messages)}", "model": model, "alt_model": _model_flash_khac(connection, model)}
+        _fail(f"**Không nhận được phản hồi từ {nhan_model(model)}.** {message}", retry)
         if getattr(exc, "ma", None):
-            _danh_dau_goi_model(st, model, message)
+            _danh_dau_goi_model(st, model, message, overloaded=retry is not None)
         return
     _danh_dau_goi_model(st, model)
     if any(re.search(pattern, response, re.IGNORECASE) for pattern in _PROHIBITED_DECISION):
         _fail("Câu trả lời của AI chứa khuyến nghị phê duyệt/từ chối nên đã bị chặn. Quyết định cuối cùng thuộc con người.")
         return
     messages.append({"role": "assistant", "content": response, "modelUsed": model, "timestamp": _now_ms()})
+
+
+def _v3_chat_retry(st: Any, retry_id: Any, use_alt: bool) -> None:
+    """Nút "Thử lại" / "Thử bằng {model khác}" sau lỗi 5xx: đúng 1 request mỗi lần bấm."""
+
+    from credit_underwriting_colab import ket_noi_llm_dang_dung
+
+    state = st.session_state
+    messages = list(state.get("v3_chat_messages") or [])
+    if len(messages) < 2 or not isinstance(retry_id, str):
+        return
+    notice, user_message = messages[-1], messages[-2]
+    retry = notice.get("retry") if isinstance(notice, dict) else None
+    # Chỉ thông báo lỗi mới nhất mới thử lại được; bấm lặp/cũ không gửi request.
+    if not isinstance(retry, dict) or retry.get("id") != retry_id or user_message.get("role") != "user":
+        return
+    connection = ket_noi_llm_dang_dung(st)
+    model = str(retry.get("model") or "")
+    if use_alt:
+        model = str(retry.get("alt_model") or "")
+        if connection is None or model not in (connection.get("models") or []):
+            return
+        state["v3_chat_model"] = model
+        provider = str(state.get("active_llm_provider") or "")
+        connections = dict(state.get("llm_connections") or {})
+        if provider in connections:
+            connections[provider] = {**connections[provider], "model": model}
+            state["llm_connections"] = connections
+    state["v3_chat_messages"] = messages[:-1]  # bỏ thông báo lỗi cũ
+    role = state.get("v3_chat_role") if state.get("v3_chat_role") in CHAT_ROLES else "underwriter"
+    _v3_chat_send(st, str(user_message.get("content") or ""), str(role), model, retry_of=user_message)
 
 
 def _v3_ai_generate(st: Any, settings: Mapping[str, Any]) -> None:
@@ -958,6 +1022,8 @@ def handle_v3_event(st: Any, raw_event: Any, settings: dict[str, Any]) -> bool:
             state["v3_chat_role"] = role
             model = str(raw_event.get("model") or "")[:160]
             _v3_chat_send(st, text.strip()[:4000], role, model)
+    elif kind == "chat_retry":
+        _v3_chat_retry(st, raw_event.get("retry_id"), bool(raw_event.get("alt")))
     elif kind == "chat_clear":
         state["v3_chat_messages"] = [
             _notice("Đã làm mới phiên hội thoại. Tôi sẵn sàng phân tích và giải đáp các nghiệp vụ tín dụng cùng bạn.")
@@ -1376,13 +1442,14 @@ def hien_thi_ket_noi_ai_v3(st: Any, settings: dict[str, Any]) -> None:
     if st.button("Kiểm tra kết nối", key="v3_ping_model", help="Gửi đúng 1 lệnh generateContent ngắn (“ping”) tới model đang chọn."):
         with st.spinner(f"Đang gọi thử {selected}…"):
             ok, detail = kiem_tra_ket_noi_model(st)
-        _toast(state, "Đã kết nối" if ok else PARTIAL_LABEL, detail, "success" if ok else "warning")
+        _toast(state, "Đã kết nối" if ok else _ai_connection_status(st)["label"], detail, "success" if ok else "warning")
         st.rerun()
     latest = (state.get("llm_connections") or {}).get(active) or {}
     if latest.get("generate_verified"):
         st.success(f"Đã kết nối · đã gọi được model {latest.get('generate_model') or selected}.")
     elif latest.get("generate_error"):
-        st.warning(f"{PARTIAL_LABEL}. {latest.get('generate_error')}")
+        label = OVERLOADED_LABEL if latest.get("generate_overloaded") else PARTIAL_LABEL
+        st.warning(f"{label}. {latest.get('generate_error')}")
     else:
         st.info(f"{PARTIAL_LABEL}. Bấm “Kiểm tra kết nối” để gọi thử model (1 request).")
     st.button("Xóa kết nối khỏi phiên", on_click=xoa_ket_noi_llm, args=(st, active), key="v3_remove_connection")
