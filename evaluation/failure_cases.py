@@ -1,4 +1,4 @@
-"""Ten required failure-case records for the evaluation report."""
+"""Failure-case records for the evaluation report (10 bắt buộc + 1 lỗi cài có chủ đích)."""
 
 from __future__ import annotations
 
@@ -7,6 +7,15 @@ from typing import Any
 
 def build_failure_cases(predictions: list[dict[str, Any]], cases: list[dict[str, Any]]) -> list[dict[str, Any]]:
     prediction_by_scenario = {case["scenario"]: prediction for case, prediction in zip(cases, predictions, strict=True)}
+
+    def false_positive_risks() -> dict[str, int]:
+        counts: dict[str, int] = {}
+        for case, prediction in zip(cases, predictions, strict=True):
+            if case.get("variant") != "known-extraction-error":
+                continue
+            for risk in set(prediction["risk_flags"]) - set(case["ground_truth"]["expected_risk_flags"]):
+                counts[risk] = counts.get(risk, 0) + 1
+        return dict(sorted(counts.items()))
 
     def observed(scenario: str) -> dict[str, Any]:
         prediction = prediction_by_scenario.get(scenario, {})
@@ -65,9 +74,9 @@ def build_failure_cases(predictions: list[dict[str, Any]], cases: list[dict[str,
         },
         {
             "case_id": "FAIL-06",
-            "input": "Thiếu sao kê ngân hàng",
+            "input": "Sao kê đọc được nhưng thiếu thu nhập và số dư",
             "ground_truth": "INSUFFICIENT INFORMATION",
-            "actual_output": observed("Thiếu sao kê ngân hàng"),
+            "actual_output": observed("Sao kê đọc được nhưng thiếu thu nhập và số dư"),
             "failure_type": "Missing statement",
             "probable_cause": "Không đủ nguồn kiểm chứng và chỉ số dòng tiền",
             "mitigation": "Yêu cầu bổ sung sao kê; không tự điền dữ liệu",
@@ -75,9 +84,9 @@ def build_failure_cases(predictions: list[dict[str, Any]], cases: list[dict[str,
         },
         {
             "case_id": "FAIL-07",
-            "input": "Thiếu chứng từ thu nhập",
+            "input": "Chứng từ thu nhập đọc được nhưng thiếu lương thực nhận",
             "ground_truth": "INSUFFICIENT INFORMATION",
-            "actual_output": observed("Thiếu chứng từ thu nhập"),
+            "actual_output": observed("Chứng từ thu nhập đọc được nhưng thiếu lương thực nhận"),
             "failure_type": "Missing income document",
             "probable_cause": "Thiếu nguồn xác minh độc lập",
             "mitigation": "Yêu cầu bổ sung chứng từ; giữ human-in-the-loop",
@@ -112,5 +121,15 @@ def build_failure_cases(predictions: list[dict[str, Any]], cases: list[dict[str,
             "probable_cause": "Prompt không có structured facts/evidence constraints",
             "mitigation": "Dùng structured output + evidence references + human review",
             "status": "EVALUATED",
+        },
+        {
+            "case_id": "FAIL-11",
+            "input": "Biến thể known-extraction-error: lỗi trích xuất được CÀI CÓ CHỦ ĐÍCH (sai đơn vị/ngày/thu nhập kê khai)",
+            "ground_truth": "Gold giữ giá trị đúng; rule chạy trên giá trị đã trích xuất sai",
+            "actual_output": {"false_positive_risks": false_positive_risks()},
+            "failure_type": "Intentional extraction error propagates to rules",
+            "probable_cause": "Lỗi CÓ CHỦ ĐÍCH để đo độ nhạy của rule (INCOME_MISMATCH, EMPLOYMENT_DATE_MISMATCH…) với lỗi trích xuất",
+            "mitigation": "Bằng chứng trang cho từng trường + chuyên viên xác nhận; không phải lỗi rule engine",
+            "status": "INTENTIONAL",
         },
     ]

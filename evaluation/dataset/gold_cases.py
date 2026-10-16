@@ -11,7 +11,7 @@ from copy import deepcopy
 from typing import Any
 
 
-DATASET_VERSION = "creditlens-synthetic-eval-v1.0"
+DATASET_VERSION = "creditlens-synthetic-eval-v1.1"
 
 BASE_FIELDS: dict[str, Any] = {
     "ho_ten_khach_hang": "Nguyễn Minh Anh",
@@ -83,26 +83,30 @@ SCENARIOS: list[dict[str, Any]] = [
     },
     {
         "code": "NO_INCOME_DOC",
-        "name": "Thiếu chứng từ thu nhập",
+        # v1.1: PDF chứng từ thu nhập ĐỌC ĐƯỢC nhưng không có lương thực nhận (khớp bộ PDF tổng hợp).
+        "name": "Chứng từ thu nhập đọc được nhưng thiếu lương thực nhận",
         "overrides": {
             "don_vi_cong_tac_chung_tu": None,
             "chuc_danh_chung_tu": None,
             "ngay_bat_dau_chung_tu": None,
             "luong_thuc_nhan": None,
         },
-        "document_status": {"income": "Không đọc được"},
+        "document_status": {},
+        "document_notes": {"income": "PDF đọc được nhưng thiếu trường cốt lõi: lương thực nhận"},
         "risks": [],
         "status": "INSUFFICIENT INFORMATION",
     },
     {
         "code": "NO_STATEMENT",
-        "name": "Thiếu sao kê ngân hàng",
+        # v1.1: PDF sao kê ĐỌC ĐƯỢC nhưng không có thu nhập qua sao kê và số dư bình quân.
+        "name": "Sao kê đọc được nhưng thiếu thu nhập và số dư",
         "overrides": {
             "thu_nhap_qua_sao_ke": None,
             "so_du_binh_quan": None,
             "bien_dong_thu_nhap": None,
         },
-        "document_status": {"statement": "Không đọc được"},
+        "document_status": {},
+        "document_notes": {"statement": "PDF đọc được nhưng thiếu trường cốt lõi: thu nhập qua sao kê, số dư bình quân"},
         "risks": [],
         "status": "INSUFFICIENT INFORMATION",
     },
@@ -342,6 +346,7 @@ def load_gold_cases() -> list[dict[str, Any]]:
                             "file_name": f"{case_id.lower()}-{key}.pdf",
                             "status": value,
                             "content_origin": "synthetic-or-anonymized-fixture",
+                            **({"note": scenario["document_notes"][key]} if key in scenario.get("document_notes", {}) else {}),
                         }
                         for key, value in documents.items()
                     },

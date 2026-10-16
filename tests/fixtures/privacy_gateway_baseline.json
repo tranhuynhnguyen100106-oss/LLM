@@ -393,7 +393,7 @@
   "CASE-02 — Thiếu thu nhập": {
    "canh_bao": [],
    "cau_hoi_xac_minh": [
-    "Vui lòng bổ sung hoặc xác nhận: Thu nhập dùng để tính."
+    "Vui lòng bổ sung hoặc xác nhận: Lương thực nhận trên chứng từ thu nhập, Thu nhập qua sao kê (ghi có bình quân), Thu nhập dùng để tính."
    ],
    "chi_so": [
     {
@@ -475,6 +475,8 @@
    },
    "nguon_thu_nhap_dung_de_tinh": "Không đủ dữ liệu",
    "thong_tin_thieu": [
+    "Lương thực nhận trên chứng từ thu nhập",
+    "Thu nhập qua sao kê (ghi có bình quân)",
     "Thu nhập dùng để tính"
    ],
    "thu_nhap_dung_de_tinh": null,
@@ -7658,7 +7660,7 @@
   "EVAL-013": {
    "canh_bao": [],
    "cau_hoi_xac_minh": [
-    "Cán bộ tín dụng vui lòng xác nhận lại dữ kiện và bằng chứng trước khi đưa ra quyết định cuối cùng."
+    "Vui lòng bổ sung hoặc xác nhận: Lương thực nhận trên chứng từ thu nhập."
    ],
    "chi_so": [
     {
@@ -7740,9 +7742,11 @@
    },
    "errors": [],
    "nguon_thu_nhap_dung_de_tinh": "Ghi có bình quân sao kê (nguồn đối chiếu hiện có)",
-   "thong_tin_thieu": [],
+   "thong_tin_thieu": [
+    "Lương thực nhận trên chứng từ thu nhập"
+   ],
    "thu_nhap_dung_de_tinh": 25000000.0,
-   "trang_thai": "REVIEW READY",
+   "trang_thai": "INSUFFICIENT INFORMATION",
    "truong_trich_xuat": [
     {
      "bang_chung": {
@@ -8025,7 +8029,7 @@
   "EVAL-014": {
    "canh_bao": [],
    "cau_hoi_xac_minh": [
-    "Cán bộ tín dụng vui lòng xác nhận lại dữ kiện và bằng chứng trước khi đưa ra quyết định cuối cùng."
+    "Vui lòng bổ sung hoặc xác nhận: Lương thực nhận trên chứng từ thu nhập."
    ],
    "chi_so": [
     {
@@ -8107,9 +8111,11 @@
    },
    "errors": [],
    "nguon_thu_nhap_dung_de_tinh": "Ghi có bình quân sao kê (nguồn đối chiếu hiện có)",
-   "thong_tin_thieu": [],
+   "thong_tin_thieu": [
+    "Lương thực nhận trên chứng từ thu nhập"
+   ],
    "thu_nhap_dung_de_tinh": 25000500.0,
-   "trang_thai": "REVIEW READY",
+   "trang_thai": "INSUFFICIENT INFORMATION",
    "truong_trich_xuat": [
     {
      "bang_chung": {
@@ -8392,7 +8398,7 @@
   "EVAL-016": {
    "canh_bao": [],
    "cau_hoi_xac_minh": [
-    "Cán bộ tín dụng vui lòng xác nhận lại dữ kiện và bằng chứng trước khi đưa ra quyết định cuối cùng."
+    "Vui lòng bổ sung hoặc xác nhận: Thu nhập qua sao kê (ghi có bình quân), Số dư bình quân trên sao kê."
    ],
    "chi_so": [
     {
@@ -8474,9 +8480,12 @@
    },
    "errors": [],
    "nguon_thu_nhap_dung_de_tinh": "Lương thực nhận (nguồn đối chiếu hiện có)",
-   "thong_tin_thieu": [],
+   "thong_tin_thieu": [
+    "Thu nhập qua sao kê (ghi có bình quân)",
+    "Số dư bình quân trên sao kê"
+   ],
    "thu_nhap_dung_de_tinh": 25000000.0,
-   "trang_thai": "REVIEW READY",
+   "trang_thai": "INSUFFICIENT INFORMATION",
    "truong_trich_xuat": [
     {
      "bang_chung": {
@@ -8765,7 +8774,7 @@
   "EVAL-017": {
    "canh_bao": [],
    "cau_hoi_xac_minh": [
-    "Cán bộ tín dụng vui lòng xác nhận lại dữ kiện và bằng chứng trước khi đưa ra quyết định cuối cùng."
+    "Vui lòng bổ sung hoặc xác nhận: Thu nhập qua sao kê (ghi có bình quân), Số dư bình quân trên sao kê."
    ],
    "chi_so": [
     {
@@ -8847,9 +8856,12 @@
    },
    "errors": [],
    "nguon_thu_nhap_dung_de_tinh": "Lương thực nhận (nguồn đối chiếu hiện có)",
-   "thong_tin_thieu": [],
+   "thong_tin_thieu": [
+    "Thu nhập qua sao kê (ghi có bình quân)",
+    "Số dư bình quân trên sao kê"
+   ],
    "thu_nhap_dung_de_tinh": 25000500.0,
-   "trang_thai": "REVIEW READY",
+   "trang_thai": "INSUFFICIENT INFORMATION",
    "truong_trich_xuat": [
     {
      "bang_chung": {

@@ -162,6 +162,66 @@ def _predict_all(cases: list[dict[str, Any]], thresholds: Mapping[str, Any]) -> 
     return predictions
 
 
+def _pdf_benchmark(cases: list[dict[str, Any]], thresholds: Mapping[str, Any]) -> dict[str, Any]:
+    """Chạy 20 bộ PDF tổng hợp qua pipeline thật (pypdf → regex → rules), rồi mới so với gold."""
+
+    try:
+        from tests.fixtures.synthetic_pdfs import case_uploads, synthetic_cases
+        from credit_underwriting_colab import xu_ly_thu_muc_tai_lieu
+    except Exception as exc:  # reportlab/font không có: báo N/A, không làm hỏng báo cáo
+        return {"available": False, "reason": f"Không sinh được PDF tổng hợp ({type(exc).__name__})."}
+
+    gold = {case["case_id"]: case for case in cases}
+    predicted_fields, gold_fields, predicted_risks, expected_risks = [], [], [], []
+    predicted_status, expected_status, runtimes, rows = [], [], [], []
+    try:
+        synthetic = synthetic_cases()
+        for synthetic_case in synthetic:
+            started = time.perf_counter()
+            result, _docs, _errors = xu_ly_thu_muc_tai_lieu(synthetic_case.case_id, case_uploads(synthetic_case), thresholds)
+            runtimes.append((time.perf_counter() - started) * 1000)
+            truth = gold[synthetic_case.case_id]["ground_truth"]
+            expected_fields = dict(truth["fields"])
+            # Tên khách hàng trong PDF là tên tổng hợp riêng của bộ PDF (không phải tên gold).
+            expected_fields["ho_ten_khach_hang"] = str(synthetic_case.inputs["ho_ten_khach_hang"]).strip()
+            extracted = result.du_lieu.model_dump(mode="json")
+            predicted_fields.append({key: extracted.get(key) for key in expected_fields})
+            gold_fields.append(expected_fields)
+            predicted_risks.append([risk.loai for risk in result.canh_bao])
+            expected_risks.append(list(truth["expected_risk_flags"]))
+            predicted_status.append(result.trang_thai)
+            expected_status.append(truth["expected_status"])
+            rows.append(
+                {
+                    "case_id": synthetic_case.case_id,
+                    "scenario": synthetic_case.scenario,
+                    "expected_status": truth["expected_status"],
+                    "predicted_status": result.trang_thai,
+                    "missing_information": list(result.thong_tin_thieu),
+                }
+            )
+    except Exception as exc:
+        return {"available": False, "reason": f"Lỗi khi chạy benchmark PDF ({type(exc).__name__})."}
+    extraction = extraction_metrics(predicted_fields, gold_fields, None)
+    risks = risk_detection_metrics(predicted_risks, expected_risks)
+    status = status_classification_metrics(predicted_status, expected_status)
+    return {
+        "available": True,
+        "method": "PDF tổng hợp (reportlab) → pypdf → regex/alias → rules; so với gold sau khi suy luận xong.",
+        "case_count": len(rows),
+        "extraction_accuracy": extraction["overall_accuracy"],
+        "extraction_correct": extraction["correct"],
+        "extraction_total": extraction["total"],
+        "risk_precision": risks["precision"],
+        "risk_recall": risks["recall"],
+        "risk_f1": risks["f1"],
+        "status_accuracy": status["accuracy"],
+        "status_macro_f1": status["macro_f1"],
+        "mean_case_runtime_ms": round(sum(runtimes) / len(runtimes), 2) if runtimes else None,
+        "cases": rows,
+    }
+
+
 def _baseline_without_cross_document(prediction: dict[str, Any]) -> dict[str, Any]:
     risks = [risk for risk in prediction["risk_flags"] if risk not in CROSS_DOCUMENT_RISKS]
     if prediction["status"] == "INSUFFICIENT INFORMATION":
@@ -212,6 +272,8 @@ def run_evaluation(
         expected_status,
     )
 
+    pdf_benchmark = _pdf_benchmark(cases, thresholds)
+
     elapsed_ms = round((time.perf_counter() - started) * 1000, 2)
     run_id = str(uuid.uuid4())
     report = {
@@ -236,6 +298,7 @@ def run_evaluation(
         },
         "extraction_metrics": extraction,
         "risk_detection": risk_metrics,
+        "pdf_benchmark": pdf_benchmark,
         "status_classification": status_metrics,
         "llm_grounding": {
             "method": "Deterministic scoring over saved annotated outputs; no inference request.",
@@ -290,6 +353,8 @@ def run_evaluation(
             "grounded_evidence_coverage": grounded["evidence_coverage"],
             "grounded_unsupported_claim_rate": grounded["unsupported_claim_rate"],
             "grounded_factual_consistency": grounded["factual_consistency"],
+            "pdf_extraction_accuracy": pdf_benchmark.get("extraction_accuracy"),
+            "pdf_status_accuracy": pdf_benchmark.get("status_accuracy"),
         },
         "case_results": [
             {

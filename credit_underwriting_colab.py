@@ -117,6 +117,16 @@ def nguong_hieu_luc(candidate: Mapping[str, Any] | None = None) -> dict[str, flo
 
 GIOI_HAN_TEP = 10 * 1024 * 1024
 
+# Tài liệu bắt buộc CÓ MẶT (đọc được) nhưng thiếu trường cốt lõi → đưa vào "thông tin thiếu"
+# và hồ sơ ra INSUFFICIENT INFORMATION. Sửa danh sách tại đây (khóa = loại tài liệu).
+TRUONG_COT_LOI_THEO_TAI_LIEU: dict[str, tuple[tuple[str, str], ...]] = {
+    "income": (("luong_thuc_nhan", "Lương thực nhận trên chứng từ thu nhập"),),
+    "statement": (
+        ("thu_nhap_qua_sao_ke", "Thu nhập qua sao kê (ghi có bình quân)"),
+        ("so_du_binh_quan", "Số dư bình quân trên sao kê"),
+    ),
+}
+
 NHAN_LOAI_TAI_LIEU = {
     "application": "Đơn đề nghị vay vốn",
     "income": "Chứng từ thu nhập",
@@ -752,6 +762,11 @@ def phan_tich_tu_du_kien(
     for key, label in [("application", "Đơn đề nghị vay vốn"), ("income", "Chứng từ thu nhập"), ("statement", "Sao kê ngân hàng")]:
         if key not in docs or docs[key].trang_thai == "Không đọc được":
             missing.append(label)
+    for key, core_fields in TRUONG_COT_LOI_THEO_TAI_LIEU.items():
+        if key in docs and docs[key].trang_thai != "Không đọc được":
+            for field_name, label in core_fields:
+                if getattr(data, field_name) is None:
+                    missing.append(label)
     if not data.ho_ten_khach_hang:
         missing.append("Họ và tên khách hàng")
     if data.so_tien_de_nghi_vay is None:
@@ -787,6 +802,7 @@ def phan_tich_tu_du_kien(
         questions.append("Cán bộ tín dụng vui lòng xác nhận lại dữ kiện và bằng chứng trước khi đưa ra quyết định cuối cùng.")
 
     critical_missing = {"Đơn đề nghị vay vốn", "Chứng từ thu nhập", "Sao kê ngân hàng", "Số tiền đề nghị vay", "Thu nhập dùng để tính"}
+    critical_missing |= {label for fields_ in TRUONG_COT_LOI_THEO_TAI_LIEU.values() for _, label in fields_}
     if any(item in critical_missing for item in missing):
         final_status = "INSUFFICIENT INFORMATION"
     elif risks or not income_independently_verified or employment_date_unparseable or debt_input_invalid:
@@ -4278,7 +4294,9 @@ def chay_tu_kiem_tra() -> None:
     assert declared_only.thu_nhap_dung_de_tinh == 25_000_000
     assert declared_only.nguon_thu_nhap_dung_de_tinh.startswith("Thu nhập kê khai")
     assert not declared_only.thu_nhap_duoc_xac_minh_doc_lap
-    assert declared_only.trang_thai == "HUMAN REVIEW REQUIRED"
+    # #5: chứng từ thu nhập và sao kê CÓ MẶT nhưng thiếu trường cốt lõi → INSUFFICIENT (trước đây HUMAN REVIEW).
+    assert declared_only.trang_thai == "INSUFFICIENT INFORMATION"
+    assert "Lương thực nhận trên chứng từ thu nhập" in declared_only.thong_tin_thieu
     declared_markdown = bao_cao_markdown(declared_only)
     assert "Thu nhập dùng để tính" in declared_markdown and "Thu nhập đã xác minh" not in declared_markdown
     assert "api_key" not in json.dumps(cau_hinh_mac_dinh(), ensure_ascii=False).lower()

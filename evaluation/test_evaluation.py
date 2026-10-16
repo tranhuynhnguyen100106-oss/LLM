@@ -70,7 +70,8 @@ class EvaluationTests(unittest.TestCase):
         self.assertIn("baseline_b", self.report["baselines"])
 
     def test_exactly_ten_failure_cases(self) -> None:
-        self.assertEqual(len(self.report["failure_cases"]), 10)
+        # #5: thêm FAIL-11 (lỗi trích xuất cài có chủ đích) → 11 bản ghi.
+        self.assertEqual(len(self.report["failure_cases"]), 11)
         required = {"case_id", "input", "ground_truth", "actual_output", "failure_type", "probable_cause", "mitigation", "status"}
         self.assertTrue(all(required.issubset(case) for case in self.report["failure_cases"]))
 
