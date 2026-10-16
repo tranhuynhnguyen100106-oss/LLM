@@ -3,7 +3,7 @@
 > Bản MẪU minh họa: dựng tất định từ facts Python (ban_tom_tat_tu_ket_qua), không gọi LLM; đúng schema CreditReviewSummary và đã vượt hậu kiểm (a)–(e). Dữ liệu tổng hợp, đã giả danh hóa.
 
 ### 1. Tổng quan khách hàng
-Khách hàng KH_01, đơn vị công tác kê khai DN_A, chức danh Chuyên viên phân tích.
+Khách hàng `KH_01`, đơn vị công tác kê khai `DN_A`, chức danh Chuyên viên phân tích.
 
 ### 2. Đề nghị vay vốn
 Số tiền đề nghị vay 600.000.000 VND; mục đích: Sửa chữa nhà ở.
@@ -20,7 +20,7 @@ Thu nhập dùng để tính: Ghi có bình quân sao kê (giá trị thận tr�
 - Biến động thu nhập: 6,0% (Trong ngưỡng minh họa)
 
 ### 5. Kiểm tra nhất quán
-Rule Python phát hiện: INCOME_MISMATCH, HIGH_DSR_DEMO.
+Rule Python phát hiện: `INCOME_MISMATCH`, `HIGH_DSR_DEMO`.
 
 ### 6. Cảnh báo rủi ro
 - **INCOME_MISMATCH** (R-001): Các nguồn thu nhập chênh 40,0%, vượt ngưỡng minh họa 15,0%. Cần xác minh nguồn thu và kỳ ghi nhận.
@@ -33,12 +33,12 @@ Rule Python phát hiện: INCOME_MISMATCH, HIGH_DSR_DEMO.
 - Nguồn thu nhập nào là thường xuyên, có thể xác minh và thuộc đúng kỳ sao kê?
 
 ### 9. Bằng chứng
-- R-001: 01_don_de_nghi_vay.pdf, trang 1, Thu nhập hàng tháng kê khai = 30.000.000 VND
-- R-001: 02_chung_tu_thu_nhap.pdf, trang 1, Lương thực nhận = 20.000.000 VND
-- R-001: 03_sao_ke_ngan_hang.pdf, trang 1, Ghi có bình quân hàng tháng = 18.000.000 VND
-- R-002: 04_nghia_vu_no.pdf, trang 1, Khoản trả nợ quan sát hàng tháng = 2.000.000 VND
-- R-002: 01_don_de_nghi_vay.pdf, trang 1, Khoản trả nợ dự kiến hàng tháng = 7.500.000 VND
-- R-002: 03_sao_ke_ngan_hang.pdf, trang 1, Ghi có bình quân hàng tháng = 18.000.000 VND
+- R-001: `01_don_de_nghi_vay.pdf`, trang 1, Thu nhập hàng tháng kê khai = 30.000.000 VND
+- R-001: `02_chung_tu_thu_nhap.pdf`, trang 1, Lương thực nhận = 20.000.000 VND
+- R-001: `03_sao_ke_ngan_hang.pdf`, trang 1, Ghi có bình quân hàng tháng = 18.000.000 VND
+- R-002: `04_nghia_vu_no.pdf`, trang 1, Khoản trả nợ quan sát hàng tháng = 2.000.000 VND
+- R-002: `01_don_de_nghi_vay.pdf`, trang 1, Khoản trả nợ dự kiến hàng tháng = 7.500.000 VND
+- R-002: `03_sao_ke_ngan_hang.pdf`, trang 1, Ghi có bình quân hàng tháng = 18.000.000 VND
 
 ### 10. Trạng thái xem xét của con người
 **CẦN CON NGƯỜI XEM XÉT** (HUMAN REVIEW REQUIRED)

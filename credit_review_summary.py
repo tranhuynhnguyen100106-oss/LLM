@@ -358,19 +358,30 @@ NHAN_TRANG_THAI_VI = {
 }
 
 
+_UNDERSCORE_TOKEN = re.compile(r"(?<![`*\w])([A-Za-z0-9][\w\-.]*_[\w\-.]*[\w])(?![`*\w])")
+
+
+def _code_underscores(text: str) -> str:
+    """Bọc mã/tên tệp có dấu gạch dưới (KH_01, 01_don_de_nghi_vay.pdf) trong `code` để Markdown không in nghiêng."""
+
+    return _UNDERSCORE_TOKEN.sub(lambda m: f"`{m.group(1)}`", text)
+
+
 def render_markdown(summary: CreditReviewSummary, footer: str = "") -> str:
     def bullets(items: list[str], empty: str) -> str:
-        return "\n".join(f"- {item}" for item in items) or f"- {empty}"
+        return "\n".join(f"- {_code_underscores(item)}" for item in items) or f"- {empty}"
 
-    warnings = "\n".join(f"- **{w.risk_code}** ({w.evidence_ref}): {w.noi_dung}" for w in summary.canh_bao) or (
+    warnings = "\n".join(
+        f"- **{w.risk_code}** ({_code_underscores(w.evidence_ref)}): {_code_underscores(w.noi_dung)}" for w in summary.canh_bao
+    ) or (
         "- Không có cảnh báo theo rule Python."
     )
     sections = {
-        "tong_quan": summary.tong_quan,
-        "de_nghi_vay": summary.de_nghi_vay,
-        "tai_chinh_da_xac_minh": summary.tai_chinh_da_xac_minh,
+        "tong_quan": _code_underscores(summary.tong_quan),
+        "de_nghi_vay": _code_underscores(summary.de_nghi_vay),
+        "tai_chinh_da_xac_minh": _code_underscores(summary.tai_chinh_da_xac_minh),
         "chi_so": bullets(summary.chi_so, "Không có chỉ số."),
-        "kiem_tra_nhat_quan": summary.kiem_tra_nhat_quan,
+        "kiem_tra_nhat_quan": _code_underscores(summary.kiem_tra_nhat_quan),
         "canh_bao": warnings,
         "thong_tin_thieu": bullets(summary.thong_tin_thieu, "Không phát hiện hạng mục bắt buộc còn thiếu."),
         "cau_hoi_xac_minh": bullets(summary.cau_hoi_xac_minh, "Không có câu hỏi bổ sung."),
