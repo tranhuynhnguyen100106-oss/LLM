@@ -89,9 +89,9 @@ def gateway(result: Any, docs: Any) -> pg.PseudonymVault:
     return pg.build_vault(pg.detect_pii(docs, result))
 
 
-def fake_httpx_client(captured: list[dict[str, Any]]) -> MagicMock:
+def fake_httpx_client(captured: list[dict[str, Any]], content: str = "KH_01 cần con người xem xét.") -> MagicMock:
     response = Mock(status_code=200)
-    response.json.return_value = {"choices": [{"message": {"content": "KH_01 cần con người xem xét."}}]}
+    response.json.return_value = {"choices": [{"message": {"content": content}}]}
     client = MagicMock()
     client.__enter__.return_value = client
 
@@ -158,7 +158,12 @@ class PayloadPrivacyTests(unittest.TestCase):
         _case, result, docs = processed_cases()[0]
         vault = gateway(result, docs)
         captured: list[dict[str, Any]] = []
-        with patch("httpx.Client", fake_httpx_client(captured)):
+        # #3: Summary phải là JSON CreditReviewSummary vượt hậu kiểm (mock dựng tất định từ facts Python).
+        from credit_review_summary import ban_tom_tat_tu_ket_qua
+        from credit_underwriting_colab import du_lieu_gui_llm
+
+        valid = ban_tom_tat_tu_ket_qua(json.loads(du_lieu_gui_llm(result, vault))).model_dump_json()
+        with patch("httpx.Client", fake_httpx_client(captured, valid)):
             tao_dien_giai_bang_ai(result, CONNECTION["api_key"], "deepseek", "deepseek-chat", "Prompt gốc", vault)
         self.assertEqual(len(captured), 1)
         system, user = captured[0]["messages"]

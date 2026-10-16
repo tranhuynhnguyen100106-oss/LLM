@@ -2627,12 +2627,9 @@ def lay_danh_sach_model(provider: str, api_key: str) -> list[str]:
 
 
 def _noi_dung_yeu_cau_llm(result: KetQuaThamDinh, vault: Any | None = None) -> str:
-    return (
-        "Hãy soạn Credit Review Summary theo đúng 10 mục: tổng quan khách hàng, "
-        "đề nghị vay, thông tin tài chính đã xác minh, chỉ số, kiểm tra nhất quán, "
-        "cảnh báo, thông tin thiếu, câu hỏi xác minh, bằng chứng và trạng thái xem xét.\n\n"
-        + du_lieu_gui_llm(result, vault)
-    )
+    from credit_review_summary import YEU_CAU_TOM_TAT
+
+    return YEU_CAU_TOM_TAT + du_lieu_gui_llm(result, vault)
 
 
 def trich_noi_dung_phan_hoi(provider: str, payload: dict[str, Any]) -> str:
@@ -2657,6 +2654,9 @@ def trich_noi_dung_phan_hoi(provider: str, payload: dict[str, Any]) -> str:
     return ""
 
 
+TOKEN_TOM_TAT_JSON = 4096  # JSON 10 mục tiếng Việt cần nhiều token hơn bản Markdown cũ (1800)
+
+
 def tao_dien_giai_bang_ai(
     result: KetQuaThamDinh,
     api_key: str,
@@ -2665,6 +2665,33 @@ def tao_dien_giai_bang_ai(
     system_prompt: str,
     vault: Any | None = None,
 ) -> str:
+    """Credit Review Summary (Markdown) render từ JSON đã validate + vượt hậu kiểm."""
+
+    return tao_credit_review_summary_ai(result, api_key, provider, model, system_prompt, vault)[1]
+
+
+def tao_credit_review_summary_ai(
+    result: KetQuaThamDinh,
+    api_key: str,
+    provider: str,
+    model: str,
+    system_prompt: str,
+    vault: Any | None = None,
+) -> tuple[Any, str]:
+    """Đúng 1 inference request → JSON CreditReviewSummary → Pydantic → hậu kiểm (a)–(e) → Markdown.
+
+    Vi phạm → ``LoiHauKiemAI`` (RuntimeError): không đưa vào báo cáo xuất; facts Python vẫn hiển thị.
+    """
+
+    from credit_review_summary import (
+        LoiHauKiemAI,
+        gemini_response_schema,
+        hau_kiem_tom_tat,
+        huong_dan_json,
+        phan_tich_output,
+        render_markdown,
+    )
+
     if not api_key or len(api_key.strip()) < 12:
         raise ValueError("API Key chưa được nhập hoặc không hợp lệ.")
     if provider not in NHA_CUNG_CAP_LLM:
@@ -2677,6 +2704,8 @@ def tao_dien_giai_bang_ai(
     active_vault = vault if vault is not None else build_vault(detect_pii(None, result))
     prompt = system_prompt[:8000] + "\n\n" + PRIVACY_PROMPT_NOTE
     user_input = _noi_dung_yeu_cau_llm(result, active_vault)
+    if provider != "gemini":
+        user_input += huong_dan_json()  # Gemini dùng responseSchema; provider khác: yêu cầu JSON + validate Pydantic
     # Fail-closed: còn giá trị thật thì chặn trước khi tạo bất kỳ client/request nào.
     assert_no_pii(prompt + "\n" + user_input, active_vault)
     active_vault.ghi_nhat_ky("Gửi Credit Review Summary", provider=provider, ket_qua="PASS")
@@ -2689,7 +2718,7 @@ def tao_dien_giai_bang_ai(
                 model=model,
                 instructions=prompt,
                 input=user_input,
-                max_output_tokens=1800,
+                max_output_tokens=TOKEN_TOM_TAT_JSON,
                 store=False,
             )
             output = (response.output_text or "").strip()
@@ -2700,7 +2729,11 @@ def tao_dien_giai_bang_ai(
                 {
                     "system_instruction": {"parts": [{"text": prompt}]},
                     "contents": [{"role": "user", "parts": [{"text": user_input}]}],
-                    "generationConfig": cau_hinh_sinh_gemini(model),
+                    "generationConfig": {
+                        **cau_hinh_sinh_gemini(model),
+                        "responseMimeType": "application/json",
+                        "responseSchema": gemini_response_schema(),
+                    },
                 },
             )
         else:
@@ -2712,7 +2745,7 @@ def tao_dien_giai_bang_ai(
                 headers.update({"x-api-key": key, "anthropic-version": "2023-06-01"})
                 body = {
                     "model": model,
-                    "max_tokens": 1800,
+                    "max_tokens": TOKEN_TOM_TAT_JSON,
                     "system": prompt,
                     "messages": [{"role": "user", "content": user_input}],
                 }
@@ -2725,7 +2758,7 @@ def tao_dien_giai_bang_ai(
                         {"role": "system", "content": prompt},
                         {"role": "user", "content": user_input},
                     ],
-                    "max_tokens": 1800,
+                    "max_tokens": TOKEN_TOM_TAT_JSON,
                     "stream": False,
                 }
 
@@ -2750,19 +2783,18 @@ def tao_dien_giai_bang_ai(
         ) from exc
     if not output:
         raise RuntimeError("API không trả về nội dung.")
-    prohibited = [
-        r"khuyến nghị\s+(phê duyệt|từ chối)",
-        r"nên\s+(phê duyệt|từ chối)",
-        r"quyết định\s*:\s*(approve|reject|phê duyệt|từ chối)",
-    ]
-    if any(re.search(pattern, output, re.IGNORECASE) for pattern in prohibited):
-        raise RuntimeError("Đầu ra AI chứa khuyến nghị quyết định tín dụng nên đã bị chặn. Hãy siết lại system prompt.")
+    summary = phan_tich_output(output)  # JSON + Pydantic (thiếu mục / sai schema → LoiHauKiemAI)
+    violations = hau_kiem_tom_tat(summary, json.loads(du_lieu_gui_llm(result, active_vault)))
+    if violations:
+        active_vault.ghi_nhat_ky("Hậu kiểm Credit Review Summary", provider=provider, ket_qua=f"FAIL {len(violations)}")
+        raise LoiHauKiemAI(violations)
     provider_label = NHA_CUNG_CAP_LLM[provider]["nhan"]
-    return (
-        output
-        + f"\n\n---\n**Mô hình diễn giải:** {provider_label} · `{model}`  "
-        + "\n**Bắt buộc con người xem xét. Nội dung AI không phải quyết định tín dụng.**"
+    markdown = render_markdown(
+        summary,
+        footer=f"---\n**Mô hình diễn giải:** {provider_label} · `{model}` · đã vượt hậu kiểm Python  "
+        + "\n**Bắt buộc con người xem xét. Nội dung AI không phải quyết định tín dụng.**",
     )
+    return summary, markdown
 
 
 def chuan_hoa_lich_su_chat(messages: Any) -> list[dict[str, str]]:

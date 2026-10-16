@@ -86,12 +86,8 @@ Nhiệm vụ:
 2. Gợi ý cơ cấu khoản vay, thời hạn, tài sản bảo đảm phù hợp năng lực trả nợ.
 3. Hỗ trợ hoàn thiện tờ trình thẩm định rõ ràng, có cấu trúc.""",
 }
-_PROHIBITED_DECISION = (
-    r"khuyến nghị\s+(phê duyệt|từ chối)",
-    r"nên\s+(phê duyệt|từ chối)",
-    r"quyết định\s*:\s*(approve|reject|phê duyệt|từ chối)",
-    r"\b(approve|reject)\s+(the\s+)?loan\b",
-)
+from credit_review_summary import PROHIBITED_DECISION_PATTERNS as _PROHIBITED_DECISION  # noqa: E402
+from credit_review_summary import chua_ngon_ngu_quyet_dinh  # noqa: E402
 WELCOME_MESSAGE = (
     "Xin chào, tôi là Trợ lý **Đánh giá tín dụng vay**. Hãy hỏi tôi về DTI/DSR, đối chiếu thu nhập hoặc "
     "các cảnh báo rủi ro của hồ sơ đang mở. Dữ liệu gửi AI luôn được giả danh hóa; quyết định cuối cùng "
@@ -871,7 +867,7 @@ def _v3_chat_send(
             _danh_dau_goi_model(st, model, message, overloaded=retry is not None)
         return
     _danh_dau_goi_model(st, model)
-    if any(re.search(pattern, response, re.IGNORECASE) for pattern in _PROHIBITED_DECISION):
+    if chua_ngon_ngu_quyet_dinh(response):
         _fail("Câu trả lời của AI chứa khuyến nghị phê duyệt/từ chối nên đã bị chặn. Quyết định cuối cùng thuộc con người.")
         return
     messages.append({"role": "assistant", "content": response, "modelUsed": model, "timestamp": _now_ms()})
@@ -931,6 +927,13 @@ def _v3_ai_generate(st: Any, settings: Mapping[str, Any]) -> None:
             lay_vault(state),
         )
     except (ValueError, RuntimeError) as exc:
+        from credit_review_summary import HAU_KIEM_LABEL, LoiHauKiemAI
+
+        if isinstance(exc, LoiHauKiemAI):
+            # Không đưa vào báo cáo xuất; facts Python vẫn hiển thị.
+            state["ai_summary"] = ""
+            _toast(state, HAU_KIEM_LABEL, "; ".join(exc.vi_pham)[:300], "warning")
+            return
         _toast(state, "Không thể tạo diễn giải", str(exc), "warning")
         return
     state["ai_summary"] = summary
