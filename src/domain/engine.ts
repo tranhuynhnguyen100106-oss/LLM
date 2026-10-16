@@ -1034,7 +1034,7 @@ export function buildMethodologyViewModel(theme: ThemeMode = "system"): V2Method
       {
         title: "Giới hạn phạm vi hệ thống",
         items: [
-          "CreditLens là công cụ hỗ trợ thẩm định, không phải hệ thống phê duyệt tự động.",
+          "Đánh giá tín dụng vay là công cụ hỗ trợ thẩm định, không phải hệ thống phê duyệt tự động.",
           "Hệ thống không tích hợp thông tin điểm tín dụng CIC hoặc danh sách đen tín dụng.",
           "Các ngưỡng cảnh báo chỉ mang tính minh họa, không thay thế quy định quản trị rủi ro ngân hàng."
         ]

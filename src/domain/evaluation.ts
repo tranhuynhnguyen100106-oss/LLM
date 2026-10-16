@@ -243,7 +243,7 @@ export function runFullEvaluation(
   ];
 
   const grounding: GroundingRow[] = [
-    { variant: "CreditLens Rule Engine", evidence_coverage: "100.0%", unsupported_claim_rate: "0.0%", factual_consistency: "100.0%" },
+    { variant: "Rule Engine xác định", evidence_coverage: "100.0%", unsupported_claim_rate: "0.0%", factual_consistency: "100.0%" },
     { variant: "LLM có Grounding Prompt", evidence_coverage: "92.4%", unsupported_claim_rate: "4.1%", factual_consistency: "95.9%" },
     { variant: "LLM Prompt tự do (Unconstrained)", evidence_coverage: "68.2%", unsupported_claim_rate: "18.6%", factual_consistency: "81.4%" }
   ];
@@ -251,7 +251,7 @@ export function runFullEvaluation(
   const baselines: BaselineRow[] = [
     {
       baseline: "Hệ thống xác định (Deterministic Engine)",
-      variant: "CreditLens v2 Production",
+      variant: "Đánh giá tín dụng vay v2",
       values: [
         { label: "Accuracy phân loại", value: "100.0%" },
         { label: "F1 Score rủi ro", value: "1.00" },

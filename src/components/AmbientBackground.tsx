@@ -335,7 +335,7 @@ export function AmbientBackground({ theme, motionLevel = "full" }: AmbientBackgr
         {/* Static CreditLens & HUB watermark at bottom-right corner */}
         <div className="cl-ambient-watermark">
           <img
-            src="/creditlens-watermark.png"
+            src="/hub-logo-transparent.png"
             alt=""
             className="cl-ambient-watermark__img"
             onError={(e) => {
@@ -455,7 +455,7 @@ function ArchitecturalNavyPlaceholder({
           textAnchor="end"
           fontFamily="'Be Vietnam Pro', sans-serif"
         >
-          HUB × CREDITLENS
+          ĐÁNH GIÁ TÍN DỤNG VAY
         </text>
       </svg>
     </div>

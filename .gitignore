@@ -13,3 +13,6 @@ frontend/node_modules/
 frontend/coverage/
 frontend/.vite/
 .pnpm-store/
+dist-standalone/
+dist/
+node_modules

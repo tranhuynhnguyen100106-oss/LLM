@@ -394,7 +394,7 @@ export function CoreBusinessPage({ viewModel }: { viewModel: V2CorePageViewModel
     >
       <header className="cl-core-header">
         <div>
-          <p className="cl-core-eyebrow">CreditLens · Core business page</p>
+          <p className="cl-core-eyebrow">Đánh giá tín dụng vay · Nghiệp vụ</p>
           <h1>{viewModel.title}</h1>
           <p>{viewModel.subtitle}</p>
         </div>

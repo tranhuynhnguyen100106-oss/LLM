@@ -1,5 +1,7 @@
 import { useState, useRef, useEffect, type FormEvent, type KeyboardEvent } from "react";
 import { useCreditLens, type ChatRoleKey, type ChatModelKey } from "../context/CreditLensContext";
+import { Markdown } from "../lib/markdown";
+import { getStoredApiKey, setStoredApiKey, testGeminiKey, IS_STANDALONE } from "../lib/gemini";
 
 const QUICK_PROMPTS: { label: string; text: string; role?: ChatRoleKey }[] = [
   {
@@ -93,6 +95,35 @@ export function GeminiChatbot({ embedded = false, onClose }: GeminiChatbotProps)
   const [input, setInput] = useState("");
   const [showRoleInfo, setShowRoleInfo] = useState(false);
   const [copiedId, setCopiedId] = useState<number | null>(null);
+  const [keyOpen, setKeyOpen] = useState(false);
+  const [keyDraft, setKeyDraft] = useState(() => getStoredApiKey());
+  const [keySaved, setKeySaved] = useState(() => Boolean(getStoredApiKey()));
+  const [keyStatus, setKeyStatus] = useState<string>("");
+  const [keyTesting, setKeyTesting] = useState(false);
+
+  const saveKey = async () => {
+    const k = keyDraft.trim();
+    if (!k) {
+      setStoredApiKey("");
+      setKeySaved(false);
+      setKeyStatus("Đã xóa khóa khỏi trình duyệt.");
+      return;
+    }
+    setKeyTesting(true);
+    setKeyStatus("Đang kiểm tra kết nối với Gemini 3.8 Flash…");
+    try {
+      await testGeminiKey(k);
+      setStoredApiKey(k);
+      setKeySaved(true);
+      setKeyStatus("✓ Kết nối thành công. Khóa chỉ lưu trong trình duyệt này.");
+      setTimeout(() => setKeyOpen(false), 900);
+    } catch (e: any) {
+      setKeyStatus(`✕ Khóa không hợp lệ hoặc bị chặn: ${e?.message ?? "lỗi"}`);
+    } finally {
+      setKeyTesting(false);
+    }
+  };
+  const lastIsUser = chatMessages[chatMessages.length - 1]?.role === "user";
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLTextAreaElement>(null);
 
@@ -139,16 +170,25 @@ export function GeminiChatbot({ embedded = false, onClose }: GeminiChatbotProps)
           </div>
           <div>
             <div className="cl-gemini-chat__title-row">
-              <h3 className="cl-gemini-chat__title">Gemini Credit Copilot</h3>
-              <span className="cl-gemini-chat__badge">HUB × AI</span>
+              <h3 className="cl-gemini-chat__title">Trợ lý Gemini 3.8</h3>
+              <span className="cl-gemini-chat__badge">AI</span>
             </div>
             <p className="cl-gemini-chat__subtitle">
-              Trợ lý thẩm định tín dụng đa phương thức đa bước
+              Hỏi đáp nghiệp vụ dựa trên hồ sơ vay đang mở
             </p>
           </div>
         </div>
 
         <div className="cl-gemini-chat__header-actions">
+          <button
+            type="button"
+            className={`cl-gemini-chat__key-btn${keySaved ? " is-on" : ""}`}
+            onClick={() => setKeyOpen((v) => !v)}
+            aria-expanded={keyOpen}
+            title="Cấu hình khóa Gemini API"
+          >
+            🔑 {keySaved ? "Đã kết nối" : "Khóa API"}
+          </button>
           <button
             type="button"
             className="cl-gemini-chat__btn-icon"
@@ -171,6 +211,35 @@ export function GeminiChatbot({ embedded = false, onClose }: GeminiChatbotProps)
           )}
         </div>
       </header>
+
+      {keyOpen && (
+        <div className="cl-gemini-chat__key-panel">
+          <label htmlFor="cl-gemini-key">
+            Khóa Gemini API {IS_STANDALONE ? "(bắt buộc ở bản độc lập)" : "(tùy chọn — ưu tiên hơn khóa máy chủ)"}
+          </label>
+          <div className="cl-gemini-chat__key-row">
+            <input
+              id="cl-gemini-key"
+              type="password"
+              autoComplete="off"
+              spellCheck={false}
+              placeholder="AIza…"
+              value={keyDraft}
+              onChange={(e) => setKeyDraft(e.target.value)}
+              onKeyDown={(e) => e.key === "Enter" && saveKey()}
+            />
+            <button type="button" onClick={saveKey} disabled={keyTesting}>
+              {keyTesting ? "…" : "Lưu & kiểm tra"}
+            </button>
+          </div>
+          <small>
+            Lấy khóa miễn phí tại{" "}
+            <a href="https://aistudio.google.com/apikey" target="_blank" rel="noreferrer">aistudio.google.com/apikey</a>.
+            Khóa chỉ lưu trên trình duyệt của bạn và gửi thẳng tới Google.
+          </small>
+          {keyStatus && <p className="cl-gemini-chat__key-status">{keyStatus}</p>}
+        </div>
+      )}
 
       {/* Grounding & Active Case Banner */}
       <div className="cl-gemini-chat__context-bar">
@@ -247,7 +316,7 @@ export function GeminiChatbot({ embedded = false, onClose }: GeminiChatbotProps)
             >
               <div className="cl-gemini-msg__meta">
                 <span className="cl-gemini-msg__sender">
-                  {isUser ? "Chuyên viên thẩm định" : "CreditLens Copilot"}
+                  {isUser ? "Chuyên viên thẩm định" : "Trợ lý tín dụng"}
                 </span>
                 {!isUser && msg.modelUsed && (
                   <span className="cl-gemini-msg__model-tag">{msg.modelUsed}</span>
@@ -263,7 +332,7 @@ export function GeminiChatbot({ embedded = false, onClose }: GeminiChatbotProps)
               </div>
 
               <div className="cl-gemini-msg__body">
-                {msg.content}
+                {isUser ? msg.content : <Markdown text={msg.content} />}
               </div>
 
               <div className="cl-gemini-msg__footer">
@@ -280,10 +349,10 @@ export function GeminiChatbot({ embedded = false, onClose }: GeminiChatbotProps)
           );
         })}
 
-        {chatLoading && (
+        {chatLoading && lastIsUser && (
           <div className="cl-gemini-msg cl-gemini-msg--bot cl-gemini-msg--loading">
             <div className="cl-gemini-msg__meta">
-              <span className="cl-gemini-msg__sender">CreditLens Copilot</span>
+              <span className="cl-gemini-msg__sender">Trợ lý tín dụng</span>
               <span className="cl-gemini-msg__model-tag">{chatModel}</span>
             </div>
             <div className="cl-gemini-loading-dots">

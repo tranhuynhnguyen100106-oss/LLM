@@ -1,6 +1,26 @@
-# CreditLens - Hệ thống Thẩm định Tín dụng Xác định (React SPA)
+# Đánh giá tín dụng vay
 
-CreditLens là hệ thống AI Credit Underwriting Copilot hỗ trợ đọc hồ sơ tài liệu PDF, chuẩn hóa dữ kiện có cấu trúc, tính toán các chỉ số tài chính xác định (DTI, DSR, thu nhập khả dụng, đệm số dư), phát hiện mâu thuẫn đa tài liệu, liên kết bằng chứng minh bạch và tạo báo cáo quyết định cấp tín dụng.
+Hệ thống hỗ trợ thẩm định khoản vay: tính DTI/DSR xác định, đối chiếu chéo chứng từ, cảnh báo rủi ro minh bạch và **trợ lý Google Gemini 3.8 Flash** (`gemini-3.8-flash`) trả lời dựa trên hồ sơ đang mở.
+
+## Chạy nhanh
+
+| Cách chạy | Lệnh | Gemini lấy khóa từ |
+|---|---|---|
+| Dev (React + Node) | `npm install && npm run dev` | biến `GEMINI_API_KEY` |
+| Production trên Render | dùng `render.yaml` (service `danh-gia-tin-dung-vay`) | biến môi trường `GEMINI_API_KEY` |
+| **Bản độc lập 1 tệp** (chạy trên mọi tên miền / hosting tĩnh: GitHub Pages, Netlify, Vercel…) | `npm run build:standalone` → `dist-standalone/index.html` | người dùng dán khóa vào nút 🔑 trong khung chat (lưu ở trình duyệt) |
+
+Lấy khóa Gemini miễn phí tại https://aistudio.google.com/apikey.
+
+### Chạy trên tên miền độc lập (GitHub Pages)
+
+1. Repo → **Settings → Pages → Source: GitHub Actions**.
+2. Push lên `main` (hoặc chạy workflow *Deploy … to GitHub Pages* thủ công) → web có tại `https://<tài-khoản>.github.io/LLM/`.
+3. Tên miền riêng: tạo biến repo `CUSTOM_DOMAIN` (Settings → Secrets and variables → Actions → Variables), trỏ bản ghi CNAME của tên miền về `<tài-khoản>.github.io`.
+
+> Khuyến nghị: với hệ thống thật, dùng chế độ có máy chủ để khóa API không lộ ra trình duyệt.
+
+---
 
 > **Nguyên tắc an toàn:** Ứng dụng hỗ trợ thẩm định và phân tích xác định; không tự phê duyệt hoặc từ chối khoản vay. Mọi quyết định cuối cùng bắt buộc do chuyên viên và Hội đồng Tín dụng xem xét.
 

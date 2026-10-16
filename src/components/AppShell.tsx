@@ -231,18 +231,18 @@ export function AppShell({ children }: AppShellProps) {
           <span aria-hidden="true">{navigationOpen ? "×" : "☰"}</span>
         </button>
 
-        <div className="cl-shell__brand" aria-label="HUB và CreditLens">
+        <div className="cl-shell__brand" aria-label="Đánh giá tín dụng vay">
           <img
-            src="/hub-creditlens-lockup.png"
-            alt="HUB CreditLens"
+            src="/hub-logo-transparent.png"
+            alt="Logo"
             className="cl-shell__logo"
             onError={(e) => {
               (e.target as HTMLImageElement).style.display = "none";
             }}
           />
           <div className="cl-shell__brand-name">
-            <strong>HUB × CreditLens</strong>
-            <span>Thẩm định có thể kiểm chứng</span>
+            <strong>Đánh giá tín dụng vay</strong>
+            <span>Thẩm định minh bạch · Gemini 3.8</span>
           </div>
         </div>
 
@@ -264,7 +264,7 @@ export function AppShell({ children }: AppShellProps) {
               onClick={() => setTheme("light")}
               title="Giao diện Sáng (Light)"
             >
-              ☀️ Sáng
+              ☀️<span className="cl-theme-btn__label"> Sáng</span>
             </button>
             <button
               type="button"
@@ -272,7 +272,7 @@ export function AppShell({ children }: AppShellProps) {
               onClick={() => setTheme("dark")}
               title="Giao diện Tối (Dark)"
             >
-              🌙 Tối
+              🌙<span className="cl-theme-btn__label"> Tối</span>
             </button>
             <button
               type="button"
@@ -280,7 +280,7 @@ export function AppShell({ children }: AppShellProps) {
               onClick={() => setTheme("system")}
               title="Theo hệ điều hành (System)"
             >
-              💻 Hệ thống
+              💻<span className="cl-theme-btn__label"> Hệ thống</span>
             </button>
           </div>
 

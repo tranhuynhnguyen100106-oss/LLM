@@ -1,6 +1,7 @@
 import { useMemo, useState } from "react";
 import { Evidence, MetricGrid, RiskCard, ToneBadge } from "./CoreBusinessPage";
 import { useCreditLens } from "../context/CreditLensContext";
+import { Markdown } from "../lib/markdown";
 import {
   generateMarkdownReport,
   generateStructuredJson,
@@ -259,10 +260,10 @@ export function SummaryPage({ viewModel }: { viewModel: V2SummaryPageViewModel }
                   borderRadius: "8px",
                   background: "var(--cl-surface-subtle)",
                   border: "1px solid var(--cl-border)",
-                  whiteSpace: "pre-line"
+                  whiteSpace: "normal"
                 }}
               >
-                {aiExplanation}
+                <Markdown text={aiExplanation} />
                 <div style={{ marginTop: "12px", borderTop: "1px solid var(--cl-border)", paddingTop: "8px" }}>
                   <small style={{ color: "var(--cl-muted)", fontSize: "11px" }}>
                     Nội dung này không thay đổi deterministic findings, công thức hoặc review status.

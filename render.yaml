@@ -1,4 +1,17 @@
 services:
+  # Web React + Node (Gemini 3.8 gọi từ máy chủ, khóa nằm trong biến môi trường)
+  - type: web
+    name: danh-gia-tin-dung-vay
+    runtime: node
+    plan: free
+    buildCommand: npm install --include=dev && npx vite build
+    startCommand: npm start
+    envVars:
+      - key: GEMINI_API_KEY
+        sync: false
+    autoDeployTrigger: commit
+
+  # Bản Streamlit cũ (giữ để rollback)
   - type: web
     name: creditlens-underwriting
     runtime: python

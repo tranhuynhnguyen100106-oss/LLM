@@ -30,6 +30,8 @@ import type {
 } from "../domain/contracts";
 
 import type { ToastItem } from "../components/Toast";
+import { askGemini, hasDirectKey, IS_STANDALONE } from "../lib/gemini";
+import { buildSystemInstruction, type PromptCaseContext } from "../lib/prompts";
 
 export type ChatRoleKey = "underwriter" | "risk_auditor" | "advisor";
 export type ChatModelKey = "gemini-3.8-flash" | "gemini-3.1-flash-lite" | "gemini-4-argon";
@@ -117,7 +119,7 @@ export function CreditLensProvider({ children }: { children: ReactNode }) {
     {
       role: "assistant",
       content:
-        "Xin chào, tôi là Trợ lý Thẩm định Tín dụng CreditLens Copilot (HUB) được tích hợp Google Gemini. Bạn có thể hỏi tôi về tính toán DTI/DSR, đối chiếu bằng chứng trích xuất hoặc phân tích rủi ro trong hồ sơ hiện hành.",
+        "Xin chào, tôi là Trợ lý **Đánh giá tín dụng vay** chạy trên Google Gemini 3.8 Flash. Hãy hỏi tôi về DTI/DSR, đối chiếu thu nhập hoặc các cảnh báo rủi ro của hồ sơ đang mở.",
       modelUsed: "gemini-3.8-flash",
       timestamp: Date.now()
     }
@@ -311,11 +313,58 @@ export function CreditLensProvider({ children }: { children: ReactNode }) {
     [addToast]
   );
 
+  const buildPromptContext = useCallback((): PromptCaseContext | null => {
+    if (!result) return null;
+    return {
+      ma_ho_so: result.ma_ho_so,
+      ho_ten: result.du_lieu.ho_ten_khach_hang ?? undefined,
+      trang_thai: result.trang_thai,
+      thu_nhap_ke_khai: result.du_lieu.thu_nhap_ke_khai ?? undefined,
+      luong_thuc_nhan: result.du_lieu.luong_thuc_nhan ?? undefined,
+      so_tien_de_nghi_vay: result.du_lieu.so_tien_de_nghi_vay ?? undefined,
+      thoi_han_vay_thang: result.du_lieu.thoi_han_vay_thang ?? undefined,
+      dti: result.chi_so.find((m) => m.key === "dti")?.raw_value ?? undefined,
+      dsr: result.chi_so.find((m) => m.key === "dsr")?.raw_value ?? undefined,
+      nguon_thu_nhap: result.nguon_thu_nhap_dung_de_tinh,
+      canh_bao: result.canh_bao.map((cb) => ({
+        severity: String(cb.severity),
+        name: cb.name,
+        description: cb.description
+      }))
+    };
+  }, [result]);
+
   const generateAiExplanation = useCallback(async () => {
     if (!result) return;
     setAiLoading(true);
-    // Simulate generation grounded exclusively in deterministic facts
-    await new Promise((res) => setTimeout(res, 600));
+
+    // 1) Try a real Gemini 3.8 explanation grounded in the deterministic JSON.
+    if (hasDirectKey() || !IS_STANDALONE) {
+      try {
+        const ctx = buildPromptContext();
+        const r = await askGemini({
+          model: chatModel,
+          systemInstruction: buildSystemInstruction("underwriter", ctx),
+          messages: [
+            {
+              role: "user",
+              content:
+                "Viết diễn giải hỗ trợ thẩm định cho hồ sơ này theo 4 mục: 1) Khách hàng & khoản vay, 2) Khả năng trả nợ (DTI/DSR), 3) Điểm cần kiểm chứng, 4) Kết luận và điều kiện đề xuất. Tối đa 250 từ."
+            }
+          ],
+          backendPayload: { role: "underwriter", caseContext: ctx },
+          onChunk: (t) => setAiExplanation(t)
+        });
+        if (!r.isSimulated) {
+          setAiExplanation(r.text);
+          setAiLoading(false);
+          return;
+        }
+      } catch {
+        /* fall through to deterministic template */
+      }
+    }
+    await new Promise((res) => setTimeout(res, 300));
 
     const applicant = result.du_lieu.ho_ten_khach_hang ?? "Khách hàng";
     const amount = result.du_lieu.so_tien_de_nghi_vay ? (result.du_lieu.so_tien_de_nghi_vay / 1e6) + " triệu VND" : "N/A";
@@ -341,9 +390,9 @@ export function CreditLensProvider({ children }: { children: ReactNode }) {
 
     narrative += `**4. Kết luận:** Trạng thái đề xuất: **${result.trang_thai}**. Quyết định cuối cùng thuộc thẩm quyền của Hội đồng Tín dụng theo quy định hiện hành.`;
 
-    setAiExplanation(narrative);
+    setAiExplanation(narrative + "\n\n_(Bản mẫu xác định — nhập khóa Gemini API để có diễn giải từ mô hình.)_");
     setAiLoading(false);
-  }, [result]);
+  }, [result, chatModel, buildPromptContext]);
 
   const clearChatMessages = useCallback(() => {
     setChatMessages([
@@ -373,66 +422,53 @@ export function CreditLensProvider({ children }: { children: ReactNode }) {
       setChatMessages(updatedHistory);
       setChatLoading(true);
 
+      const placeholderTs = Date.now() + 1;
       try {
-        const caseContextPayload = result
-          ? {
-              ma_ho_so: result.ma_ho_so,
-              ho_ten: result.du_lieu.ho_ten_khach_hang,
-              trang_thai: result.trang_thai,
-              thu_nhap_ke_khai: result.du_lieu.thu_nhap_ke_khai,
-              luong_thuc_nhan: result.du_lieu.luong_thuc_nhan,
-              dti: result.chi_so.find((m) => m.key === "dti")?.raw_value,
-              dsr: result.chi_so.find((m) => m.key === "dsr")?.raw_value,
-              nguon_thu_nhap: result.nguon_thu_nhap_dung_de_tinh,
-              canh_bao: result.canh_bao.map((cb) => ({
-                severity: cb.severity,
-                name: cb.name,
-                description: cb.description
-              }))
-            }
-          : null;
-
-        const response = await fetch("/api/gemini/chat", {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json"
-          },
-          body: JSON.stringify({
-            messages: updatedHistory.map((m) => ({
-              role: m.role,
-              content: m.content
-            })),
-            model: chatModel,
-            role: chatRole,
-            caseContext: caseContextPayload
-          })
+        const ctx = buildPromptContext();
+        let streamed = false;
+        const r = await askGemini({
+          model: chatModel,
+          systemInstruction: buildSystemInstruction(chatRole, ctx),
+          messages: updatedHistory.map((m) => ({ role: m.role, content: m.content })),
+          backendPayload: { role: chatRole, caseContext: ctx },
+          onChunk: (t) => {
+            setChatMessages((prev) => {
+              const last = prev[prev.length - 1];
+              if (streamed && last?.timestamp === placeholderTs) {
+                return [...prev.slice(0, -1), { ...last, content: t }];
+              }
+              streamed = true;
+              return [...prev, { role: "assistant", content: t, modelUsed: chatModel, timestamp: placeholderTs }];
+            });
+          }
         });
-
-        if (!response.ok) {
-          throw new Error(`Mã lỗi HTTP: ${response.status}`);
-        }
-
-        const data = await response.json();
-        const botReply: ChatMessage = {
-          role: "assistant",
-          content: data.text || "Mô hình không trả về nội dung.",
-          modelUsed: data.modelUsed || chatModel,
-          timestamp: Date.now()
-        };
-
-        setChatMessages((prev) => [...prev, botReply]);
+        setChatMessages((prev) => {
+          const base = prev[prev.length - 1]?.timestamp === placeholderTs ? prev.slice(0, -1) : prev;
+          return [
+            ...base,
+            {
+              role: "assistant",
+              content: r.text,
+              modelUsed: r.isSimulated ? `${r.modelUsed} · mô phỏng` : r.modelUsed,
+              timestamp: placeholderTs
+            }
+          ];
+        });
       } catch (err: any) {
         console.error("Gemini chat error:", err);
         // Fallback response with offline calculated metrics
-        let fallbackMsg = "Không thể kết nối với dịch vụ Gemini qua máy chủ backend.";
+        const noKey = err?.message === "NO_KEY" || String(err?.message ?? "").startsWith("BACKEND_UNAVAILABLE");
+        let fallbackMsg = noKey
+          ? "Chưa kết nối Gemini. Bấm nút **🔑 Khóa API** ở đầu khung chat và dán khóa Gemini (lấy miễn phí tại aistudio.google.com/apikey)."
+          : "Không thể kết nối với dịch vụ Gemini.";
         if (result) {
           fallbackMsg += `\n\n[Dữ liệu xác minh cục bộ cho hồ sơ ${result.ma_ho_so}]:\n- Trạng thái: ${result.trang_thai}\n- DTI: ${result.chi_so.find((m) => m.key === "dti")?.value_display ?? "N/A"}\n- DSR: ${result.chi_so.find((m) => m.key === "dsr")?.value_display ?? "N/A"}\n- Cảnh báo rủi ro: ${result.canh_bao.length} cảnh báo.`;
         }
         setChatMessages((prev) => [
-          ...prev,
+          ...(prev[prev.length - 1]?.timestamp === placeholderTs ? prev.slice(0, -1) : prev),
           {
             role: "assistant",
-            content: `${fallbackMsg}\n(Chi tiết: ${err?.message || "Lỗi mạng"})`,
+            content: noKey ? fallbackMsg : `${fallbackMsg}\n(Chi tiết: ${err?.message || "Lỗi mạng"})`,
             modelUsed: chatModel,
             timestamp: Date.now()
           }
@@ -442,7 +478,7 @@ export function CreditLensProvider({ children }: { children: ReactNode }) {
         setChatLoading(false);
       }
     },
-    [chatMessages, chatLoading, chatModel, chatRole, result, addToast]
+    [chatMessages, chatLoading, chatModel, chatRole, buildPromptContext, addToast]
   );
 
   const providers: ProviderStatus[] = useMemo(
@@ -453,7 +489,7 @@ export function CreditLensProvider({ children }: { children: ReactNode }) {
         description: "Các model Gemini hỗ trợ phân tích đa phương thức và suy luận ngữ cảnh dài.",
         connected: true,
         active: activeProvider === "gemini",
-        model: "gemini-2.5-flash",
+        model: "gemini-3.8-flash",
         model_count: 5,
         status_label: activeProvider === "gemini" ? "ĐANG DÙNG" : "ĐÃ KẾT NỐI",
         status_tone: activeProvider === "gemini" ? "success" : "info"

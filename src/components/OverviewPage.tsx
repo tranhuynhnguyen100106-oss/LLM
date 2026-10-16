@@ -52,7 +52,7 @@ export function OverviewPage() {
     <div className="cl-overview-container" style={{ display: "grid", gap: "24px" }}>
       <section className="cl-page-header">
         <div>
-          <p className="cl-page-header__eyebrow">CreditLens workspace</p>
+          <p className="cl-page-header__eyebrow">Đánh giá tín dụng vay</p>
           <h1>Tổng quan và hồ sơ</h1>
           <p>Bắt đầu từ bộ tài liệu hoặc mở một hồ sơ minh họa xác định.</p>
         </div>
@@ -65,7 +65,7 @@ export function OverviewPage() {
         </div>
         <div>
           <strong>Dữ liệu chỉ được dùng trong phiên hiện tại</strong>
-          <p>CreditLens hỗ trợ thẩm định; quyết định cuối cùng thuộc cán bộ tín dụng.</p>
+          <p>Hệ thống hỗ trợ thẩm định; quyết định cuối cùng thuộc cán bộ tín dụng.</p>
           <details>
             <summary>Xem nguyên tắc sử dụng</summary>
             <p>

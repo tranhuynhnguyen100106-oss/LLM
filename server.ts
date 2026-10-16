@@ -49,20 +49,20 @@ function resolveGeminiApiKey(): string | undefined {
 
 // Roles & System Instructions configuration
 const SYSTEM_ROLES: Record<string, string> = {
-  underwriter: `Bạn là Chuyên viên Thẩm định Tín dụng Cấp cao (Senior Underwriter) của hệ thống HUB × CreditLens (Trường Đại học Ngân hàng TP.HCM).
+  underwriter: `Bạn là Chuyên viên Thẩm định Tín dụng Cấp cao (Senior Underwriter) của hệ thống "Đánh giá tín dụng vay".
 Nhiệm vụ của bạn:
 1. Đánh giá tính khả thi và rủi ro của hồ sơ cấp tín dụng dựa trên các nguyên tắc tài chính - ngân hàng chính xác.
 2. Phân tích định lượng các chỉ số DTI (Debt-to-Income), DSR (Debt Service Ratio), chênh lệch thu nhập kê khai so với sao kê tài khoản ngân hàng.
 3. Chỉ ra rõ bằng chứng trích xuất từ tài liệu cụ thể (hợp đồng lao động, sao kê ngân hàng, báo cáo tín dụng CIC).
 4. Đưa ra lập luận khách quan, chặt chẽ, thận trọng theo chuẩn mực ngân hàng thương mại Việt Nam.`,
 
-  risk_auditor: `Bạn là Trưởng ban Kiểm soát Rủi ro & Tuân thủ Tín dụng (Credit Risk & Compliance Auditor) của hệ thống HUB × CreditLens.
+  risk_auditor: `Bạn là Trưởng ban Kiểm soát Rủi ro & Tuân thủ Tín dụng (Credit Risk & Compliance Auditor) của hệ thống "Đánh giá tín dụng vay".
 Nhiệm vụ của bạn:
 1. Phát hiện dấu hiệu gian lận hồ sơ, mâu thuẫn số liệu thu nhập, nợ tiềm ẩn không kê khai.
 2. Đánh giá mức độ vi phạm các ngưỡng cảnh báo rủi ro an toàn hoạt động tín dụng.
 3. Yêu cầu làm rõ các điểm nghi vấn và đề xuất biện pháp xác minh bổ sung (thực địa, đối soát bảo hiểm xã hội).`,
 
-  advisor: `Bạn là Trợ lý Thẩm định & Cố vấn Phương án Tài chính (Credit Solution Advisor) của hệ thống HUB × CreditLens.
+  advisor: `Bạn là Trợ lý Thẩm định & Cố vấn Phương án Tài chính (Credit Solution Advisor) của hệ thống "Đánh giá tín dụng vay".
 Nhiệm vụ của bạn:
 1. Giải thích các thuật ngữ tài chính, cách tính toán DTI, DSR và tác động của việc điều chỉnh tham số ngưỡng.
 2. Gợi ý phương án cơ cấu khoản vay, thời hạn hoặc tài sản bảo đảm phù hợp với năng lực trả nợ thực tế của khách hàng.
@@ -188,7 +188,7 @@ Quy tắc phản hồi:
       const caseCode = req.body?.caseContext?.ma_ho_so;
       res.status(200).json({
         success: true,
-        text: `[Hệ thống Thẩm định CreditLens]: Khóa API Gemini đang chờ cấu hình trong môi trường bí mật (Settings > Secrets). Hệ thống đã ghi nhận câu hỏi và sẵn sàng phân tích ngữ cảnh hồ sơ ${caseCode ? `[${caseCode}]` : "tín dụng"}. Khi khóa API được kết nối, mô hình ${req.body?.model || "gemini-3.8-flash"} sẽ trực tiếp suy luận và đối chiếu bằng chứng đa bước cho bạn.`,
+        text: `[Đánh giá tín dụng vay]: Khóa API Gemini đang chờ cấu hình trong môi trường bí mật (Settings > Secrets). Hệ thống đã ghi nhận câu hỏi và sẵn sàng phân tích ngữ cảnh hồ sơ ${caseCode ? `[${caseCode}]` : "tín dụng"}. Khi khóa API được kết nối, mô hình ${req.body?.model || "gemini-3.8-flash"} sẽ trực tiếp suy luận và đối chiếu bằng chứng đa bước cho bạn.`,
         modelUsed: req.body?.model || "gemini-3.8-flash",
         isSimulated: true
       });
@@ -224,7 +224,7 @@ async function startServer() {
   }
 
   app.listen(PORT, "0.0.0.0", () => {
-    console.log(`CreditLens server running on http://0.0.0.0:${PORT} (${isProduction ? "production" : "development"})`);
+    console.log(`Đánh giá tín dụng vay server running on http://0.0.0.0:${PORT} (${isProduction ? "production" : "development"})`);
   });
 }
 
