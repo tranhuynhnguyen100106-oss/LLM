@@ -49,13 +49,49 @@ Các tệp Node (`server.ts`, `package.json`, `scripts/build-standalone.mjs`, `.
 
 ## Kiến trúc và Công nghệ
 
-Dự án được xây dựng hoàn toàn dưới dạng **React SPA (Vite + TypeScript)** theo tiêu chuẩn hiện đại:
+Bản chính thức chạy trên **Streamlit**; Python là server và nguồn sự thật, React chỉ là lớp hiển thị:
 
-- **Framework:** React 19 + TypeScript 5
-- **Build Tool:** Vite
-- **Hệ thống Design Tokens:** CSS Variables theo thiết kế đồng thương hiệu HUB × CreditLens (`#203469` Navy và `#A71B28` Accent Red)
-- **Hỗ trợ giao diện:** 3 chế độ Theme (Theo hệ thống, Sáng, Tối)
-- **Khả năng tiếp cận:** Hỗ trợ phím tắt, Skip Link, đầy đủ nhãn ARIA và tự động giảm chuyển động khi bật `prefers-reduced-motion`
+- **Python** (`app.py` → `creditlens_ui_v3.py`): trích xuất PDF bằng pypdf + regex/alias, Privacy Gateway (`privacy_gateway.py`), công thức DTI/DSR và rule engine (`credit_underwriting_colab.py`), Evaluation (`evaluation/`), gọi LLM, xuất Word/Excel/PDF/Markdown/JSON.
+- **React 19 + TypeScript** (`src/components`) được đóng gói thành **Streamlit Component v2** ở `frontend-v3/` (bundle `frontend-v3/dist/` được commit). Python gửi view model JSON đã giả danh hóa; React gửi event có kiểu về Python.
+- Fallback giao diện: **v3 → v2 → legacy**.
+- Sơ đồ pipeline đầy đủ (bước nào AI làm, bước nào con người duyệt): [`docs/workflow.md`](docs/workflow.md). Mẫu nộp bài (thư mục 4 PDF tổng hợp + Credit Review Summary mẫu): [`samples/`](samples/README.md).
+- **Giới hạn PDF:** chỉ đọc PDF có lớp văn bản. **Chưa hỗ trợ OCR cho PDF scan** (failure case FAIL-01) — hồ sơ như vậy được báo “Không đọc được” và chuyển con người xem xét.
+
+---
+
+## 3 tác vụ LLM
+
+Mọi phép tính do Python thực hiện; LLM chỉ làm 3 việc dưới đây. Mỗi tác vụ chạy khi chuyên viên bấm, **tối đa 1 inference request mỗi lần bấm**, dữ liệu gửi đi luôn qua Privacy Gateway (giả danh hóa + `assert_no_pii` fail-closed).
+
+| # | Tác vụ | Loại | Kiểm soát | Con người |
+|---|---|---|---|---|
+| 1 | **Structured extraction** — bổ sung các trường số/ngày mà regex bỏ sót (`trich_xuat_bo_sung_bang_ai`) | Extraction | JSON `{field, value, unit, source_doc, page, quote}`; Python kiểm tra value + quote có thật trong trang PDF, không khớp → “Không tìm thấy căn cứ” | Từng trường phải bấm **Xác nhận** mới được dùng tính DTI/DSR |
+| 2 | **Credit Review Summary** — báo cáo 10 mục (`tao_dien_giai_bang_ai`) | Report generation | JSON schema `CreditReviewSummary`; hậu kiểm số liệu, risk_code, đủ 10 mục, trạng thái, ngôn ngữ quyết định | Output không qua hậu kiểm không vào báo cáo xuất |
+| 3 | **Hỏi đáp theo vai trò** — Thẩm định viên / Kiểm soát rủi ro / Cố vấn (`tao_phan_hoi_chat_ai`) | Q&A | Ngữ cảnh hồ sơ đã giả danh hóa; chặn khuyến nghị phê duyệt/từ chối | Quyết định cuối thuộc chuyên viên |
+
+Ba vai trò chat là ba system prompt của **cùng một** tác vụ (3), không tính thành ba tác vụ.
+
+---
+
+## Cách chạy đánh giá
+
+```bash
+pip install -r requirements.txt
+pytest tests/ evaluation/                       # toàn bộ test (không gọi LLM)
+CREDITLENS_SELF_TEST=1 python credit_underwriting_colab.py
+python -c "from evaluation.evaluator import run_evaluation, report_to_json; print(report_to_json(run_evaluation()))" > evaluation_report.json
+```
+
+`run_evaluation()` chấm 36 ca gold (12 kịch bản × 3 biến thể) **và** benchmark 20 bộ PDF tổng hợp chạy qua pipeline pypdf thật. Không gọi LLM (`llm_api_calls = 0`).
+
+Đánh giá **output LLM thật** (Summary + Extraction) chạy riêng bằng khóa của người chạy, đọc từ biến môi trường:
+
+```bash
+export GEMINI_API_KEY=...        # không ghi vào repo
+python scripts/run_llm_eval.py --model gemini-3.8-flash --cases 12
+```
+
+Kết quả lưu ở `evaluation/llm_outputs/<model>/` (đã giả danh hóa, không chứa khóa) và hiển thị ở trang Evaluation, tách riêng khỏi số liệu mô phỏng.
 
 ---
 
@@ -94,11 +130,11 @@ Dự án được xây dựng hoàn toàn dưới dạng **React SPA (Vite + Typ
    - Nhóm các giới hạn hệ thống và trách nhiệm con người.
 
 7. **Evaluation Benchmark (`7_evaluation`):**
-   - Bộ kiểm thử chất lượng chạy trên 12 kịch bản synthetic gold dataset độc lập.
+   - Bộ kiểm thử chất lượng: 36 ca gold (12 kịch bản × 3 biến thể) và benchmark 20 bộ PDF tổng hợp.
    - Scorecards độ chính xác trích xuất và phân loại.
    - Ma trận nhầm lẫn (Confusion Matrix) 3x3 cho trạng thái thẩm định.
-   - Bảng Grounding consistency và so sánh với baseline con người / LLM zero-shot.
-   - Danh mục 6 trường hợp ngoại lệ (Failure Cases) kèm nguyên nhân và giải pháp khắc phục.
+   - So sánh baseline: không đối chiếu chéo (rule) và prompt chung chung không có JSON ngữ cảnh (LLM); số liệu output LLM thật tách riêng số liệu mô phỏng.
+   - Danh mục 10 trường hợp ngoại lệ (Failure Cases) kèm nguyên nhân và giải pháp khắc phục.
    - Xuất kết quả đánh giá ra định dạng CSV và JSON.
 
 8. **Cài đặt & Trợ lý AI (`8_settings`):**

@@ -112,7 +112,7 @@
   "process_cards": [
    {
     "key": "card-1",
-    "label": "Tiếp nhận và OCR",
+    "label": "Tiếp nhận và trích xuất văn bản",
     "description": "Kiểm tra tính toàn vẹn của PDF và trích xuất dữ liệu lớp văn bản.",
     "state": "current"
    },
@@ -466,7 +466,7 @@
   "process_cards": [
    {
     "key": "card-1",
-    "label": "Tiếp nhận và OCR",
+    "label": "Tiếp nhận và trích xuất văn bản",
     "description": "Kiểm tra tính toàn vẹn của PDF và trích xuất dữ liệu lớp văn bản.",
     "state": "complete"
    },

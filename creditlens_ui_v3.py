@@ -541,7 +541,7 @@ def _workflow(result: Any) -> tuple[list[dict[str, Any]], list[dict[str, Any]]]:
         {"key": "human", "label": "Con người xem xét", "description": "Chuyên viên tín dụng kiểm tra bằng chứng và đưa ra quyết định cuối", "state": "current" if ready else "upcoming", "status_label": "Chờ chuyên viên" if ready else "Chưa thực hiện"},
     ]
     cards = [
-        {"key": "card-1", "label": "Tiếp nhận và OCR", "description": "Kiểm tra tính toàn vẹn của PDF và trích xuất dữ liệu lớp văn bản.", "state": "complete" if ready else "current"},
+        {"key": "card-1", "label": "Tiếp nhận và trích xuất văn bản", "description": "Kiểm tra tính toàn vẹn của PDF và trích xuất dữ liệu lớp văn bản.", "state": "complete" if ready else "current"},
         {"key": "card-2", "label": "Chuẩn hóa Schema", "description": "Ép kiểu dữ liệu số, ngày tháng, tên công ty và loại bỏ khoảng trắng.", "state": "complete" if ready else "upcoming"},
         {"key": "card-3", "label": "Động cơ quy tắc tín dụng", "description": "Kiểm tra các ngưỡng DTI, DSR, chênh lệch nợ và độ tin cậy trích xuất.", "state": ("warning" if risks else "complete") if ready else "upcoming"},
         {"key": "card-4", "label": "Tóm tắt & Xuất báo cáo", "description": "Tạo tóm tắt có căn cứ bằng chứng phục vụ con người xem xét cấp tín dụng.", "state": "current" if ready else "upcoming"},

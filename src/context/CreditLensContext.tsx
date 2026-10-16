@@ -691,7 +691,7 @@ export function CreditLensProvider({ children }: { children: ReactNode }) {
     () => [
       {
         key: "card-1",
-        label: "Tiếp nhận và OCR",
+        label: "Tiếp nhận và trích xuất văn bản",
         description: "Kiểm tra tính toàn vẹn của PDF và trích xuất dữ liệu lớp văn bản.",
         state: result ? "complete" : "current"
       },
