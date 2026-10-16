@@ -1,0 +1,134 @@
+{
+ "CASE-01 — Hồ sơ bình thường": {
+  "canh_bao": [],
+  "canh_bao_labels": [],
+  "dsr": 0.39915966386554624,
+  "dti": 0.08403361344537816,
+  "nguon": "Ghi có bình quân sao kê (giá trị thận trọng hơn)",
+  "thu_nhap_dung_de_tinh": 23800000.0,
+  "trang_thai": "REVIEW READY"
+ },
+ "CASE-02 — Thiếu thu nhập": {
+  "canh_bao": [],
+  "canh_bao_labels": [],
+  "dsr": null,
+  "dti": null,
+  "nguon": "Không đủ dữ liệu",
+  "thu_nhap_dung_de_tinh": null,
+  "trang_thai": "INSUFFICIENT INFORMATION"
+ },
+ "CASE-03 — Thu nhập không nhất quán": {
+  "canh_bao": [
+   "HIGH_DSR_DEMO",
+   "INCOME_MISMATCH"
+  ],
+  "canh_bao_labels": [
+   "DSR cao theo ngưỡng minh họa",
+   "Thu nhập không nhất quán"
+  ],
+  "dsr": 0.6785714285714286,
+  "dti": 0.14285714285714285,
+  "nguon": "Ghi có bình quân sao kê (giá trị thận trọng hơn)",
+  "thu_nhap_dung_de_tinh": 14000000.0,
+  "trang_thai": "HUMAN REVIEW REQUIRED"
+ },
+ "CASE-04 — Đơn vị công tác không khớp": {
+  "canh_bao": [
+   "EMPLOYER_MISMATCH"
+  ],
+  "canh_bao_labels": [
+   "Đơn vị công tác không khớp"
+  ],
+  "dsr": 0.39915966386554624,
+  "dti": 0.08403361344537816,
+  "nguon": "Ghi có bình quân sao kê (giá trị thận trọng hơn)",
+  "thu_nhap_dung_de_tinh": 23800000.0,
+  "trang_thai": "HUMAN REVIEW REQUIRED"
+ },
+ "CASE-05 — Nghĩa vụ nợ không nhất quán": {
+  "canh_bao": [
+   "HIGH_DSR_DEMO",
+   "POSSIBLE_UNDECLARED_DEBT"
+  ],
+  "canh_bao_labels": [
+   "Có thể có khoản nợ chưa kê khai",
+   "DSR cao theo ngưỡng minh họa"
+  ],
+  "dsr": 0.5252100840336135,
+  "dti": 0.21008403361344538,
+  "nguon": "Ghi có bình quân sao kê (giá trị thận trọng hơn)",
+  "thu_nhap_dung_de_tinh": 23800000.0,
+  "trang_thai": "HUMAN REVIEW REQUIRED"
+ },
+ "CASE-06 — DTI cao": {
+  "canh_bao": [
+   "HIGH_DSR_DEMO",
+   "HIGH_DTI_DEMO"
+  ],
+  "canh_bao_labels": [
+   "DSR cao theo ngưỡng minh họa",
+   "DTI cao theo ngưỡng minh họa"
+  ],
+  "dsr": 0.8611111111111112,
+  "dti": 0.4444444444444444,
+  "nguon": "Lương thực nhận (giá trị thận trọng hơn)",
+  "thu_nhap_dung_de_tinh": 18000000.0,
+  "trang_thai": "HUMAN REVIEW REQUIRED"
+ },
+ "CASE-07 — Sao kê không đọc được": {
+  "canh_bao": [],
+  "canh_bao_labels": [],
+  "dsr": 0.3958333333333333,
+  "dti": 0.08333333333333333,
+  "nguon": "Lương thực nhận (nguồn đối chiếu hiện có)",
+  "thu_nhap_dung_de_tinh": 24000000.0,
+  "trang_thai": "INSUFFICIENT INFORMATION"
+ },
+ "CASE-08 — Đơn vay chưa đầy đủ": {
+  "canh_bao": [],
+  "canh_bao_labels": [],
+  "dsr": 0.39915966386554624,
+  "dti": 0.08403361344537816,
+  "nguon": "Ghi có bình quân sao kê (giá trị thận trọng hơn)",
+  "thu_nhap_dung_de_tinh": 23800000.0,
+  "trang_thai": "INSUFFICIENT INFORMATION"
+ },
+ "CASE-09 — Độ tin cậy thấp": {
+  "canh_bao": [
+   "LOW_EXTRACTION_CONFIDENCE"
+  ],
+  "canh_bao_labels": [
+   "Độ tin cậy trích xuất thấp"
+  ],
+  "dsr": 0.39915966386554624,
+  "dti": 0.08403361344537816,
+  "nguon": "Ghi có bình quân sao kê (giá trị thận trọng hơn)",
+  "thu_nhap_dung_de_tinh": 23800000.0,
+  "trang_thai": "HUMAN REVIEW REQUIRED"
+ },
+ "CASE-10 — Nhiều cảnh báo đồng thời": {
+  "canh_bao": [
+   "EMPLOYER_MISMATCH",
+   "HIGH_DSR_DEMO",
+   "HIGH_DTI_DEMO",
+   "HIGH_INCOME_VOLATILITY",
+   "INCOME_MISMATCH",
+   "LOW_BALANCE_BUFFER",
+   "POSSIBLE_UNDECLARED_DEBT"
+  ],
+  "canh_bao_labels": [
+   "Có thể có khoản nợ chưa kê khai",
+   "DSR cao theo ngưỡng minh họa",
+   "DTI cao theo ngưỡng minh họa",
+   "Hệ số đệm số dư thấp",
+   "Thu nhập biến động cao",
+   "Thu nhập không nhất quán",
+   "Đơn vị công tác không khớp"
+  ],
+  "dsr": 1.1333333333333333,
+  "dti": 0.5333333333333333,
+  "nguon": "Ghi có bình quân sao kê (giá trị thận trọng hơn)",
+  "thu_nhap_dung_de_tinh": 15000000.0,
+  "trang_thai": "HUMAN REVIEW REQUIRED"
+ }
+}

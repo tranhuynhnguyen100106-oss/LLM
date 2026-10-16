@@ -1,8 +1,8 @@
 name: Deploy "Đánh giá tín dụng vay" to GitHub Pages
 
+# Chỉ chạy thủ công: bản standalone gọi Gemini từ trình duyệt (khóa trong localStorage),
+# không đúng nguyên tắc "API key chỉ ở Python backend" của bản Streamlit.
 on:
-  push:
-    branches: [main]
   workflow_dispatch:
 
 permissions:

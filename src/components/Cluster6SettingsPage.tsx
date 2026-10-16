@@ -20,10 +20,23 @@ export function SettingsPage() {
     thresholds,
     updateThreshold,
     resetThresholds,
-    result
+    result,
+    aiConnection
   } = useCreditLens();
 
   const activeProviderObj = providers.find((p) => p.provider === activeProvider);
+  // Bản Streamlit: trạng thái kết nối thật do Python cung cấp (không hiển thị CONNECTED giả lập).
+  const connTone: StatusTone = !aiConnection
+    ? "success"
+    : aiConnection.state === "connected"
+    ? "success"
+    : aiConnection.state === "error"
+    ? "danger"
+    : "warning";
+  const connLabel = aiConnection ? aiConnection.label : "CONNECTED";
+  const connMessage = aiConnection
+    ? aiConnection.message
+    : "Kết nối đã được xác minh trong phiên hiện tại. Phân tích xác định tiếp tục hoạt động độc lập.";
 
   return (
     <main
@@ -39,20 +52,20 @@ export function SettingsPage() {
             Quản lý nhà cung cấp mô hình, điều chỉnh ngưỡng minh họa trong phiên và tương tác với trợ lý thẩm định.
           </p>
         </div>
-        <ToneBadge tone="success">CONNECTED</ToneBadge>
+        <ToneBadge tone={connTone}>{connLabel}</ToneBadge>
       </header>
 
       {/* Connection status card */}
       <section
-        className="cl-settings-status cl-tone--success"
+        className={`cl-settings-status cl-tone--${connTone}`}
         role="status"
         aria-live="polite"
         aria-labelledby="cl-settings-status-title"
       >
         <div>
           <p className="cl-core-eyebrow">CONNECTION STATUS</p>
-          <h2 id="cl-settings-status-title">CONNECTED</h2>
-          <p>Kết nối đã được xác minh trong phiên hiện tại. Phân tích xác định tiếp tục hoạt động độc lập.</p>
+          <h2 id="cl-settings-status-title">{connLabel}</h2>
+          <p>{connMessage}</p>
         </div>
         <dl className="cl-settings-status__facts">
           <div>

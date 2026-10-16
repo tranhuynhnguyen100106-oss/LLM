@@ -3897,3 +3897,132 @@
   .cl-shell__header { grid-template-columns: auto minmax(0, 1fr) auto; padding: 0 12px; gap: 8px; }
   .cl-shell__header .cl-close-case-btn { padding: 4px 8px; }
 }
+
+/* Privacy Gateway · Bước 0 · Bảo mật hồ sơ (UI v3 trên Streamlit) — HUB navy #203469 / crimson #A71B28. */
+.cl-privacy-page {
+  display: grid;
+  gap: 16px;
+  padding: 20px;
+  border: 1px solid var(--cl-border);
+  border-top: 4px solid var(--cl-primary);
+  border-radius: 12px;
+  background: var(--cl-surface);
+}
+.cl-privacy-page__header {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+}
+.cl-privacy-page__header h2 {
+  margin: 2px 0 4px;
+  color: var(--cl-text);
+  font-size: 24px;
+  line-height: 32px;
+}
+.cl-privacy-page__header p { margin: 0; color: var(--cl-text-secondary); }
+.cl-privacy-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-height: 32px;
+  padding: 4px 12px;
+  border: 1px solid var(--cl-warning-border);
+  border-radius: 999px;
+  background: var(--cl-warning-bg);
+  color: var(--cl-warning-fg);
+  font-size: 13px;
+  font-weight: 600;
+  white-space: nowrap;
+}
+.cl-privacy-badge--done { border-color: var(--cl-success-border); background: var(--cl-success-bg); color: var(--cl-success-fg); }
+.cl-privacy-badge--review { border-color: var(--cl-info-border); background: var(--cl-info-bg); color: var(--cl-info-fg); }
+.cl-privacy-warning {
+  padding: 12px 16px;
+  border: 1px solid var(--cl-danger-border);
+  border-left: 4px solid var(--cl-accent);
+  border-radius: 8px;
+  background: var(--cl-danger-bg);
+  color: var(--cl-danger-fg);
+}
+.cl-privacy-warning p { margin: 4px 0 0; }
+.cl-privacy-consent-row {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  padding: 12px 16px;
+  border: 1px solid var(--cl-border);
+  border-radius: 8px;
+  background: var(--cl-surface-subtle);
+  color: var(--cl-text);
+  font-size: 14px;
+  line-height: 20px;
+  cursor: pointer;
+}
+.cl-privacy-consent-row input { width: 18px; height: 18px; margin-top: 1px; accent-color: var(--cl-primary); flex: none; }
+.cl-privacy-state {
+  display: grid;
+  gap: 4px;
+  padding: 12px 16px;
+  border-radius: 8px;
+  background: var(--cl-surface-subtle);
+  color: var(--cl-text-secondary);
+}
+.cl-privacy-state strong { color: var(--cl-text); }
+.cl-privacy-counts { display: flex; flex-wrap: wrap; gap: 8px; margin: 0; padding: 0; list-style: none; }
+.cl-privacy-counts li {
+  display: inline-flex;
+  gap: 8px;
+  padding: 6px 10px;
+  border: 1px solid var(--cl-border);
+  border-radius: 8px;
+  background: var(--cl-surface-subtle);
+  font-size: 13px;
+}
+.cl-privacy-table code { color: var(--cl-primary); font-weight: 600; }
+.cl-privacy-link {
+  padding: 0;
+  border: 0;
+  background: none;
+  color: var(--cl-accent);
+  font-weight: 600;
+  text-decoration: underline;
+  cursor: pointer;
+}
+.cl-privacy-manual { display: grid; gap: 6px; }
+.cl-privacy-manual label { color: var(--cl-text); font-size: 13px; font-weight: 600; }
+.cl-privacy-manual div { display: flex; flex-wrap: wrap; gap: 8px; }
+.cl-privacy-manual input {
+  flex: 1 1 240px;
+  min-height: 44px;
+  padding: 0 12px;
+  border: 1px solid var(--cl-border);
+  border-radius: 8px;
+  background: var(--cl-surface);
+  color: var(--cl-text);
+}
+.cl-privacy-manual button {
+  min-height: 44px;
+  padding: 0 16px;
+  border: 1px solid var(--cl-border);
+  border-radius: 8px;
+  background: var(--cl-surface);
+  color: var(--cl-primary);
+  font-weight: 600;
+  cursor: pointer;
+}
+.cl-privacy-manual button:disabled { cursor: not-allowed; opacity: 0.55; }
+.cl-privacy-actions { display: flex; flex-wrap: wrap; gap: 12px; align-items: center; }
+.cl-privacy-actions .cl-demo-panel__action { width: auto; min-width: 240px; margin: 0; }
+.cl-privacy-actions .cl-demo-panel__action:disabled { cursor: not-allowed; opacity: 0.55; }
+.cl-privacy-hint { margin: 0; color: var(--cl-muted); font-size: 13px; }
+.cl-privacy-audit summary { cursor: pointer; color: var(--cl-text-secondary); }
+.cl-privacy-audit ul { margin: 8px 0 0; padding-left: 18px; color: var(--cl-muted); font-size: 13px; }
+.cl-shell__nav-item.is-locked,
+.cl-shell__nav-item:disabled { cursor: not-allowed; opacity: 0.55; }
+.cl-shell__nav-item.is-locked:hover { background: transparent; }
+@media (max-width: 640px) {
+  .cl-privacy-page { padding: 16px; }
+  .cl-privacy-badge { white-space: normal; }
+}

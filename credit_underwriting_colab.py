@@ -2658,8 +2658,14 @@ def tao_phan_hoi_chat_ai(
     provider: str,
     model: str,
     vault: Any | None = None,
+    *,
+    system_prompt: str | None = None,
 ) -> str:
-    """Gửi đúng một request chat đến provider/model đang hoạt động (đã giả danh hóa)."""
+    """Gửi đúng một request chat đến provider/model đang hoạt động (đã giả danh hóa).
+
+    ``system_prompt`` (tùy chọn, dùng cho UI v3) được gửi bằng kênh system của từng provider và
+    cũng đi qua ``assert_no_pii``. Không truyền thì request giữ nguyên như trước.
+    """
     key = (api_key or "").strip()
     if len(key) < 12:
         raise ValueError("API Key chưa được nhập hoặc không hợp lệ.")
@@ -2676,8 +2682,9 @@ def tao_phan_hoi_chat_ai(
         {"role": message["role"], "content": pseudonymize_text(message["content"], vault)}
         for message in history
     ]
+    system_text = pseudonymize_text(system_prompt[:8000], vault) if system_prompt else None
     # Fail-closed: chặn trước khi tạo client; không gửi bản chưa che.
-    assert_no_pii(json.dumps(history, ensure_ascii=False), vault)
+    assert_no_pii(json.dumps({"system": system_text, "history": history}, ensure_ascii=False), vault)
     if vault is not None:
         vault.ghi_nhat_ky("Gửi chat", provider=provider, ket_qua="PASS")
 
@@ -2686,11 +2693,13 @@ def tao_phan_hoi_chat_ai(
             from openai import OpenAI
 
             client = OpenAI(api_key=key)
+            openai_options: dict[str, Any] = {"instructions": system_text} if system_text else {}
             response = client.responses.create(
                 model=model,
                 input=history,
                 max_output_tokens=1800,
                 store=False,
+                **openai_options,
             )
             output = (response.output_text or "").strip()
         else:
@@ -2710,14 +2719,19 @@ def tao_phan_hoi_chat_ai(
                     ],
                     "generationConfig": {"maxOutputTokens": 1800},
                 }
+                if system_text:
+                    body["system_instruction"] = {"parts": [{"text": system_text}]}
             elif provider == "anthropic":
                 url = "https://api.anthropic.com/v1/messages"
                 headers.update({"x-api-key": key, "anthropic-version": "2023-06-01"})
                 body = {"model": model, "max_tokens": 1800, "messages": history}
+                if system_text:
+                    body["system"] = system_text
             else:
                 url = "https://api.deepseek.com/chat/completions"
                 headers["Authorization"] = f"Bearer {key}"
-                body = {"model": model, "messages": history, "max_tokens": 1800, "stream": False}
+                deepseek_messages = ([{"role": "system", "content": system_text}] if system_text else []) + history
+                body = {"model": model, "messages": deepseek_messages, "max_tokens": 1800, "stream": False}
 
             with httpx.Client(timeout=60.0, follow_redirects=True) as http_client:
                 http_response = http_client.post(url, headers=headers, json=body)

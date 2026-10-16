@@ -28,8 +28,12 @@ export function AppShell({ children }: AppShellProps) {
     caseContext,
     clearCase,
     toasts,
-    dismissToast
+    dismissToast,
+    privacy,
+    aiConnection,
+    assetUrl
   } = useCreditLens();
+  const logoSrc = assetUrl ? assetUrl("hub-logo-transparent.png") : "/hub-logo-transparent.png";
 
   const [navigationOpen, setNavigationOpen] = useState(false);
   const [chatOpen, setChatOpen] = useState(false);
@@ -191,7 +195,8 @@ export function AppShell({ children }: AppShellProps) {
     };
   }, [motionLevel]);
 
-  const selectPage = (page: string) => {
+  const selectPage = (page: string, locked = false) => {
+    if (locked) return;
     setActivePage(page);
     setNavigationOpen(false);
     window.scrollTo({ top: 0, behavior: "smooth" });
@@ -202,7 +207,7 @@ export function AppShell({ children }: AppShellProps) {
   return (
     <div ref={shellRef} className="cl-shell" data-theme={theme} data-motion={motionLevel}>
       {/* YÊU CẦU 1: Layered background behind all application content */}
-      <AmbientBackground theme={theme} motionLevel={motionLevel} />
+      <AmbientBackground theme={theme} motionLevel={motionLevel} logoSrc={logoSrc} />
 
       {/* Global banking-grade status notifications */}
       <ToastContainer toasts={toasts} onDismiss={dismissToast} />
@@ -233,7 +238,7 @@ export function AppShell({ children }: AppShellProps) {
 
         <div className="cl-shell__brand" aria-label="Đánh giá tín dụng vay">
           <img
-            src="/hub-logo-transparent.png"
+            src={logoSrc}
             alt="Logo"
             className="cl-shell__logo"
             onError={(e) => {
@@ -242,7 +247,10 @@ export function AppShell({ children }: AppShellProps) {
           />
           <div className="cl-shell__brand-name">
             <strong>Đánh giá tín dụng vay</strong>
-            <span>Thẩm định minh bạch · Gemini 3.8</span>
+            <span>
+              Thẩm định minh bạch ·{" "}
+              {aiConnection ? (aiConnection.model ?? "Chưa kết nối AI") : "Gemini 3.8"}
+            </span>
           </div>
         </div>
 
@@ -297,6 +305,17 @@ export function AppShell({ children }: AppShellProps) {
             <span>Trợ lý Gemini</span>
           </button>
 
+          {privacy ? (
+            <span
+              className={`cl-privacy-badge cl-privacy-badge--${privacy.state} cl-shell__privacy-badge`}
+              aria-label={`Trạng thái bảo mật hồ sơ: ${privacy.badge_label}`}
+              title={privacy.badge_label}
+            >
+              <span aria-hidden="true">{privacy.state === "done" ? "✓" : "🔒"}</span>
+              <span className="cl-theme-btn__label">{privacy.badge_label}</span>
+            </span>
+          ) : null}
+
           {caseContext.case_id ? (
             <button
               type="button"
@@ -344,19 +363,23 @@ export function AppShell({ children }: AppShellProps) {
                 .filter((item) => item.group === group)
                 .map((item) => {
                   const active = item.page === activePage;
+                  const locked = item.locked === true;
+                  const reason = locked ? item.lock_reason || "Hoàn tất Bước 0 để mở trang này." : "";
                   return (
                     <button
                       type="button"
                       data-page={item.page}
-                      className={`cl-shell__nav-item${active ? " is-active" : ""}`}
+                      className={`cl-shell__nav-item${active ? " is-active" : ""}${locked ? " is-locked" : ""}`}
                       aria-current={active ? "page" : undefined}
-                      aria-label={item.label}
-                      title={item.label}
-                      onClick={() => selectPage(item.page)}
+                      aria-label={locked ? `${item.label} — ${reason}` : item.label}
+                      aria-disabled={locked || undefined}
+                      disabled={locked}
+                      title={locked ? reason : item.label}
+                      onClick={() => selectPage(item.page, locked)}
                       key={item.page}
                     >
                       <span className="cl-shell__nav-index" aria-hidden="true">
-                        {item.ordinal}
+                        {locked ? "🔒" : item.ordinal}
                       </span>
                       <span className="cl-shell__nav-label">
                         {item.label.replace(/^\d+\.\s*/, "")}

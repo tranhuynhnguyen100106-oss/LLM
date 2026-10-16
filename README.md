@@ -15,10 +15,31 @@ Lấy khóa Gemini miễn phí tại https://aistudio.google.com/apikey.
 ### Chạy trên tên miền độc lập (GitHub Pages)
 
 1. Repo → **Settings → Pages → Source: GitHub Actions**.
-2. Push lên `main` (hoặc chạy workflow *Deploy … to GitHub Pages* thủ công) → web có tại `https://<tài-khoản>.github.io/LLM/`.
+2. Chạy workflow *Deploy … to GitHub Pages* thủ công (Actions → Run workflow) → web có tại `https://<tài-khoản>.github.io/LLM/`. Workflow **không** tự chạy khi push lên `main`, vì bản độc lập gọi Gemini từ trình duyệt.
 3. Tên miền riêng: tạo biến repo `CUSTOM_DOMAIN` (Settings → Secrets and variables → Actions → Variables), trỏ bản ghi CNAME của tên miền về `<tài-khoản>.github.io`.
 
 > Khuyến nghị: với hệ thống thật, dùng chế độ có máy chủ để khóa API không lộ ra trình duyệt.
+
+---
+
+## Chạy trên Streamlit (bản chính thức · UI v3)
+
+Bản công khai tại **https://creditlens-underwriting.streamlit.app** chạy giao diện "Đánh giá tín dụng vay" trên Streamlit:
+
+- **Python là server và source of truth**: trích xuất PDF thật (pypdf), Privacy Gateway (Bước 0), công thức DTI/DSR, rules, ngưỡng, Evaluation, gọi LLM, xuất Word/Excel/PDF/Markdown/JSON (`app.py` → `creditlens_ui_v3.py`, `credit_underwriting_colab.py`, `privacy_gateway.py`, `evaluation/`).
+- **React (`src/components`) là presentation layer**, đóng gói thành một Streamlit Component v2 ở `frontend-v3/`. Bundle `frontend-v3/dist/` **được commit** vì Streamlit Cloud không build Node. Khi build cho Streamlit, `src/lib/gemini.ts` được thay bằng `frontend-v3/src/geminiStub.ts`: không gọi Gemini từ trình duyệt và không lưu khóa vào localStorage. `src/domain/engine.ts` chỉ giữ lại để đối chiếu trong test.
+- Luồng dữ liệu: Python → view model JSON (allowlist, đã giả danh hóa, không có API key) → React. React → event có kiểu (`event_id` duy nhất) → Python kiểm tra và chống xử lý trùng → thực thi. Mỗi lần Send tối đa 1 inference request.
+- Thứ tự giao diện: **v3 → v2 → legacy**. Cờ `UI_V3_ENABLED` mặc định bật; đặt `UI_V3_ENABLED = "false"` để quay về v2. Nếu v3 lỗi, app tự chuyển sang v2.
+
+**Cấu hình Gemini (chủ app tự làm):** Streamlit Cloud → app → ⋮ → Settings → **Secrets**, thêm `GEMINI_API_KEY = "…"`. Nếu không có khóa này, người dùng nhập khóa ở **Cài đặt → Kết nối AI** (ô mật khẩu gốc của Streamlit, chỉ lưu trong session Python). Model được chọn từ danh sách API trả về; nếu `gemini-3.8-flash` không có, app chọn model khả dụng đầu tiên và báo lại.
+
+Rebuild giao diện v3 sau khi sửa `src/` hoặc `frontend-v3/src`:
+
+```bash
+cd frontend-v3 && pnpm install && pnpm test && pnpm build   # commit frontend-v3/dist
+```
+
+Các tệp Node (`server.ts`, `package.json`, `scripts/build-standalone.mjs`, `.github/workflows/pages.yml`, service Node trong `render.yaml`) được giữ nguyên để chạy bản React/Node. Streamlit không phụ thuộc vào các tệp này.
 
 ---
 

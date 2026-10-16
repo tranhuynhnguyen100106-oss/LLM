@@ -21,7 +21,7 @@ const QUICK_PROMPTS: { label: string; text: string; role?: ChatRoleKey }[] = [
   },
   {
     label: "Đề xuất phương án cấp tín dụng",
-    text: "Dựa trên tình hình tài chính của khách hàng, hãy đề xuất điều kiện phê duyệt hoặc biện pháp giảm thiểu rủi ro.",
+    text: "Dựa trên tình hình tài chính của khách hàng, hãy nêu phương án cơ cấu khoản vay, biện pháp giảm thiểu rủi ro và các điểm cần xác minh thêm (không đề xuất phê duyệt hay từ chối).",
     role: "advisor"
   }
 ];
@@ -89,8 +89,24 @@ export function GeminiChatbot({ embedded = false, onClose }: GeminiChatbotProps)
     setChatModel,
     sendChatMessage,
     clearChatMessages,
-    result
+    result,
+    serverMode,
+    aiConnection,
+    chatModels,
+    openAiSettings
   } = useCreditLens();
+  const modelOptions: { id: string; label: string; badge: string }[] =
+    chatModels ??
+    (Object.keys(MODELS_CONFIG) as ChatModelKey[]).map((m) => ({
+      id: m,
+      label: MODELS_CONFIG[m]!.label,
+      badge: MODELS_CONFIG[m]!.badge
+    }));
+  const modelLabel = (id: string) =>
+    !id
+      ? "Chưa kết nối AI"
+      : modelOptions.find((m) => m.id === id)?.label ?? MODELS_CONFIG[id as keyof typeof MODELS_CONFIG]?.label ?? id;
+  const serverConnected = aiConnection?.state === "connected";
 
   const [input, setInput] = useState("");
   const [showRoleInfo, setShowRoleInfo] = useState(false);
@@ -170,7 +186,9 @@ export function GeminiChatbot({ embedded = false, onClose }: GeminiChatbotProps)
           </div>
           <div>
             <div className="cl-gemini-chat__title-row">
-              <h3 className="cl-gemini-chat__title">Trợ lý Gemini 3.8</h3>
+              <h3 className="cl-gemini-chat__title">
+                {serverMode ? `Trợ lý ${aiConnection?.provider_label ?? "AI"}` : "Trợ lý Gemini 3.8"}
+              </h3>
               <span className="cl-gemini-chat__badge">AI</span>
             </div>
             <p className="cl-gemini-chat__subtitle">
@@ -180,15 +198,29 @@ export function GeminiChatbot({ embedded = false, onClose }: GeminiChatbotProps)
         </div>
 
         <div className="cl-gemini-chat__header-actions">
-          <button
-            type="button"
-            className={`cl-gemini-chat__key-btn${keySaved ? " is-on" : ""}`}
-            onClick={() => setKeyOpen((v) => !v)}
-            aria-expanded={keyOpen}
-            title="Cấu hình khóa Gemini API"
-          >
-            🔑 {keySaved ? "Đã kết nối" : "Khóa API"}
-          </button>
+          {serverMode ? (
+            <button
+              type="button"
+              className={`cl-gemini-chat__key-btn${serverConnected ? " is-on" : ""}`}
+              onClick={() => {
+                openAiSettings?.();
+                onClose?.();
+              }}
+              title="Cài đặt → Kết nối AI (khóa chỉ nằm ở máy chủ Python)"
+            >
+              🔑 {serverConnected ? "Đã kết nối" : "Kết nối AI"}
+            </button>
+          ) : (
+            <button
+              type="button"
+              className={`cl-gemini-chat__key-btn${keySaved ? " is-on" : ""}`}
+              onClick={() => setKeyOpen((v) => !v)}
+              aria-expanded={keyOpen}
+              title="Cấu hình khóa Gemini API"
+            >
+              🔑 {keySaved ? "Đã kết nối" : "Khóa API"}
+            </button>
+          )}
           <button
             type="button"
             className="cl-gemini-chat__btn-icon"
@@ -212,7 +244,14 @@ export function GeminiChatbot({ embedded = false, onClose }: GeminiChatbotProps)
         </div>
       </header>
 
-      {keyOpen && (
+      {serverMode && !serverConnected ? (
+        <div className="cl-gemini-chat__key-panel" role="status">
+          <strong>{aiConnection?.label ?? "Chưa kết nối AI"}</strong>
+          <small>{aiConnection?.message ?? "Mở Cài đặt → Kết nối AI để nhập khóa trên máy chủ."}</small>
+        </div>
+      ) : null}
+
+      {!serverMode && keyOpen && (
         <div className="cl-gemini-chat__key-panel">
           <label htmlFor="cl-gemini-key">
             Khóa Gemini API {IS_STANDALONE ? "(bắt buộc ở bản độc lập)" : "(tùy chọn — ưu tiên hơn khóa máy chủ)"}
@@ -291,9 +330,10 @@ export function GeminiChatbot({ embedded = false, onClose }: GeminiChatbotProps)
             value={chatModel}
             onChange={(e) => setChatModel(e.target.value as ChatModelKey)}
           >
-            {(Object.keys(MODELS_CONFIG) as ChatModelKey[]).map((m) => (
-              <option key={m} value={m}>
-                {MODELS_CONFIG[m].label} ({MODELS_CONFIG[m].badge})
+            {modelOptions.length === 0 ? <option value={chatModel}>Chưa có model khả dụng</option> : null}
+            {modelOptions.map((m) => (
+              <option key={m.id} value={m.id}>
+                {m.label} ({m.badge})
               </option>
             ))}
           </select>
@@ -409,7 +449,7 @@ export function GeminiChatbot({ embedded = false, onClose }: GeminiChatbotProps)
           </button>
         </div>
         <div className="cl-gemini-chat__footer-info">
-          <span>Mô hình: {MODELS_CONFIG[chatModel].label}</span>
+          <span>Mô hình: {modelLabel(chatModel)}</span>
           <span>Phản hồi có tính chất hỗ trợ quyết định</span>
         </div>
       </form>

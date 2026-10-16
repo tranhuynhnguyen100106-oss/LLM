@@ -1,0 +1,1017 @@
+{
+ "locked": {
+  "schema_version": "3.0",
+  "component": "creditlens_v3_app",
+  "revision": 1,
+  "theme": "system",
+  "motion_level": "full",
+  "active_page": "1_overview",
+  "navigation": [
+   {
+    "page": "1_overview",
+    "label": "1. Tổng quan và hồ sơ",
+    "group": "Hồ sơ",
+    "ordinal": 1,
+    "locked": false,
+    "lock_reason": ""
+   },
+   {
+    "page": "2_extraction",
+    "label": "2. Trích xuất tài liệu",
+    "group": "Hồ sơ",
+    "ordinal": 2,
+    "locked": true,
+    "lock_reason": "Đang khóa: hoàn tất Bước 0 · Bảo mật hồ sơ (xác nhận và giả danh hóa) để mở trang này."
+   },
+   {
+    "page": "3_analysis",
+    "label": "3. Phân tích tín dụng",
+    "group": "Hồ sơ",
+    "ordinal": 3,
+    "locked": true,
+    "lock_reason": "Đang khóa: hoàn tất Bước 0 · Bảo mật hồ sơ (xác nhận và giả danh hóa) để mở trang này."
+   },
+   {
+    "page": "4_risk",
+    "label": "4. Cảnh báo rủi ro",
+    "group": "Hồ sơ",
+    "ordinal": 4,
+    "locked": true,
+    "lock_reason": "Đang khóa: hoàn tất Bước 0 · Bảo mật hồ sơ (xác nhận và giả danh hóa) để mở trang này."
+   },
+   {
+    "page": "5_summary",
+    "label": "5. Tóm tắt thẩm định",
+    "group": "Hồ sơ",
+    "ordinal": 5,
+    "locked": true,
+    "lock_reason": "Đang khóa: hoàn tất Bước 0 · Bảo mật hồ sơ (xác nhận và giả danh hóa) để mở trang này."
+   },
+   {
+    "page": "6_methodology",
+    "label": "6. Phương pháp và giới hạn",
+    "group": "Kiểm chứng",
+    "ordinal": 6,
+    "locked": false,
+    "lock_reason": ""
+   },
+   {
+    "page": "7_evaluation",
+    "label": "7. Evaluation",
+    "group": "Kiểm chứng",
+    "ordinal": 7,
+    "locked": false,
+    "lock_reason": ""
+   },
+   {
+    "page": "8_settings",
+    "label": "8. Cài đặt",
+    "group": "Hệ thống",
+    "ordinal": 8,
+    "locked": false,
+    "lock_reason": ""
+   }
+  ],
+  "case_context": {
+   "case_id": null,
+   "source": null,
+   "status_label": "Chưa có hồ sơ đang mở",
+   "status_tone": "neutral",
+   "summary": "Tải tài liệu hoặc mở hồ sơ minh họa để bắt đầu."
+  },
+  "workflow": [
+   {
+    "key": "intake",
+    "label": "Tiếp nhận hồ sơ",
+    "description": "Kiểm tra định dạng PDF, lớp văn bản và phân loại loại tài liệu",
+    "state": "current",
+    "status_label": "Hiện tại"
+   },
+   {
+    "key": "compute",
+    "label": "Tính toán xác định",
+    "description": "Tính toán DTI, DSR, thu nhập khả dụng và đệm số dư bằng công thức",
+    "state": "upcoming",
+    "status_label": "Chưa thực hiện"
+   },
+   {
+    "key": "crosscheck",
+    "label": "Đối chiếu đa chứng từ",
+    "description": "Kiểm tra chéo thu nhập 3 nguồn, đơn vị công tác và nợ quan sát",
+    "state": "upcoming",
+    "status_label": "Chưa thực hiện"
+   },
+   {
+    "key": "human",
+    "label": "Con người xem xét",
+    "description": "Chuyên viên tín dụng kiểm tra bằng chứng và đưa ra quyết định cuối",
+    "state": "upcoming",
+    "status_label": "Chưa thực hiện"
+   }
+  ],
+  "process_cards": [
+   {
+    "key": "card-1",
+    "label": "Tiếp nhận và OCR",
+    "description": "Kiểm tra tính toàn vẹn của PDF và trích xuất dữ liệu lớp văn bản.",
+    "state": "current"
+   },
+   {
+    "key": "card-2",
+    "label": "Chuẩn hóa Schema",
+    "description": "Ép kiểu dữ liệu số, ngày tháng, tên công ty và loại bỏ khoảng trắng.",
+    "state": "upcoming"
+   },
+   {
+    "key": "card-3",
+    "label": "Động cơ quy tắc tín dụng",
+    "description": "Kiểm tra các ngưỡng DTI, DSR, chênh lệch nợ và độ tin cậy trích xuất.",
+    "state": "upcoming"
+   },
+   {
+    "key": "card-4",
+    "label": "Tóm tắt & Xuất báo cáo",
+    "description": "Tạo tóm tắt có căn cứ bằng chứng phục vụ con người xem xét cấp tín dụng.",
+    "state": "upcoming"
+   }
+  ],
+  "demo_cases": [
+   {
+    "case_name": "CASE-01 — Hồ sơ bình thường",
+    "case_code": "CASE-01",
+    "title": "Hồ sơ bình thường",
+    "description": "Dữ liệu tổng hợp xác định; không gọi mô hình khi mở hồ sơ."
+   },
+   {
+    "case_name": "CASE-02 — Thiếu thu nhập",
+    "case_code": "CASE-02",
+    "title": "Thiếu thu nhập",
+    "description": "Dữ liệu tổng hợp xác định; không gọi mô hình khi mở hồ sơ."
+   },
+   {
+    "case_name": "CASE-03 — Thu nhập không nhất quán",
+    "case_code": "CASE-03",
+    "title": "Thu nhập không nhất quán",
+    "description": "Dữ liệu tổng hợp xác định; không gọi mô hình khi mở hồ sơ."
+   },
+   {
+    "case_name": "CASE-04 — Đơn vị công tác không khớp",
+    "case_code": "CASE-04",
+    "title": "Đơn vị công tác không khớp",
+    "description": "Dữ liệu tổng hợp xác định; không gọi mô hình khi mở hồ sơ."
+   },
+   {
+    "case_name": "CASE-05 — Nghĩa vụ nợ không nhất quán",
+    "case_code": "CASE-05",
+    "title": "Nghĩa vụ nợ không nhất quán",
+    "description": "Dữ liệu tổng hợp xác định; không gọi mô hình khi mở hồ sơ."
+   },
+   {
+    "case_name": "CASE-06 — DTI cao",
+    "case_code": "CASE-06",
+    "title": "DTI cao",
+    "description": "Dữ liệu tổng hợp xác định; không gọi mô hình khi mở hồ sơ."
+   },
+   {
+    "case_name": "CASE-07 — Sao kê không đọc được",
+    "case_code": "CASE-07",
+    "title": "Sao kê không đọc được",
+    "description": "Dữ liệu tổng hợp xác định; không gọi mô hình khi mở hồ sơ."
+   },
+   {
+    "case_name": "CASE-08 — Đơn vay chưa đầy đủ",
+    "case_code": "CASE-08",
+    "title": "Đơn vay chưa đầy đủ",
+    "description": "Dữ liệu tổng hợp xác định; không gọi mô hình khi mở hồ sơ."
+   },
+   {
+    "case_name": "CASE-09 — Độ tin cậy thấp",
+    "case_code": "CASE-09",
+    "title": "Độ tin cậy thấp",
+    "description": "Dữ liệu tổng hợp xác định; không gọi mô hình khi mở hồ sơ."
+   },
+   {
+    "case_name": "CASE-10 — Nhiều cảnh báo đồng thời",
+    "case_code": "CASE-10",
+    "title": "Nhiều cảnh báo đồng thời",
+    "description": "Dữ liệu tổng hợp xác định; không gọi mô hình khi mở hồ sơ."
+   }
+  ],
+  "selected_demo": "CASE-03 — Thu nhập không nhất quán",
+  "custom_case_name": null,
+  "result": null,
+  "thresholds": {
+   "do_tin_cay_thap": 0.75,
+   "chenh_lech_thu_nhap": 0.15,
+   "chenh_lech_thu_nhap_nghiem_trong": 0.3,
+   "chenh_lech_no": 0.2,
+   "dti_canh_bao": 0.4,
+   "dsr_canh_bao": 0.45,
+   "he_so_dem_so_du_thap": 1.0,
+   "bien_dong_thu_nhap_cao": 0.25
+  },
+  "pages": {
+   "core": null,
+   "summary": null,
+   "methodology": null,
+   "evaluation": null
+  },
+  "ai": {
+   "explanation": null
+  },
+  "chat": {
+   "messages": [
+    {
+     "role": "assistant",
+     "content": "Xin chào, tôi là Trợ lý **Đánh giá tín dụng vay**. Hãy hỏi tôi về DTI/DSR, đối chiếu thu nhập hoặc các cảnh báo rủi ro của hồ sơ đang mở. Dữ liệu gửi AI luôn được giả danh hóa; quyết định cuối cùng thuộc chuyên viên và Hội đồng Tín dụng.",
+     "modelUsed": "Hệ thống",
+     "timestamp": 1792138526490
+    }
+   ],
+   "role": "underwriter",
+   "model": "",
+   "models": []
+  },
+  "providers": [
+   {
+    "provider": "openai",
+    "label": "OpenAI · GPT",
+    "description": "GPT và các model suy luận được cấp cho OpenAI API Key",
+    "connected": false,
+    "active": false,
+    "model": null,
+    "model_count": 0,
+    "status_label": "CHƯA KẾT NỐI",
+    "status_tone": "neutral"
+   },
+   {
+    "provider": "gemini",
+    "label": "Google · Gemini",
+    "description": "Các model Gemini hỗ trợ generateContent",
+    "connected": false,
+    "active": false,
+    "model": null,
+    "model_count": 0,
+    "status_label": "CHƯA KẾT NỐI",
+    "status_tone": "neutral"
+   },
+   {
+    "provider": "anthropic",
+    "label": "Anthropic · Claude",
+    "description": "Các model Claude được Anthropic API Key cho phép",
+    "connected": false,
+    "active": false,
+    "model": null,
+    "model_count": 0,
+    "status_label": "CHƯA KẾT NỐI",
+    "status_tone": "neutral"
+   },
+   {
+    "provider": "deepseek",
+    "label": "DeepSeek",
+    "description": "Các model chat/reasoner được DeepSeek API Key cho phép",
+    "connected": false,
+    "active": false,
+    "model": null,
+    "model_count": 0,
+    "status_label": "CHƯA KẾT NỐI",
+    "status_tone": "neutral"
+   }
+  ],
+  "active_provider": "",
+  "ai_connection": {
+   "state": "disconnected",
+   "label": "Chưa kết nối AI",
+   "message": "Chưa có API Key đã xác minh. Phân tích xác định (Python) vẫn hoạt động đầy đủ; chat và diễn giải AI tạm khóa.",
+   "provider_label": null,
+   "model": null,
+   "source": null
+  },
+  "privacy": {
+   "state": "review",
+   "badge_label": "Chờ xác nhận · 3 trường",
+   "field_count": 3,
+   "public_warning": "Bản công khai chỉ dành cho dữ liệu tổng hợp hoặc đã ẩn danh. Không tải hồ sơ khách hàng thật.",
+   "consent_text": "Tôi xác nhận hồ sơ được xử lý theo quy định bảo mật; dữ liệu định danh sẽ được giả danh hóa trước khi gửi đến dịch vụ AI bên ngoài.",
+   "consent_given": true,
+   "case_id": "CASE-03",
+   "rows": [
+    {
+     "pii_type": "Họ tên khách hàng",
+     "masked_value": "Nguyễn M*** A**",
+     "replacement": "KH_01",
+     "document": "don_de_nghi_vay.pdf",
+     "page": 1,
+     "source": "Dữ liệu trích xuất",
+     "required": true
+    },
+    {
+     "pii_type": "Đơn vị công tác",
+     "masked_value": "Công t** C** p*** C*** n*** A*****",
+     "replacement": "DN_A",
+     "document": "don_de_nghi_vay.pdf",
+     "page": 1,
+     "source": "Dữ liệu trích xuất",
+     "required": true
+    },
+    {
+     "pii_type": "Ngày bắt đầu làm việc",
+     "masked_value": "**/06/2022",
+     "replacement": "06/2022",
+     "document": "don_de_nghi_vay.pdf",
+     "page": 1,
+     "source": "Dữ liệu trích xuất",
+     "required": true
+    }
+   ],
+   "counts": [
+    {
+     "label": "Họ tên khách hàng",
+     "count": 1
+    },
+    {
+     "label": "Đơn vị công tác",
+     "count": 1
+    },
+    {
+     "label": "Ngày bắt đầu làm việc",
+     "count": 1
+    }
+   ],
+   "audit": [],
+   "lock_reason": "Đang khóa: hoàn tất Bước 0 · Bảo mật hồ sơ (xác nhận và giả danh hóa) để mở trang này."
+  },
+  "toasts": [
+   {
+    "id": "t17921385264940",
+    "title": "Đã quét hồ sơ minh họa",
+    "description": "CASE-03 — Thu nhập không nhất quán · kiểm tra bảng xem trước ở Bước 0.",
+    "type": "success"
+   }
+  ],
+  "assets": {
+   "hub-logo-transparent.png": "data:image/png;base64,AA=="
+  }
+ },
+ "summary": {
+  "schema_version": "3.0",
+  "component": "creditlens_v3_app",
+  "revision": 2,
+  "theme": "system",
+  "motion_level": "full",
+  "active_page": "5_summary",
+  "navigation": [
+   {
+    "page": "1_overview",
+    "label": "1. Tổng quan và hồ sơ",
+    "group": "Hồ sơ",
+    "ordinal": 1,
+    "locked": false,
+    "lock_reason": ""
+   },
+   {
+    "page": "2_extraction",
+    "label": "2. Trích xuất tài liệu",
+    "group": "Hồ sơ",
+    "ordinal": 2,
+    "locked": false,
+    "lock_reason": ""
+   },
+   {
+    "page": "3_analysis",
+    "label": "3. Phân tích tín dụng",
+    "group": "Hồ sơ",
+    "ordinal": 3,
+    "locked": false,
+    "lock_reason": ""
+   },
+   {
+    "page": "4_risk",
+    "label": "4. Cảnh báo rủi ro",
+    "group": "Hồ sơ",
+    "ordinal": 4,
+    "locked": false,
+    "lock_reason": ""
+   },
+   {
+    "page": "5_summary",
+    "label": "5. Tóm tắt thẩm định",
+    "group": "Hồ sơ",
+    "ordinal": 5,
+    "locked": false,
+    "lock_reason": ""
+   },
+   {
+    "page": "6_methodology",
+    "label": "6. Phương pháp và giới hạn",
+    "group": "Kiểm chứng",
+    "ordinal": 6,
+    "locked": false,
+    "lock_reason": ""
+   },
+   {
+    "page": "7_evaluation",
+    "label": "7. Evaluation",
+    "group": "Kiểm chứng",
+    "ordinal": 7,
+    "locked": false,
+    "lock_reason": ""
+   },
+   {
+    "page": "8_settings",
+    "label": "8. Cài đặt",
+    "group": "Hệ thống",
+    "ordinal": 8,
+    "locked": false,
+    "lock_reason": ""
+   }
+  ],
+  "case_context": {
+   "case_id": "CASE-03",
+   "source": "Hồ sơ minh họa xác định",
+   "status_label": "HUMAN REVIEW REQUIRED",
+   "status_tone": "warning",
+   "summary": "CASE-03 — Thu nhập không nhất quán · 20 trường · 2 cảnh báo rủi ro."
+  },
+  "workflow": [
+   {
+    "key": "intake",
+    "label": "Tiếp nhận hồ sơ",
+    "description": "Kiểm tra định dạng PDF, lớp văn bản và phân loại loại tài liệu",
+    "state": "complete",
+    "status_label": "Đã tiếp nhận"
+   },
+   {
+    "key": "compute",
+    "label": "Tính toán xác định",
+    "description": "Tính toán DTI, DSR, thu nhập khả dụng và đệm số dư bằng công thức",
+    "state": "complete",
+    "status_label": "Đã tính toán"
+   },
+   {
+    "key": "crosscheck",
+    "label": "Đối chiếu đa chứng từ",
+    "description": "Kiểm tra chéo thu nhập 3 nguồn, đơn vị công tác và nợ quan sát",
+    "state": "warning",
+    "status_label": "Có mâu thuẫn"
+   },
+   {
+    "key": "human",
+    "label": "Con người xem xét",
+    "description": "Chuyên viên tín dụng kiểm tra bằng chứng và đưa ra quyết định cuối",
+    "state": "current",
+    "status_label": "Chờ chuyên viên"
+   }
+  ],
+  "process_cards": [
+   {
+    "key": "card-1",
+    "label": "Tiếp nhận và OCR",
+    "description": "Kiểm tra tính toàn vẹn của PDF và trích xuất dữ liệu lớp văn bản.",
+    "state": "complete"
+   },
+   {
+    "key": "card-2",
+    "label": "Chuẩn hóa Schema",
+    "description": "Ép kiểu dữ liệu số, ngày tháng, tên công ty và loại bỏ khoảng trắng.",
+    "state": "complete"
+   },
+   {
+    "key": "card-3",
+    "label": "Động cơ quy tắc tín dụng",
+    "description": "Kiểm tra các ngưỡng DTI, DSR, chênh lệch nợ và độ tin cậy trích xuất.",
+    "state": "warning"
+   },
+   {
+    "key": "card-4",
+    "label": "Tóm tắt & Xuất báo cáo",
+    "description": "Tạo tóm tắt có căn cứ bằng chứng phục vụ con người xem xét cấp tín dụng.",
+    "state": "current"
+   }
+  ],
+  "demo_cases": [
+   {
+    "case_name": "CASE-01 — Hồ sơ bình thường",
+    "case_code": "CASE-01",
+    "title": "Hồ sơ bình thường",
+    "description": "Dữ liệu tổng hợp xác định; không gọi mô hình khi mở hồ sơ."
+   },
+   {
+    "case_name": "CASE-02 — Thiếu thu nhập",
+    "case_code": "CASE-02",
+    "title": "Thiếu thu nhập",
+    "description": "Dữ liệu tổng hợp xác định; không gọi mô hình khi mở hồ sơ."
+   },
+   {
+    "case_name": "CASE-03 — Thu nhập không nhất quán",
+    "case_code": "CASE-03",
+    "title": "Thu nhập không nhất quán",
+    "description": "Dữ liệu tổng hợp xác định; không gọi mô hình khi mở hồ sơ."
+   },
+   {
+    "case_name": "CASE-04 — Đơn vị công tác không khớp",
+    "case_code": "CASE-04",
+    "title": "Đơn vị công tác không khớp",
+    "description": "Dữ liệu tổng hợp xác định; không gọi mô hình khi mở hồ sơ."
+   },
+   {
+    "case_name": "CASE-05 — Nghĩa vụ nợ không nhất quán",
+    "case_code": "CASE-05",
+    "title": "Nghĩa vụ nợ không nhất quán",
+    "description": "Dữ liệu tổng hợp xác định; không gọi mô hình khi mở hồ sơ."
+   },
+   {
+    "case_name": "CASE-06 — DTI cao",
+    "case_code": "CASE-06",
+    "title": "DTI cao",
+    "description": "Dữ liệu tổng hợp xác định; không gọi mô hình khi mở hồ sơ."
+   },
+   {
+    "case_name": "CASE-07 — Sao kê không đọc được",
+    "case_code": "CASE-07",
+    "title": "Sao kê không đọc được",
+    "description": "Dữ liệu tổng hợp xác định; không gọi mô hình khi mở hồ sơ."
+   },
+   {
+    "case_name": "CASE-08 — Đơn vay chưa đầy đủ",
+    "case_code": "CASE-08",
+    "title": "Đơn vay chưa đầy đủ",
+    "description": "Dữ liệu tổng hợp xác định; không gọi mô hình khi mở hồ sơ."
+   },
+   {
+    "case_name": "CASE-09 — Độ tin cậy thấp",
+    "case_code": "CASE-09",
+    "title": "Độ tin cậy thấp",
+    "description": "Dữ liệu tổng hợp xác định; không gọi mô hình khi mở hồ sơ."
+   },
+   {
+    "case_name": "CASE-10 — Nhiều cảnh báo đồng thời",
+    "case_code": "CASE-10",
+    "title": "Nhiều cảnh báo đồng thời",
+    "description": "Dữ liệu tổng hợp xác định; không gọi mô hình khi mở hồ sơ."
+   }
+  ],
+  "selected_demo": "CASE-03 — Thu nhập không nhất quán",
+  "custom_case_name": null,
+  "result": {
+   "ma_ho_so": "CASE-03",
+   "ten_ho_so": "CASE-03 — Thu nhập không nhất quán",
+   "trang_thai": "HUMAN REVIEW REQUIRED",
+   "nguon_thu_nhap_dung_de_tinh": "Ghi có bình quân sao kê (giá trị thận trọng hơn)",
+   "du_lieu": {
+    "ho_ten_khach_hang": "KH_01"
+   },
+   "documents": [
+    {
+     "name": "don_de_nghi_vay.pdf"
+    },
+    {
+     "name": "chung_tu_thu_nhap.pdf"
+    },
+    {
+     "name": "sao_ke_ngan_hang_6_thang.pdf"
+    },
+    {
+     "name": "thong_tin_nghia_vu_no.pdf"
+    }
+   ],
+   "fields": [
+    {
+     "key": "ho_ten_khach_hang"
+    },
+    {
+     "key": "don_vi_cong_tac_ke_khai"
+    },
+    {
+     "key": "don_vi_cong_tac_chung_tu"
+    },
+    {
+     "key": "chuc_danh_ke_khai"
+    },
+    {
+     "key": "chuc_danh_chung_tu"
+    },
+    {
+     "key": "ngay_bat_dau_ke_khai"
+    },
+    {
+     "key": "ngay_bat_dau_chung_tu"
+    },
+    {
+     "key": "tham_nien_lam_viec_thang"
+    },
+    {
+     "key": "thu_nhap_ke_khai"
+    },
+    {
+     "key": "luong_thuc_nhan"
+    },
+    {
+     "key": "thu_nhap_qua_sao_ke"
+    },
+    {
+     "key": "so_tien_de_nghi_vay"
+    },
+    {
+     "key": "thoi_han_vay_thang"
+    },
+    {
+     "key": "khoan_tra_du_kien"
+    },
+    {
+     "key": "nghia_vu_no_ke_khai"
+    },
+    {
+     "key": "nghia_vu_no_quan_sat"
+    },
+    {
+     "key": "chi_phi_sinh_hoat"
+    },
+    {
+     "key": "so_du_binh_quan"
+    },
+    {
+     "key": "bien_dong_thu_nhap"
+    },
+    {
+     "key": "muc_dich_vay"
+    }
+   ],
+   "canh_bao": [
+    {
+     "severity": "HIGH",
+     "name": "Thu nhập không nhất quán",
+     "description": "Các nguồn thu nhập chênh 44,0%, vượt ngưỡng minh họa 15,0%. Cần xác minh nguồn thu và kỳ ghi nhận."
+    },
+    {
+     "severity": "HIGH",
+     "name": "DSR cao theo ngưỡng minh họa",
+     "description": "DSR dự kiến 67,9% vượt ngưỡng cảnh báo minh họa 45,0%."
+    }
+   ]
+  },
+  "thresholds": {
+   "do_tin_cay_thap": 0.75,
+   "chenh_lech_thu_nhap": 0.15,
+   "chenh_lech_thu_nhap_nghiem_trong": 0.3,
+   "chenh_lech_no": 0.2,
+   "dti_canh_bao": 0.4,
+   "dsr_canh_bao": 0.45,
+   "he_so_dem_so_du_thap": 1.0,
+   "bien_dong_thu_nhap_cao": 0.25
+  },
+  "pages": {
+   "core": null,
+   "summary": {
+    "schema_version": "1.0",
+    "component_version": "0.5.0",
+    "component": "summary_page",
+    "theme": "system",
+    "state": "success",
+    "state_message": "Kết quả xác định đã sẵn sàng để chuyên viên xem xét.",
+    "case_id": "CASE-03",
+    "applicant": "KH_01",
+    "employer": "DN_A",
+    "loan_amount": "300.000.000 VND",
+    "loan_term": "36 tháng",
+    "loan_purpose": "Sửa chữa nhà ở",
+    "review_status": "CẦN CON NGƯỜI XEM XÉT",
+    "review_status_tone": "warning",
+    "highest_alert": "HIGH · CAO",
+    "highest_alert_tone": "danger",
+    "metrics": [
+     {
+      "key": "dti",
+      "label": "DTI hiện hữu",
+      "value_display": "14,3%",
+      "raw_value": 0.14285714285714285,
+      "reference": "Cần chú ý khi > 40,0%",
+      "status": "Trong ngưỡng minh họa",
+      "status_tone": "success",
+      "formula": "Nghĩa vụ nợ hiện hữu ÷ Thu nhập dùng để tính",
+      "note": "Nguồn thu nhập: Ghi có bình quân sao kê (giá trị thận trọng hơn).",
+      "source_role": "calculated"
+     },
+     {
+      "key": "dsr",
+      "label": "DSR dự kiến",
+      "value_display": "67,9%",
+      "raw_value": 0.6785714285714286,
+      "reference": "Cần chú ý khi > 45,0%",
+      "status": "Cần chú ý",
+      "status_tone": "warning",
+      "formula": "(Nợ hiện hữu + Khoản trả dự kiến) ÷ Thu nhập dùng để tính",
+      "note": "Khoản trả dự kiến là đầu vào thủ công; hệ thống không tự đặt lãi suất.",
+      "source_role": "calculated"
+     },
+     {
+      "key": "thu_nhap_kha_dung",
+      "label": "Thu nhập còn lại trước khoản vay mới",
+      "value_display": "3.000.000 VND",
+      "raw_value": 3000000.0,
+      "reference": "Trạng thái do Python trả về",
+      "status": "Trong ngưỡng minh họa",
+      "status_tone": "success",
+      "formula": "Thu nhập dùng để tính − Nợ hiện hữu − Chi phí sinh hoạt",
+      "note": "Chưa trừ khoản trả dự kiến của khoản vay mới.",
+      "source_role": "calculated"
+     },
+     {
+      "key": "he_so_dem_so_du",
+      "label": "Hệ số đệm số dư",
+      "value_display": "2,40×",
+      "raw_value": 2.4,
+      "reference": "Cần chú ý khi < 1,00×",
+      "status": "Trong ngưỡng minh họa",
+      "status_tone": "success",
+      "formula": "Số dư bình quân ÷ Khoản trả dự kiến",
+      "note": "Chỉ báo thanh khoản dựa trên số dư bình quân.",
+      "source_role": "calculated"
+     },
+     {
+      "key": "chenh_lech_thu_nhap",
+      "label": "Chênh lệch thu nhập",
+      "value_display": "44,0%",
+      "raw_value": 0.44,
+      "reference": "Cần chú ý khi > 15,0%",
+      "status": "Cần chú ý",
+      "status_tone": "warning",
+      "formula": "(Nguồn cao nhất − Nguồn thấp nhất) ÷ Nguồn cao nhất",
+      "note": "So sánh đơn vay, chứng từ thu nhập và sao kê.",
+      "source_role": "calculated"
+     },
+     {
+      "key": "bien_dong_thu_nhap",
+      "label": "Biến động thu nhập",
+      "value_display": "6,0%",
+      "raw_value": 0.06,
+      "reference": "Cần chú ý khi > 25,0%",
+      "status": "Trong ngưỡng minh họa",
+      "status_tone": "success",
+      "formula": "Độ lệch chuẩn dòng tiền vào tháng ÷ Dòng tiền vào bình quân",
+      "note": "Hệ số biến thiên khi sao kê có đủ dữ liệu theo tháng.",
+      "source_role": "calculated"
+     }
+    ],
+    "top_risks": [
+     {
+      "code": "R-001",
+      "name": "Thu nhập không nhất quán",
+      "severity": "HIGH",
+      "severity_label": "CAO",
+      "severity_tone": "danger",
+      "description": "Các nguồn thu nhập chênh 44,0%, vượt ngưỡng minh họa 15,0%. Cần xác minh nguồn thu và kỳ ghi nhận.",
+      "difference": "44,0%",
+      "evidence": [
+       {
+        "document": "don_de_nghi_vay.pdf",
+        "field": "Thu nhập hàng tháng kê khai",
+        "value": "25.000.000 VND",
+        "page": 1,
+        "excerpt": "Thu nhập hàng tháng kê khai: 25.000.000 VND"
+       },
+       {
+        "document": "chung_tu_thu_nhap.pdf",
+        "field": "Lương thực nhận",
+        "value": "18.000.000 VND",
+        "page": 1,
+        "excerpt": "Lương thực nhận: 18.000.000 VND"
+       },
+       {
+        "document": "sao_ke_ngan_hang_6_thang.pdf",
+        "field": "Ghi có bình quân hàng tháng",
+        "value": "14.000.000 VND",
+        "page": 4,
+        "excerpt": "Ghi có bình quân hàng tháng: 14.000.000 VND"
+       }
+      ]
+     },
+     {
+      "code": "R-002",
+      "name": "DSR cao theo ngưỡng minh họa",
+      "severity": "HIGH",
+      "severity_label": "CAO",
+      "severity_tone": "danger",
+      "description": "DSR dự kiến 67,9% vượt ngưỡng cảnh báo minh họa 45,0%.",
+      "difference": null,
+      "evidence": [
+       {
+        "document": "sao_ke_ngan_hang_6_thang.pdf",
+        "field": "Khoản trả nợ quan sát hàng tháng",
+        "value": "2.000.000 VND",
+        "page": 5,
+        "excerpt": "Khoản trả nợ quan sát hàng tháng: 2.000.000 VND"
+       },
+       {
+        "document": "don_de_nghi_vay.pdf",
+        "field": "Khoản trả nợ dự kiến hàng tháng",
+        "value": "7.500.000 VND",
+        "page": 2,
+        "excerpt": "Khoản trả nợ dự kiến hàng tháng: 7.500.000 VND"
+       },
+       {
+        "document": "sao_ke_ngan_hang_6_thang.pdf",
+        "field": "Ghi có bình quân hàng tháng",
+        "value": "14.000.000 VND",
+        "page": 4,
+        "excerpt": "Ghi có bình quân hàng tháng: 14.000.000 VND"
+       }
+      ]
+     }
+    ],
+    "total_risk_count": 2,
+    "findings": [
+     {
+      "category": "finding",
+      "title": "Thu nhập dùng để tính",
+      "detail": "14.000.000 VND · Ghi có bình quân sao kê (giá trị thận trọng hơn)",
+      "tone": "info"
+     },
+     {
+      "category": "finding",
+      "title": "Trạng thái nguồn thu nhập",
+      "detail": "Đã có nguồn đối chiếu độc lập",
+      "tone": "success"
+     },
+     {
+      "category": "verification",
+      "title": "Cần chuyên viên xác minh",
+      "detail": "Nguồn thu nhập nào là thường xuyên, có thể xác minh và thuộc đúng kỳ sao kê?",
+      "tone": "warning"
+     },
+     {
+      "category": "finding",
+      "title": "Hạng mục bắt buộc",
+      "detail": "Không phát hiện hạng mục bắt buộc còn thiếu.",
+      "tone": "success"
+     }
+    ],
+    "evidence": [
+     {
+      "document": "don_de_nghi_vay.pdf",
+      "field": "Thu nhập hàng tháng kê khai",
+      "value": "25.000.000 VND",
+      "page": 1,
+      "excerpt": "Thu nhập hàng tháng kê khai: 25.000.000 VND"
+     },
+     {
+      "document": "chung_tu_thu_nhap.pdf",
+      "field": "Lương thực nhận",
+      "value": "18.000.000 VND",
+      "page": 1,
+      "excerpt": "Lương thực nhận: 18.000.000 VND"
+     },
+     {
+      "document": "sao_ke_ngan_hang_6_thang.pdf",
+      "field": "Ghi có bình quân hàng tháng",
+      "value": "14.000.000 VND",
+      "page": 4,
+      "excerpt": "Ghi có bình quân hàng tháng: 14.000.000 VND"
+     },
+     {
+      "document": "sao_ke_ngan_hang_6_thang.pdf",
+      "field": "Khoản trả nợ quan sát hàng tháng",
+      "value": "2.000.000 VND",
+      "page": 5,
+      "excerpt": "Khoản trả nợ quan sát hàng tháng: 2.000.000 VND"
+     },
+     {
+      "document": "don_de_nghi_vay.pdf",
+      "field": "Khoản trả nợ dự kiến hàng tháng",
+      "value": "7.500.000 VND",
+      "page": 2,
+      "excerpt": "Khoản trả nợ dự kiến hàng tháng: 7.500.000 VND"
+     },
+     {
+      "document": "sao_ke_ngan_hang_6_thang.pdf",
+      "field": "Ghi có bình quân hàng tháng",
+      "value": "14.000.000 VND",
+      "page": 4,
+      "excerpt": "Ghi có bình quân hàng tháng: 14.000.000 VND"
+     }
+    ],
+    "document_count": 4,
+    "extracted_field_count": 20,
+    "ai_explanation": null
+   },
+   "methodology": null,
+   "evaluation": null
+  },
+  "ai": {
+   "explanation": null
+  },
+  "chat": {
+   "messages": [
+    {
+     "role": "assistant",
+     "content": "Xin chào, tôi là Trợ lý **Đánh giá tín dụng vay**. Hãy hỏi tôi về DTI/DSR, đối chiếu thu nhập hoặc các cảnh báo rủi ro của hồ sơ đang mở. Dữ liệu gửi AI luôn được giả danh hóa; quyết định cuối cùng thuộc chuyên viên và Hội đồng Tín dụng.",
+     "modelUsed": "Hệ thống",
+     "timestamp": 1792138526490
+    }
+   ],
+   "role": "underwriter",
+   "model": "",
+   "models": []
+  },
+  "providers": [
+   {
+    "provider": "openai",
+    "label": "OpenAI · GPT",
+    "description": "GPT và các model suy luận được cấp cho OpenAI API Key",
+    "connected": false,
+    "active": false,
+    "model": null,
+    "model_count": 0,
+    "status_label": "CHƯA KẾT NỐI",
+    "status_tone": "neutral"
+   },
+   {
+    "provider": "gemini",
+    "label": "Google · Gemini",
+    "description": "Các model Gemini hỗ trợ generateContent",
+    "connected": false,
+    "active": false,
+    "model": null,
+    "model_count": 0,
+    "status_label": "CHƯA KẾT NỐI",
+    "status_tone": "neutral"
+   },
+   {
+    "provider": "anthropic",
+    "label": "Anthropic · Claude",
+    "description": "Các model Claude được Anthropic API Key cho phép",
+    "connected": false,
+    "active": false,
+    "model": null,
+    "model_count": 0,
+    "status_label": "CHƯA KẾT NỐI",
+    "status_tone": "neutral"
+   },
+   {
+    "provider": "deepseek",
+    "label": "DeepSeek",
+    "description": "Các model chat/reasoner được DeepSeek API Key cho phép",
+    "connected": false,
+    "active": false,
+    "model": null,
+    "model_count": 0,
+    "status_label": "CHƯA KẾT NỐI",
+    "status_tone": "neutral"
+   }
+  ],
+  "active_provider": "",
+  "ai_connection": {
+   "state": "disconnected",
+   "label": "Chưa kết nối AI",
+   "message": "Chưa có API Key đã xác minh. Phân tích xác định (Python) vẫn hoạt động đầy đủ; chat và diễn giải AI tạm khóa.",
+   "provider_label": null,
+   "model": null,
+   "source": null
+  },
+  "privacy": {
+   "state": "done",
+   "badge_label": "Đã giả danh hóa · 3 trường",
+   "field_count": 3,
+   "public_warning": "Bản công khai chỉ dành cho dữ liệu tổng hợp hoặc đã ẩn danh. Không tải hồ sơ khách hàng thật.",
+   "consent_text": "Tôi xác nhận hồ sơ được xử lý theo quy định bảo mật; dữ liệu định danh sẽ được giả danh hóa trước khi gửi đến dịch vụ AI bên ngoài.",
+   "consent_given": true,
+   "case_id": "CASE-03",
+   "rows": [],
+   "counts": [
+    {
+     "label": "Đơn vị công tác",
+     "count": 1
+    },
+    {
+     "label": "Họ tên khách hàng",
+     "count": 1
+    },
+    {
+     "label": "Ngày bắt đầu làm việc",
+     "count": 1
+    }
+   ],
+   "audit": [
+    {
+     "time": "2026-10-16T08:15:26+00:00",
+     "event": "Giả danh hóa hồ sơ",
+     "provider": "",
+     "fields": 3,
+     "result": "OK"
+    }
+   ],
+   "lock_reason": "Đang khóa: hoàn tất Bước 0 · Bảo mật hồ sơ (xác nhận và giả danh hóa) để mở trang này."
+  },
+  "toasts": [
+   {
+    "id": "t17921385264970",
+    "title": "Đã giả danh hóa",
+    "description": "3 trường · các trang sau đã mở khóa.",
+    "type": "success"
+   }
+  ],
+  "assets": {
+   "hub-logo-transparent.png": "data:image/png;base64,AA=="
+  }
+ }
+}

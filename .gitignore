@@ -10,9 +10,10 @@ venv/
 
 # Cluster 2 frontend dependencies and local test output.
 frontend/node_modules/
+frontend-v3/node_modules/
 frontend/coverage/
 frontend/.vite/
 .pnpm-store/
 dist-standalone/
-dist/
+/dist/
 node_modules

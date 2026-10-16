@@ -841,22 +841,25 @@ class Cluster6SettingsAndChatTests(unittest.TestCase):
 
 
 class AppEntryPointTests(unittest.TestCase):
+    @patch("app.ui_v3_enabled", return_value=False)  # kiểm thử riêng nhánh v2/legacy
     @patch("app.chay_ung_dung_streamlit")
     @patch("app.chay_ung_dung_streamlit_v2")
     @patch("app.ui_v2_enabled", return_value=False)
-    def test_flag_off_runs_legacy_exactly(self, _flag: Mock, v2: Mock, legacy: Mock) -> None:
+    def test_flag_off_runs_legacy_exactly(self, _flag: Mock, v2: Mock, legacy: Mock, _v3: Mock) -> None:
         app.main()
         v2.assert_not_called()
         legacy.assert_called_once_with()
 
+    @patch("app.ui_v3_enabled", return_value=False)
     @patch("app.chay_ung_dung_streamlit")
     @patch("app.chay_ung_dung_streamlit_v2")
     @patch("app.ui_v2_enabled", return_value=True)
-    def test_flag_on_runs_v2_shell_only(self, _flag: Mock, v2: Mock, legacy: Mock) -> None:
+    def test_flag_on_runs_v2_shell_only(self, _flag: Mock, v2: Mock, legacy: Mock, _v3: Mock) -> None:
         app.main()
         v2.assert_called_once_with()
         legacy.assert_not_called()
 
+    @patch("app.ui_v3_enabled", return_value=False)
     @patch("app.show_v2_fallback_notice")
     @patch("app.chay_ung_dung_streamlit")
     @patch("app.chay_ung_dung_streamlit_v2", side_effect=RuntimeError("synthetic-build-failure"))
@@ -867,6 +870,7 @@ class AppEntryPointTests(unittest.TestCase):
         _v2: Mock,
         legacy: Mock,
         notice: Mock,
+        _v3: Mock,
     ) -> None:
         app.main()
         notice.assert_called_once_with()

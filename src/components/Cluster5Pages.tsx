@@ -25,13 +25,14 @@ const SUMMARY_STATE_LABELS = {
 } as const;
 
 export function SummaryPage({ viewModel }: { viewModel: V2SummaryPageViewModel }) {
-  const { result, aiExplanation, aiLoading, generateAiExplanation, addToast } = useCreditLens();
+  const { result, aiExplanation, aiLoading, generateAiExplanation, addToast, exportFile } = useCreditLens();
 
   const deterministicFindings = viewModel.findings.filter((item) => item.category === "finding");
   const reviewFindings = viewModel.findings.filter((item) => item.category !== "finding");
   const terminal = viewModel.state === "empty" || viewModel.state === "error";
 
   const handleDownloadMarkdown = () => {
+    if (exportFile) return exportFile("markdown");
     if (!result) return;
     const md = generateMarkdownReport(result, aiExplanation ?? "");
     downloadFile(`${result.ma_ho_so}_tom_tat_tham_dinh.md`, md, "text/markdown");
@@ -39,6 +40,7 @@ export function SummaryPage({ viewModel }: { viewModel: V2SummaryPageViewModel }
   };
 
   const handleDownloadJson = () => {
+    if (exportFile) return exportFile("json");
     if (!result) return;
     const json = generateStructuredJson(result);
     downloadFile(`${result.ma_ho_so}_ket_qua.json`, json, "application/json");
@@ -282,7 +284,10 @@ export function SummaryPage({ viewModel }: { viewModel: V2SummaryPageViewModel }
               </div>
             </div>
             <p style={{ color: "var(--cl-muted)", fontSize: "14px", lineHeight: "20px", marginBottom: "16px" }}>
-              Báo cáo dùng nguyên dữ liệu, công thức và schema hiện hành. Tệp được tạo trực tiếp trong trình duyệt.
+              Báo cáo dùng nguyên dữ liệu, công thức và schema hiện hành.{" "}
+              {exportFile
+                ? "Tệp do Python tạo (mặc định bản giả danh hóa); Word, Excel, PDF ở khung xuất báo cáo bên dưới."
+                : "Tệp được tạo trực tiếp trong trình duyệt."}
             </p>
             <div style={{ display: "flex", gap: "12px", flexWrap: "wrap" }}>
               <button
@@ -519,7 +524,7 @@ function EvaluationTable({
 }
 
 export function EvaluationPage({ viewModel }: { viewModel: V2EvaluationPageViewModel }) {
-  const { runEvaluation } = useCreditLens();
+  const { runEvaluation, exportFile } = useCreditLens();
   const [running, setRunning] = useState(false);
   const [failureType, setFailureType] = useState("all");
 
@@ -543,11 +548,13 @@ export function EvaluationPage({ viewModel }: { viewModel: V2EvaluationPageViewM
   };
 
   const handleDownloadCsv = () => {
+    if (exportFile) return exportFile("evaluation_csv");
     const csv = generateEvaluationCsv(viewModel);
     downloadFile(`creditlens_evaluation_${viewModel.run_id ?? "run"}.csv`, csv, "text/csv");
   };
 
   const handleDownloadJson = () => {
+    if (exportFile) return exportFile("evaluation_json");
     const json = generateEvaluationJson(viewModel);
     downloadFile(`creditlens_evaluation_${viewModel.run_id ?? "run"}.json`, json, "application/json");
   };

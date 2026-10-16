@@ -15,6 +15,9 @@ export interface NavigationItem {
   label: string;
   group: "Hồ sơ" | "Kiểm chứng" | "Hệ thống";
   ordinal: number;
+  /** Streamlit (UI v3): trang bị khóa cho đến khi qua Bước 0 · Bảo mật hồ sơ. */
+  locked?: boolean;
+  lock_reason?: string;
 }
 
 export interface WorkflowStep {

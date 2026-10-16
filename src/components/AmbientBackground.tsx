@@ -57,9 +57,11 @@ export const HUB_PHOTO_CONFIG: HubPhotoItem[] = [
 interface AmbientBackgroundProps {
   theme: ThemeMode;
   motionLevel?: MotionLevel;
+  /** Đường dẫn logo watermark (bản Streamlit truyền data URI). */
+  logoSrc?: string;
 }
 
-export function AmbientBackground({ theme, motionLevel = "full" }: AmbientBackgroundProps) {
+export function AmbientBackground({ theme, motionLevel = "full", logoSrc = "/hub-logo-transparent.png" }: AmbientBackgroundProps) {
   const [activeIndex, setActiveIndex] = useState(0);
   const [prevIndex, setPrevIndex] = useState<number | null>(null);
   const [isCrossfading, setIsCrossfading] = useState(false);
@@ -335,7 +337,7 @@ export function AmbientBackground({ theme, motionLevel = "full" }: AmbientBackgr
         {/* Static CreditLens & HUB watermark at bottom-right corner */}
         <div className="cl-ambient-watermark">
           <img
-            src="/hub-logo-transparent.png"
+            src={logoSrc}
             alt=""
             className="cl-ambient-watermark__img"
             onError={(e) => {

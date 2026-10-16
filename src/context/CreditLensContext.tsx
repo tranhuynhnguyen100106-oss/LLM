@@ -34,7 +34,7 @@ import { askGemini, hasDirectKey, IS_STANDALONE } from "../lib/gemini";
 import { buildSystemInstruction, type PromptCaseContext } from "../lib/prompts";
 
 export type ChatRoleKey = "underwriter" | "risk_auditor" | "advisor";
-export type ChatModelKey = "gemini-3.8-flash" | "gemini-3.1-flash-lite" | "gemini-4-argon";
+export type ChatModelKey = "gemini-3.8-flash" | "gemini-3.1-flash-lite" | "gemini-4-argon" | (string & {});
 
 export interface ChatMessage {
   role: "user" | "assistant";
@@ -84,6 +84,71 @@ export interface CreditLensContextType {
   toasts: ToastItem[];
   addToast: (title: string, description?: string, type?: "info" | "success" | "warning") => void;
   dismissToast: (id: string) => void;
+  /* ---- Các trường tùy chọn: chỉ bản Streamlit (UI v3) cung cấp. Bản Node/standalone bỏ trống. ---- */
+  /** Python là backend: không gọi LLM hay lưu khóa ở trình duyệt. */
+  serverMode?: boolean;
+  /** Xuất tệp qua Python (st.download_button). */
+  exportFile?: (kind: ExportKind) => void;
+  /** Trạng thái kết nối AI thật do Python cung cấp. */
+  aiConnection?: AiConnectionStatus;
+  /** Danh sách model lấy từ API của nhà cung cấp (không giả định tên model). */
+  chatModels?: ChatModelOption[];
+  /** Mở Cài đặt → Kết nối AI (thay cho ô nhập khóa trong chat). */
+  openAiSettings?: () => void;
+  /** Bước 0 · Bảo mật hồ sơ (Privacy Gateway). */
+  privacy?: PrivacyGatewayState;
+  privacyActions?: PrivacyGatewayActions;
+  /** Logo nhúng (data URI) khi chạy trong component Streamlit. */
+  assetUrl?: (name: string) => string;
+}
+
+export type ExportKind = "markdown" | "json" | "evaluation_csv" | "evaluation_json";
+
+export interface AiConnectionStatus {
+  state: "connected" | "disconnected" | "error";
+  label: string;
+  message: string;
+  provider_label: string | null;
+  model: string | null;
+  source: "secrets" | "session" | null;
+}
+
+export interface ChatModelOption {
+  id: string;
+  label: string;
+  badge: string;
+}
+
+export interface PrivacyPreviewRow {
+  pii_type: string;
+  masked_value: string;
+  replacement: string;
+  document: string;
+  page: number | null;
+  source: string;
+  required: boolean;
+}
+
+export interface PrivacyGatewayState {
+  state: "empty" | "review" | "done";
+  badge_label: string;
+  field_count: number;
+  public_warning: string;
+  consent_text: string;
+  consent_given: boolean;
+  case_id: string | null;
+  rows: PrivacyPreviewRow[];
+  counts: { label: string; count: number }[];
+  audit: { time: string; event: string; provider: string; fields: number; result: string }[];
+  lock_reason: string;
+}
+
+export interface PrivacyGatewayActions {
+  setConsent: (value: boolean) => void;
+  confirm: () => void;
+  cancel: () => void;
+  addMask: (value: string) => void;
+  removeMask: (code: string) => void;
 }
 
 const CreditLensContext = createContext<CreditLensContextType | null>(null);
@@ -323,8 +388,8 @@ export function CreditLensProvider({ children }: { children: ReactNode }) {
       luong_thuc_nhan: result.du_lieu.luong_thuc_nhan ?? undefined,
       so_tien_de_nghi_vay: result.du_lieu.so_tien_de_nghi_vay ?? undefined,
       thoi_han_vay_thang: result.du_lieu.thoi_han_vay_thang ?? undefined,
-      dti: result.chi_so.find((m) => m.key === "dti")?.raw_value ?? undefined,
-      dsr: result.chi_so.find((m) => m.key === "dsr")?.raw_value ?? undefined,
+      dti: result.chi_so.find((m) => m.key === "dti")?.raw_value as number | undefined,
+      dsr: result.chi_so.find((m) => m.key === "dsr")?.raw_value as number | undefined,
       nguon_thu_nhap: result.nguon_thu_nhap_dung_de_tinh,
       canh_bao: result.canh_bao.map((cb) => ({
         severity: String(cb.severity),
