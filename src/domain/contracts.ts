@@ -318,6 +318,11 @@ export interface V2EvaluationPageViewModel {
   failure_cases: FailureCase[];
   limitations: string[];
   llm_api_calls: number | null;
+  /** Benchmark 20 PDF thật qua pypdf (bản Streamlit). */
+  pdf_benchmark?: LabelValue[];
+  /** Nguồn số liệu output LLM thật ("Output LLM thật · model X · ngày Y") hoặc hướng dẫn chạy. */
+  llm_live_note?: string | null;
+  llm_live?: BaselineRow[];
 }
 
 export interface ProviderStatus {

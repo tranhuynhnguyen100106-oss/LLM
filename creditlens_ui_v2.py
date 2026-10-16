@@ -444,6 +444,10 @@ class V2EvaluationPageViewModel:
     limitations: tuple[str, ...] = ()
     llm_api_calls: int | None = None
     theme: Literal["system", "light", "dark"] = "system"
+    # #5: benchmark 20 PDF thật; #2: output LLM thật (tách khỏi số liệu mô phỏng).
+    pdf_benchmark: tuple[V2LabelValue, ...] = ()
+    llm_live_note: str | None = None
+    llm_live: tuple[V2BaselineRow, ...] = ()
 
 
 @dataclass(frozen=True, slots=True)
@@ -1345,6 +1349,20 @@ def serialize_evaluation_page_view_model(view_model: V2EvaluationPageViewModel) 
                 for item in view_model.limitations
             ],
             "llm_api_calls": view_model.llm_api_calls,
+            "pdf_benchmark": _serialize_label_values(view_model.pdf_benchmark, field="evaluation.pdf_benchmark"),
+            "llm_live_note": (
+                _clean_text(view_model.llm_live_note, field="evaluation.llm_live_note", maximum=400)
+                if view_model.llm_live_note
+                else None
+            ),
+            "llm_live": [
+                {
+                    "baseline": _clean_text(item.baseline, field="llm_live.name", maximum=220),
+                    "variant": _clean_text(item.variant, field="llm_live.variant", maximum=180),
+                    "values": _serialize_label_values(item.values, field="llm_live.values"),
+                }
+                for item in view_model.llm_live
+            ],
         },
         label="Evaluation page view model",
     )
@@ -2784,8 +2802,8 @@ def build_evaluation_page_view_model(
             factual_consistency=_display_rate(grounding_report[key].get("factual_consistency")),
         )
         for key, label in (
-            ("structured_grounded", "Structured + evidence"),
-            ("generic_prompt", "Generic prompt · saved output"),
+            ("structured_grounded", "Structured + evidence · MÔ PHỎNG (output mẫu gán nhãn)"),
+            ("generic_prompt", "Generic prompt · MÔ PHỎNG (output mẫu gán nhãn)"),
         )
     )
     baseline_a = report["baselines"]["baseline_a"]
@@ -2891,7 +2909,76 @@ def build_evaluation_page_view_model(
         limitations=tuple(str(item) for item in report["limitations"]),
         llm_api_calls=int(llm_calls) if llm_calls is not None else None,
         theme=theme,
+        pdf_benchmark=_pdf_benchmark_rows(report.get("pdf_benchmark")),
+        llm_live_note=_llm_live_note(report.get("llm_live")),
+        llm_live=_llm_live_rows(report.get("llm_live")),
     )
+
+
+def _pdf_benchmark_rows(bench: Any) -> tuple[V2LabelValue, ...]:
+    if not isinstance(bench, Mapping):
+        return ()
+    if not bench.get("available"):
+        return (V2LabelValue("PDF benchmark", str(bench.get("reason") or "N/A")),)
+    return (
+        V2LabelValue("Nguồn", "20 PDF tổng hợp chạy qua pipeline pypdf thật (không phải fixture)"),
+        V2LabelValue("Extraction accuracy (PDF)", f"{_display_rate(bench.get('extraction_accuracy'))} ({bench.get('extraction_correct')}/{bench.get('extraction_total')})"),
+        V2LabelValue("Risk F1 (PDF)", _display_rate(bench.get("risk_f1"))),
+        V2LabelValue("Status accuracy (PDF)", _display_rate(bench.get("status_accuracy"))),
+        V2LabelValue("Mean case runtime (PDF)", f"{bench.get('mean_case_runtime_ms')} ms"),
+    )
+
+
+def _llm_live_note(live: Any) -> str | None:
+    if not isinstance(live, Mapping):
+        return None
+    if not live.get("available"):
+        return str(live.get("note") or "Chưa có output LLM thật.")
+    notes = [str(m.get("source_note")) for m in (live.get("models") or {}).values() if isinstance(m, Mapping)]
+    return " | ".join(notes) or None
+
+
+def _llm_live_rows(live: Any) -> tuple[V2BaselineRow, ...]:
+    if not isinstance(live, Mapping) or not live.get("available"):
+        return ()
+    rows: list[V2BaselineRow] = []
+    for model, metrics in (live.get("models") or {}).items():
+        name = f"Output LLM thật · {model} · {metrics.get('case_count')} hồ sơ"
+        for key, label in (("summary", "Summary · có JSON ngữ cảnh"), ("summary_baseline_generic", "BASELINE · prompt chung, không JSON")):
+            m = metrics.get(key) or {}
+            if not m.get("attempted"):
+                continue
+            rows.append(
+                V2BaselineRow(
+                    baseline=name,
+                    variant=label,
+                    values=(
+                        V2LabelValue("Numeric faithfulness", _display_rate(m.get("numeric_faithfulness"))),
+                        V2LabelValue("Risk coverage", _display_rate(m.get("risk_coverage"))),
+                        V2LabelValue("Completeness (10 mục)", _display_rate(m.get("completeness"))),
+                        V2LabelValue("Guardrail violation rate", _display_rate(m.get("guardrail_violation_rate"))),
+                        V2LabelValue("Vượt hậu kiểm", _display_rate(m.get("post_check_pass_rate"))),
+                        V2LabelValue("Latency TB", f"{m.get('mean_latency_ms')} ms"),
+                        V2LabelValue("Lỗi API", str(m.get("errors"))),
+                    ),
+                )
+            )
+        e = metrics.get("extraction") or {}
+        if e.get("attempted"):
+            rows.append(
+                V2BaselineRow(
+                    baseline=name,
+                    variant="LLM Extraction · grounding check",
+                    values=(
+                        V2LabelValue("Extraction grounding rate", _display_rate(e.get("grounding_rate"))),
+                        V2LabelValue("Precision vs gold", _display_rate(e.get("precision_vs_gold"))),
+                        V2LabelValue("Recall vs gold", _display_rate(e.get("recall_vs_gold"))),
+                        V2LabelValue("Latency TB", f"{e.get('mean_latency_ms')} ms"),
+                        V2LabelValue("Lỗi API", str(e.get("errors"))),
+                    ),
+                )
+            )
+    return tuple(rows)
 
 
 def _settings_threshold_display(key: str, value: float) -> str:

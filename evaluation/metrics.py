@@ -271,3 +271,111 @@ def llm_grounding_metrics(
         "consistent_facts": factually_consistent,
         "factual_claims": factual_total,
     }
+
+
+# ==========================================================
+# #2 — Chấm OUTPUT LLM THẬT (đọc từ evaluation/llm_outputs, không gọi API)
+# ==========================================================
+
+def _mean(values: list[float]) -> float | None:
+    return round(sum(values) / len(values), 2) if values else None
+
+
+def summary_output_metrics(records: list[dict[str, Any]], task: str) -> dict[str, Any]:
+    """Numeric faithfulness, risk coverage, completeness, guardrail violation rate, post-check, latency."""
+
+    from credit_review_summary import (
+        LoiHauKiemAI,
+        chua_ngon_ngu_quyet_dinh,
+        chuoi_cua_tom_tat,
+        doi_chieu_con_so,
+        hau_kiem_tom_tat,
+        phan_tich_output,
+    )
+
+    attempted = answered = complete = violations = passed = 0
+    matched_numbers = total_numbers = 0
+    covered = expected_codes = 0
+    latencies: list[float] = []
+    for record in records:
+        entry = (record.get("tasks") or {}).get(task)
+        if not entry:
+            continue
+        attempted += 1
+        if entry.get("latency_ms") is not None:
+            latencies.append(float(entry["latency_ms"]))
+        raw = entry.get("raw")
+        if not raw:
+            continue
+        answered += 1
+        payload = (record.get("python") or {}).get("payload") or {}
+        codes = {str(r.get("loai")) for r in payload.get("canh_bao") or [] if isinstance(r, dict)}
+        try:
+            summary = phan_tich_output(raw)
+            texts = chuoi_cua_tom_tat(summary)
+            complete += 1
+            passed += int(not hau_kiem_tom_tat(summary, payload))
+            mentioned = {item.risk_code for item in summary.canh_bao} | {c for c in codes if any(c in t for t in texts)}
+        except LoiHauKiemAI:
+            texts = [raw]
+            mentioned = {c for c in codes if c in raw}
+        ok, total, _bad = doi_chieu_con_so(texts, payload)
+        matched_numbers += ok
+        total_numbers += total
+        covered += len(codes & mentioned)
+        expected_codes += len(codes)
+        violations += int(any(chua_ngon_ngu_quyet_dinh(t) for t in texts))
+    return {
+        "attempted": attempted,
+        "answered": answered,
+        "errors": attempted - answered,
+        "numeric_faithfulness": safe_divide(matched_numbers, total_numbers),
+        "numbers_checked": total_numbers,
+        "risk_coverage": safe_divide(covered, expected_codes),
+        "completeness": safe_divide(complete, answered),
+        "guardrail_violation_rate": safe_divide(violations, answered),
+        "post_check_pass_rate": safe_divide(passed, answered),
+        "mean_latency_ms": _mean(latencies),
+    }
+
+
+def extraction_output_metrics(records: list[dict[str, Any]]) -> dict[str, Any]:
+    """Extraction grounding rate (% giá trị vượt grounding check) và precision so với gold."""
+
+    attempted = answered = items_total = grounded = correct = gold_total = 0
+    latencies: list[float] = []
+    for record in records:
+        entry = (record.get("tasks") or {}).get("extraction")
+        if not entry:
+            continue
+        attempted += 1
+        if entry.get("latency_ms") is not None:
+            latencies.append(float(entry["latency_ms"]))
+        if entry.get("error"):
+            continue
+        answered += 1
+        gold = entry.get("gold") or {}
+        gold_total += sum(1 for value in gold.values() if value is not None)
+        for item in entry.get("items") or []:
+            items_total += 1
+            if item.get("status") != "pending":
+                continue
+            grounded += 1
+            field = str(item.get("field"))
+            expected, value = gold.get(field), item.get("value")
+            if expected is None:
+                continue
+            if isinstance(expected, str) and re.fullmatch(r"\d{2}/\d{4}", expected):
+                correct += int(str(value) == expected)  # ngày được lưu ở mức tháng/năm
+            elif field_matches(field, value, expected):
+                correct += 1
+    return {
+        "attempted": attempted,
+        "answered": answered,
+        "errors": attempted - answered,
+        "items": items_total,
+        "grounding_rate": safe_divide(grounded, items_total),
+        "precision_vs_gold": safe_divide(correct, grounded),
+        "recall_vs_gold": safe_divide(correct, gold_total),
+        "mean_latency_ms": _mean(latencies),
+    }

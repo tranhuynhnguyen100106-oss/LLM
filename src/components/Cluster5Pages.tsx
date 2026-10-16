@@ -745,8 +745,8 @@ export function EvaluationPage({ viewModel }: { viewModel: V2EvaluationPageViewM
           <section className="cl-core-section" aria-labelledby="cl-grounding-title">
             <div className="cl-core-section__heading">
               <div>
-                <p className="cl-core-eyebrow">Saved outputs · no API</p>
-                <h2 id="cl-grounding-title">Grounding metrics</h2>
+                <p className="cl-core-eyebrow">MÔ PHỎNG · saved annotated outputs · no API</p>
+                <h2 id="cl-grounding-title">Grounding metrics (mô phỏng)</h2>
               </div>
             </div>
             <div className="cl-table-scroll" tabIndex={0} aria-label="Bảng grounding metrics">
@@ -797,6 +797,55 @@ export function EvaluationPage({ viewModel }: { viewModel: V2EvaluationPageViewM
               ))}
             </div>
           </section>
+
+          {viewModel.pdf_benchmark && viewModel.pdf_benchmark.length > 0 ? (
+            <section className="cl-core-section" aria-labelledby="cl-pdf-bench-title">
+              <div className="cl-core-section__heading">
+                <div>
+                  <p className="cl-core-eyebrow">Real PDF pipeline · no API</p>
+                  <h2 id="cl-pdf-bench-title">PDF benchmark (20 hồ sơ)</h2>
+                </div>
+              </div>
+              <dl className="cl-label-value-grid">
+                {viewModel.pdf_benchmark.map((item) => (
+                  <div key={item.label}>
+                    <dt>{item.label}</dt>
+                    <dd>{item.value}</dd>
+                  </div>
+                ))}
+              </dl>
+            </section>
+          ) : null}
+
+          {viewModel.llm_live_note !== undefined ? (
+            <section className="cl-core-section" aria-labelledby="cl-llm-live-title">
+              <div className="cl-core-section__heading">
+                <div>
+                  <p className="cl-core-eyebrow">Output LLM thật · tách khỏi số liệu mô phỏng</p>
+                  <h2 id="cl-llm-live-title">Đánh giá output LLM thật</h2>
+                </div>
+              </div>
+              <p className="cl-llm-live-note">{viewModel.llm_live_note ?? "Chưa có output LLM thật."}</p>
+              {viewModel.llm_live && viewModel.llm_live.length > 0 ? (
+                <div className="cl-baseline-grid">
+                  {viewModel.llm_live.map((row) => (
+                    <article key={`${row.baseline}-${row.variant}`}>
+                      <span>{row.baseline}</span>
+                      <h3>{row.variant}</h3>
+                      <dl>
+                        {row.values.map((item) => (
+                          <div key={item.label}>
+                            <dt>{item.label}</dt>
+                            <dd>{item.value}</dd>
+                          </div>
+                        ))}
+                      </dl>
+                    </article>
+                  ))}
+                </div>
+              ) : null}
+            </section>
+          ) : null}
 
           <section className="cl-core-section" aria-labelledby="cl-processing-title">
             <div className="cl-core-section__heading">

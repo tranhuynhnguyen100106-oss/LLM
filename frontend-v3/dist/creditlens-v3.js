@@ -12410,10 +12410,10 @@ function We({ viewModel: e }) {
 						className: "cl-core-section__heading",
 						children: /* @__PURE__ */ (0, x.jsxs)("div", { children: [/* @__PURE__ */ (0, x.jsx)("p", {
 							className: "cl-core-eyebrow",
-							children: "Saved outputs · no API"
+							children: "MÔ PHỎNG · saved annotated outputs · no API"
 						}), /* @__PURE__ */ (0, x.jsx)("h2", {
 							id: "cl-grounding-title",
-							children: "Grounding metrics"
+							children: "Grounding metrics (mô phỏng)"
 						})] })
 					}), /* @__PURE__ */ (0, x.jsx)("div", {
 						className: "cl-table-scroll",
@@ -12470,6 +12470,51 @@ function We({ viewModel: e }) {
 							/* @__PURE__ */ (0, x.jsx)("dl", { children: e.values.map((e) => /* @__PURE__ */ (0, x.jsxs)("div", { children: [/* @__PURE__ */ (0, x.jsx)("dt", { children: e.label }), /* @__PURE__ */ (0, x.jsx)("dd", { children: e.value })] }, e.label)) })
 						] }, `${e.baseline}-${e.variant}`))
 					})]
+				}),
+				e.pdf_benchmark && e.pdf_benchmark.length > 0 ? /* @__PURE__ */ (0, x.jsxs)("section", {
+					className: "cl-core-section",
+					"aria-labelledby": "cl-pdf-bench-title",
+					children: [/* @__PURE__ */ (0, x.jsx)("div", {
+						className: "cl-core-section__heading",
+						children: /* @__PURE__ */ (0, x.jsxs)("div", { children: [/* @__PURE__ */ (0, x.jsx)("p", {
+							className: "cl-core-eyebrow",
+							children: "Real PDF pipeline · no API"
+						}), /* @__PURE__ */ (0, x.jsx)("h2", {
+							id: "cl-pdf-bench-title",
+							children: "PDF benchmark (20 hồ sơ)"
+						})] })
+					}), /* @__PURE__ */ (0, x.jsx)("dl", {
+						className: "cl-label-value-grid",
+						children: e.pdf_benchmark.map((e) => /* @__PURE__ */ (0, x.jsxs)("div", { children: [/* @__PURE__ */ (0, x.jsx)("dt", { children: e.label }), /* @__PURE__ */ (0, x.jsx)("dd", { children: e.value })] }, e.label))
+					})]
+				}) : null,
+				e.llm_live_note === void 0 ? null : /* @__PURE__ */ (0, x.jsxs)("section", {
+					className: "cl-core-section",
+					"aria-labelledby": "cl-llm-live-title",
+					children: [
+						/* @__PURE__ */ (0, x.jsx)("div", {
+							className: "cl-core-section__heading",
+							children: /* @__PURE__ */ (0, x.jsxs)("div", { children: [/* @__PURE__ */ (0, x.jsx)("p", {
+								className: "cl-core-eyebrow",
+								children: "Output LLM thật · tách khỏi số liệu mô phỏng"
+							}), /* @__PURE__ */ (0, x.jsx)("h2", {
+								id: "cl-llm-live-title",
+								children: "Đánh giá output LLM thật"
+							})] })
+						}),
+						/* @__PURE__ */ (0, x.jsx)("p", {
+							className: "cl-llm-live-note",
+							children: e.llm_live_note ?? "Chưa có output LLM thật."
+						}),
+						e.llm_live && e.llm_live.length > 0 ? /* @__PURE__ */ (0, x.jsx)("div", {
+							className: "cl-baseline-grid",
+							children: e.llm_live.map((e) => /* @__PURE__ */ (0, x.jsxs)("article", { children: [
+								/* @__PURE__ */ (0, x.jsx)("span", { children: e.baseline }),
+								/* @__PURE__ */ (0, x.jsx)("h3", { children: e.variant }),
+								/* @__PURE__ */ (0, x.jsx)("dl", { children: e.values.map((e) => /* @__PURE__ */ (0, x.jsxs)("div", { children: [/* @__PURE__ */ (0, x.jsx)("dt", { children: e.label }), /* @__PURE__ */ (0, x.jsx)("dd", { children: e.value })] }, e.label)) })
+							] }, `${e.baseline}-${e.variant}`))
+						}) : null
+					]
 				}),
 				/* @__PURE__ */ (0, x.jsxs)("section", {
 					className: "cl-core-section",

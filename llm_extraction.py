@@ -251,17 +251,23 @@ def trich_xuat_bo_sung_bang_ai(
     docs: Mapping[str, Any],
     vault: Any,
     connection: Mapping[str, Any],
+    *,
+    fields: list[str] | None = None,
 ) -> dict[str, Any]:
-    """1 inference request cho cả hồ sơ. Trả {"requested", "items"} — items đã qua grounding check."""
+    """1 inference request cho cả hồ sơ. Trả {"requested", "items", "raw"} — items đã qua grounding check.
+
+    ``fields`` chỉ dùng cho đánh giá offline (scripts/run_llm_eval.py): yêu cầu trích mọi trường số/ngày
+    để đo grounding rate và precision so với gold; UI luôn dùng các trường regex bỏ sót.
+    """
 
     from credit_underwriting_colab import tao_phan_hoi_chat_ai
 
-    requested = truong_can_bo_sung(result, docs)
+    requested = [f for f in fields if f in TRUONG_AI] if fields is not None else truong_can_bo_sung(result, docs)
     if not requested:
-        return {"requested": [], "items": []}
+        return {"requested": [], "items": [], "raw": ""}
     pages = trang_da_gia_danh(docs, requested, vault)
     if not pages:
-        return {"requested": requested, "items": []}
+        return {"requested": requested, "items": [], "raw": ""}
     output = tao_phan_hoi_chat_ai(
         [{"role": "user", "content": noi_dung_yeu_cau(requested, pages)}],
         str(connection.get("api_key") or ""),
@@ -271,6 +277,17 @@ def trich_xuat_bo_sung_bang_ai(
         system_prompt=SYSTEM_PROMPT,
         response_schema=gemini_response_schema(),
     )
+    return {"requested": requested, "items": cham_output_trich_xuat(output, requested, pages, docs), "raw": output}
+
+
+def cham_output_trich_xuat(
+    output: str,
+    requested: list[str],
+    pages: Mapping[tuple[str, int], str],
+    docs: Mapping[str, Any],
+) -> list[dict[str, Any]]:
+    """Phân tích JSON (lỗi → RuntimeError EXT-JSON) rồi grounding check từng mục."""
+
     parsed = phan_tich_output(output)
     seen: set[str] = set()
     items = []
@@ -281,7 +298,7 @@ def trich_xuat_bo_sung_bang_ai(
                 checked = {**checked, "status": "rejected", "reason": "Trùng trường — chỉ giữ giá trị đầu tiên."}
             seen.add(item.field)
         items.append(checked)
-    return {"requested": requested, "items": items}
+    return items
 
 
 def ap_dung_truong_da_xac_nhan(result: Any, docs: Mapping[str, Any], item: Mapping[str, Any], thresholds: Any) -> Any:

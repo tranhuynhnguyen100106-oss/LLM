@@ -24,6 +24,7 @@ from credit_underwriting_colab import (
 
 from .dataset import DATASET_VERSION, load_gold_cases
 from .failure_cases import build_failure_cases
+from .llm_live import score_llm_outputs
 from .metrics import (
     extraction_metrics,
     llm_grounding_metrics,
@@ -273,6 +274,7 @@ def run_evaluation(
     )
 
     pdf_benchmark = _pdf_benchmark(cases, thresholds)
+    llm_live = score_llm_outputs()  # output LLM thật đã lưu (nếu có); không gọi API
 
     elapsed_ms = round((time.perf_counter() - started) * 1000, 2)
     run_id = str(uuid.uuid4())
@@ -299,9 +301,10 @@ def run_evaluation(
         "extraction_metrics": extraction,
         "risk_detection": risk_metrics,
         "pdf_benchmark": pdf_benchmark,
+        "llm_live": llm_live,
         "status_classification": status_metrics,
         "llm_grounding": {
-            "method": "Deterministic scoring over saved annotated outputs; no inference request.",
+            "method": "MÔ PHỎNG: chấm trên output mẫu có gán nhãn (gold_cases._saved_outputs), không phải output LLM thật; no inference request.",
             "structured_grounded": grounded,
             "generic_prompt": generic,
         },

@@ -4063,3 +4063,5 @@
 .cl-ai-extract__reason { color: var(--cl-danger, #b91c1c); }
 .cl-ai-extract__actions { display: flex; gap: 8px; flex-wrap: wrap; }
 .cl-ai-extract__actions .cl-demo-panel__action { width: auto; min-width: 120px; margin: 0; }
+
+.cl-llm-live-note { margin: 0 0 12px; color: var(--cl-muted); font-size: 14px; }

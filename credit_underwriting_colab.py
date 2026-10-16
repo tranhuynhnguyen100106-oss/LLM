@@ -2683,14 +2683,38 @@ def tao_credit_review_summary_ai(
     Vi phạm → ``LoiHauKiemAI`` (RuntimeError): không đưa vào báo cáo xuất; facts Python vẫn hiển thị.
     """
 
-    from credit_review_summary import (
-        LoiHauKiemAI,
-        gemini_response_schema,
-        hau_kiem_tom_tat,
-        huong_dan_json,
-        phan_tich_output,
-        render_markdown,
+    from credit_review_summary import LoiHauKiemAI, hau_kiem_tom_tat, phan_tich_output, render_markdown
+    from privacy_gateway import build_vault, detect_pii
+
+    active_vault = vault if vault is not None else build_vault(detect_pii(None, result))
+    output = goi_llm_tom_tat_tho(result, api_key, provider, model, system_prompt, active_vault)
+    summary = phan_tich_output(output)  # JSON + Pydantic (thiếu mục / sai schema → LoiHauKiemAI)
+    violations = hau_kiem_tom_tat(summary, json.loads(du_lieu_gui_llm(result, active_vault)))
+    if violations:
+        active_vault.ghi_nhat_ky("Hậu kiểm Credit Review Summary", provider=provider, ket_qua=f"FAIL {len(violations)}")
+        raise LoiHauKiemAI(violations)
+    provider_label = NHA_CUNG_CAP_LLM[provider]["nhan"]
+    markdown = render_markdown(
+        summary,
+        footer=f"---\n**Mô hình diễn giải:** {provider_label} · `{model}` · đã vượt hậu kiểm Python  "
+        + "\n**Bắt buộc con người xem xét. Nội dung AI không phải quyết định tín dụng.**",
     )
+    return summary, markdown
+
+
+def goi_llm_tom_tat_tho(
+    result: KetQuaThamDinh,
+    api_key: str,
+    provider: str,
+    model: str,
+    system_prompt: str,
+    vault: Any | None = None,
+    *,
+    co_ngu_canh: bool = True,
+) -> str:
+    """Đúng 1 inference request; trả output thô. ``co_ngu_canh=False``: baseline prompt chung, không có JSON."""
+
+    from credit_review_summary import YEU_CAU_TOM_TAT_GENERIC, gemini_response_schema, huong_dan_json
 
     if not api_key or len(api_key.strip()) < 12:
         raise ValueError("API Key chưa được nhập hoặc không hợp lệ.")
@@ -2703,7 +2727,7 @@ def tao_credit_review_summary_ai(
 
     active_vault = vault if vault is not None else build_vault(detect_pii(None, result))
     prompt = system_prompt[:8000] + "\n\n" + PRIVACY_PROMPT_NOTE
-    user_input = _noi_dung_yeu_cau_llm(result, active_vault)
+    user_input = _noi_dung_yeu_cau_llm(result, active_vault) if co_ngu_canh else YEU_CAU_TOM_TAT_GENERIC
     if provider != "gemini":
         user_input += huong_dan_json()  # Gemini dùng responseSchema; provider khác: yêu cầu JSON + validate Pydantic
     # Fail-closed: còn giá trị thật thì chặn trước khi tạo bất kỳ client/request nào.
@@ -2783,18 +2807,7 @@ def tao_credit_review_summary_ai(
         ) from exc
     if not output:
         raise RuntimeError("API không trả về nội dung.")
-    summary = phan_tich_output(output)  # JSON + Pydantic (thiếu mục / sai schema → LoiHauKiemAI)
-    violations = hau_kiem_tom_tat(summary, json.loads(du_lieu_gui_llm(result, active_vault)))
-    if violations:
-        active_vault.ghi_nhat_ky("Hậu kiểm Credit Review Summary", provider=provider, ket_qua=f"FAIL {len(violations)}")
-        raise LoiHauKiemAI(violations)
-    provider_label = NHA_CUNG_CAP_LLM[provider]["nhan"]
-    markdown = render_markdown(
-        summary,
-        footer=f"---\n**Mô hình diễn giải:** {provider_label} · `{model}` · đã vượt hậu kiểm Python  "
-        + "\n**Bắt buộc con người xem xét. Nội dung AI không phải quyết định tín dụng.**",
-    )
-    return summary, markdown
+    return output
 
 
 def chuan_hoa_lich_su_chat(messages: Any) -> list[dict[str, str]]:

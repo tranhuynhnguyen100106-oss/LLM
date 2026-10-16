@@ -117,6 +117,13 @@ def huong_dan_json() -> str:
     )
 
 
+# Baseline đánh giá (#2): prompt chung chung, KHÔNG có JSON ngữ cảnh của hồ sơ.
+YEU_CAU_TOM_TAT_GENERIC = (
+    "Hãy soạn Credit Review Summary theo đúng 10 mục cho hồ sơ vay của khách hàng KH_01 "
+    "(tong_quan, de_nghi_vay, tai_chinh_da_xac_minh, chi_so, kiem_tra_nhat_quan, canh_bao, thong_tin_thieu, "
+    "cau_hoi_xac_minh, bang_chung, trang_thai_xem_xet)."
+)
+
 YEU_CAU_TOM_TAT = (
     "Hãy soạn Credit Review Summary theo đúng 10 mục (tong_quan, de_nghi_vay, tai_chinh_da_xac_minh, chi_so, "
     "kiem_tra_nhat_quan, canh_bao, thong_tin_thieu, cau_hoi_xac_minh, bang_chung, trang_thai_xem_xet). "
@@ -271,26 +278,40 @@ def _strings(summary: CreditReviewSummary) -> Iterable[str]:
                     yield str(item)
 
 
-def hau_kiem_tom_tat(summary: CreditReviewSummary, payload: dict[str, Any]) -> list[str]:
-    """Danh sách vi phạm (rỗng = vượt hậu kiểm). ``payload``: JSON đã giả danh hóa gửi cho LLM."""
+def doi_chieu_con_so(texts: Iterable[str], payload: Any) -> tuple[int, int, list[str]]:
+    """(số khớp, tổng số, danh sách không khớp) — tỷ lệ ±0,1 điểm %, tiền/số khác khớp sau quy đổi."""
 
-    violations: list[str] = []
     allowed: list[float] = []
     _numbers_in_json(payload, allowed)
     percents = {round(v, 4) for v in allowed} | {round(v * 100, 4) for v in allowed if abs(v) <= 50}
     small_counts = {float(i) for i in range(0, 13)}  # đánh số mục, số lượng cảnh báo…
-
-    # (a) số liệu khớp JSON (±0,1 điểm % cho tỷ lệ; tiền/số khác khớp tuyệt đối sau quy đổi)
-    bad_numbers: list[str] = []
-    for text in _strings(summary):
+    matched = total = 0
+    bad: list[str] = []
+    for text in texts:
         for value, kind in trich_con_so(text):
+            total += 1
             if kind == "percent":
                 ok = any(abs(value - p) <= 0.1 + 1e-9 for p in percents)
             else:
                 ok = value in small_counts or any(abs(value - a) <= max(1e-6, abs(a) * 1e-9) for a in allowed)
                 ok = ok or any(abs(value - p) <= 0.1 + 1e-9 for p in percents if p < 1000)
-            if not ok:
-                bad_numbers.append(f"{value:g}{'%' if kind == 'percent' else ''}")
+            if ok:
+                matched += 1
+            else:
+                bad.append(f"{value:g}{'%' if kind == 'percent' else ''}")
+    return matched, total, bad
+
+
+def chuoi_cua_tom_tat(summary: CreditReviewSummary) -> list[str]:
+    return list(_strings(summary))
+
+
+def hau_kiem_tom_tat(summary: CreditReviewSummary, payload: dict[str, Any]) -> list[str]:
+    """Danh sách vi phạm (rỗng = vượt hậu kiểm). ``payload``: JSON đã giả danh hóa gửi cho LLM."""
+
+    violations: list[str] = []
+    # (a) số liệu khớp JSON (±0,1 điểm % cho tỷ lệ; tiền/số khác khớp tuyệt đối sau quy đổi)
+    _matched, _total, bad_numbers = doi_chieu_con_so(_strings(summary), payload)
     if bad_numbers:
         violations.append("(a) số liệu không có trong JSON đầu vào: " + ", ".join(sorted(set(bad_numbers))[:8]))
 
