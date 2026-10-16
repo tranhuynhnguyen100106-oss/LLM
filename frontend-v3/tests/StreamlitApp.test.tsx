@@ -94,6 +94,41 @@ describe("UI v3 trên Streamlit", () => {
     expect(click).toHaveBeenCalledTimes(1);
   });
 
+  it("bảng xác nhận phân loại: selectbox phát upload_assign, tiếp tục bị khóa khi trùng loại", () => {
+    const base = parseV3Payload(fixtures.locked);
+    const plan = {
+      mode: "directory",
+      rows: [
+        { id: "f1", path: "HOSO/don_de_nghi_vay.pdf", size_label: "2 KB", type: "application", detected_label: "Đơn đề nghị vay vốn", confidence: 0.92, basis: "Tên tệp + nội dung", changed: false, note: "" },
+        { id: "f2", path: "HOSO/sub/a.pdf", size_label: "2 KB", type: "application", detected_label: "Đơn đề nghị vay vốn", confidence: 0.74, basis: "Nội dung PDF", changed: false, note: "" }
+      ],
+      skipped: [{ path: "HOSO/ghi_chu.txt", reason: "Không phải PDF — bỏ qua." }],
+      options: [
+        { value: "application", label: "Đơn đề nghị vay vốn" },
+        { value: "income", label: "Chứng từ thu nhập" },
+        { value: "statement", label: "Sao kê ngân hàng" },
+        { value: "debt", label: "Thông tin nghĩa vụ nợ" },
+        { value: "skip", label: "Bỏ qua (không dùng)" }
+      ],
+      issues: [{ level: "error" as const, text: "Có 2 tệp cùng loại Đơn đề nghị vay vốn." }],
+      can_continue: false
+    };
+    const { emit } = mount({ ...base, privacy: { ...base.privacy, upload_plan: plan } });
+    expect(screen.getByText("Xác nhận phân loại tài liệu")).toBeTruthy();
+    expect(screen.getByText("HOSO/sub/a.pdf")).toBeTruthy();
+    expect(screen.getByText(/Có 2 tệp cùng loại/)).toBeTruthy();
+    const next = screen.getByRole("button", { name: "Tiếp tục trích xuất" });
+    expect(next.hasAttribute("disabled")).toBe(true);
+    fireEvent.change(screen.getByLabelText("Loại tài liệu của HOSO/sub/a.pdf"), { target: { value: "income" } });
+    expect(emit.mock.calls.at(-1)![0]).toMatchObject({ type: "upload_assign", id: "f2", doc_type: "income" });
+  });
+
+  it("nút Chọn thư mục dùng input webkitdirectory", () => {
+    mount(parseV3Payload(fixtures.locked));
+    expect(screen.getAllByRole("button", { name: /Chọn thư mục/ }).length).toBeGreaterThan(0);
+    expect(document.querySelector('[data-testid="cl-folder-input"]')!.hasAttribute("webkitdirectory")).toBe(true);
+  });
+
   it("từ chối payload chứa khóa bị cấm", () => {
     expect(() => parseV3Payload({ ...fixtures.summary, api_key: "x" })).toThrow();
     expect(() => parseV3Payload({ ...fixtures.summary, chat: { ...fixtures.summary.chat, token: "x" } })).toThrow();

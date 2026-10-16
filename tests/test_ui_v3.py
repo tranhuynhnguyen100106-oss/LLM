@@ -75,6 +75,7 @@ def upload_case_through_gateway(st: FakeSt, index: int = 0) -> Any:
     case = synthetic_cases()[index]
     st.session_state[pg.KEY_CONSENT] = True
     v3.xu_ly_tep_tai_len_v3(st, case_uploads(case), st.settings)
+    v3.handle_v3_event(st, event("upload_continue"), st.settings)
     pg.xac_nhan_cong(st)
     return case
 

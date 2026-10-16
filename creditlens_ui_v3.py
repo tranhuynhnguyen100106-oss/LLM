@@ -61,11 +61,9 @@ PAGE_LABELS = {
 CORE_KIND = {"2_extraction": "extraction", "3_analysis": "analysis", "4_risk": "risk"}
 
 GEMINI_DEFAULT_MODEL = "gemini-3.8-flash"
-MODEL_LABELS = {
-    "gemini-3.8-flash": ("Gemini 3.8 Flash", "MẶC ĐỊNH"),
-    "gemini-3.1-flash-lite": ("Gemini 3.1 Flash Lite", "TỐC ĐỘ CAO"),
-    "gemini-4-argon": ("Gemini 4 Argon", "SUY LUẬN SÂU"),
-}
+CHAT_HISTORY_LIMIT = 12
+PING_SYSTEM_PROMPT = "Kiểm tra kết nối. Trả lời đúng một từ: OK."
+PARTIAL_LABEL = "Key hợp lệ — chưa gọi được model"
 
 CHAT_ROLES = ("underwriter", "risk_auditor", "advisor")
 # Nội dung chuyển nguyên văn từ src/lib/prompts.ts (bản AI Studio).
@@ -187,8 +185,39 @@ def chon_model_mac_dinh(provider: str, models: list[str], preferred: str | None 
     if wanted and wanted in models:
         return wanted, None
     if wanted:
-        return models[0], f"Model {wanted} không khả dụng với khóa này; đang dùng {models[0]}."
+        fallback = next((model for model in models if "flash" in model.lower()), models[0])
+        return fallback, f"Model {wanted} không khả dụng với khóa này; đang dùng {fallback}."
     return models[0], None
+
+
+def nhan_model(model_id: str) -> str:
+    """Nhãn hiển thị suy ra từ id model thật (không dùng danh sách viết cứng)."""
+
+    words = []
+    for word in str(model_id).replace("models/", "").split("-"):
+        words.append(word.upper() if word.lower() in {"ai", "gpt"} else word[:1].upper() + word[1:])
+    return " ".join(words) or str(model_id)
+
+
+def lich_su_hop_le(messages: list[dict[str, Any]], limit: int = CHAT_HISTORY_LIMIT) -> list[dict[str, str]]:
+    """Lịch sử gửi provider: bỏ notice và tin gửi lỗi, gộp lượt cùng vai, lượt đầu luôn là user, tối đa `limit` lượt."""
+
+    turns: list[dict[str, str]] = []
+    for item in messages:
+        if not isinstance(item, dict) or item.get("notice") or item.get("failed"):
+            continue
+        role = item.get("role")
+        content = str(item.get("content") or "").strip()
+        if role not in {"user", "assistant"} or not content:
+            continue
+        if turns and turns[-1]["role"] == role:
+            turns[-1] = {"role": role, "content": turns[-1]["content"] + "\n\n" + content}
+        else:
+            turns.append({"role": str(role), "content": content})
+    turns = turns[-max(1, int(limit)):]
+    while turns and turns[0]["role"] != "user":
+        turns.pop(0)
+    return turns
 
 
 def _toast(state: Any, title: str, description: str = "", kind: str = "info") -> None:
@@ -286,12 +315,28 @@ def _ai_connection_status(st: Any) -> dict[str, Any]:
 
     connection = ket_noi_llm_dang_dung(st)
     error = str(st.session_state.get("llm_connection_error") or "")
+    if connection and not connection.get("generate_verified"):
+        provider = str(connection.get("provider"))
+        last_error = str(connection.get("generate_error") or "")
+        return {
+            "state": "partial",
+            "label": PARTIAL_LABEL,
+            "message": (
+                f"Lần kiểm tra gần nhất: {last_error} "
+                if last_error
+                else "Khóa đã tải được danh sách model nhưng chưa gọi thử model. "
+            )
+            + "Bấm “Kiểm tra kết nối” ở Cài đặt → Kết nối AI (1 request) hoặc gửi một câu hỏi.",
+            "provider_label": NHA_CUNG_CAP_LLM[provider]["nhan"],
+            "model": str(connection.get("model") or ""),
+            "source": "secrets" if connection.get("source") == "secrets" else "session",
+        }
     if connection:
         provider = str(connection.get("provider"))
         source = "secrets" if connection.get("source") == "secrets" else "session"
         return {
             "state": "connected",
-            "label": "CONNECTED",
+            "label": "Đã kết nối",
             "message": (
                 "Đang dùng khóa do chủ ứng dụng cấu hình trong Secrets. "
                 if source == "secrets"
@@ -355,11 +400,50 @@ def _chat_models(st: Any) -> list[dict[str, str]]:
         return []
     output = []
     for model_id in list(connection.get("models") or [])[:120]:
-        label, badge = MODEL_LABELS.get(model_id, (model_id, "KHẢ DỤNG"))
-        if model_id == connection.get("model"):
-            badge = "ĐANG DÙNG"
-        output.append({"id": model_id, "label": label, "badge": badge})
+        badge = "ĐANG DÙNG" if model_id == connection.get("model") else "KHẢ DỤNG"
+        output.append({"id": model_id, "label": nhan_model(model_id), "badge": badge})
     return output
+
+
+def _danh_dau_goi_model(st: Any, model: str, error: str = "") -> None:
+    """Ghi kết quả gọi generateContent thật vào kết nối đang dùng (không chứa khóa trong thông điệp)."""
+
+    state = st.session_state
+    provider = str(state.get("active_llm_provider") or "")
+    connections = dict(state.get("llm_connections") or {})
+    if provider not in connections:
+        return
+    connection = dict(connections[provider])
+    connection["generate_verified"] = not error
+    connection["generate_model"] = model
+    connection["generate_error"] = error[:300]
+    connections[provider] = connection
+    state["llm_connections"] = connections
+
+
+def kiem_tra_ket_noi_model(st: Any) -> tuple[bool, str]:
+    """Nút "Kiểm tra kết nối": đúng 1 generateContent ngắn ("ping") với model đang chọn."""
+
+    from credit_underwriting_colab import ket_noi_llm_dang_dung, tao_phan_hoi_chat_ai
+
+    connection = ket_noi_llm_dang_dung(st)
+    if connection is None:
+        return False, "Chưa có API Key đã xác minh."
+    model = str(connection.get("model") or "")
+    try:
+        tao_phan_hoi_chat_ai(
+            [{"role": "user", "content": "ping"}],
+            str(connection.get("api_key") or ""),
+            str(connection.get("provider") or ""),
+            model,
+            None,
+            system_prompt=PING_SYSTEM_PROMPT,
+        )
+    except (ValueError, RuntimeError) as exc:
+        _danh_dau_goi_model(st, model, str(exc))
+        return False, str(exc)
+    _danh_dau_goi_model(st, model)
+    return True, f"Đã gọi được model {model}."
 
 
 # ==========================================================
@@ -593,6 +677,7 @@ def build_v3_payload(st: Any, settings: Mapping[str, Any]) -> dict[str, Any]:
         for key in ("state", "badge_label", "field_count", "public_warning", "consent_text", "consent_given", "case_id", "rows", "counts", "audit")
     }
     privacy_state["lock_reason"] = LOCK_REASON
+    privacy_state["upload_plan"] = upload_plan_view(state)
     steps, cards = _workflow(result)
     providers, active_provider = _providers(st)
     models = _chat_models(st)
@@ -709,25 +794,28 @@ def _v3_chat_send(st: Any, text: str, role: str, model_requested: str) -> None:
 
     state = st.session_state
     messages = list(state.get("v3_chat_messages") or [])
-    messages.append({"role": "user", "content": text, "timestamp": _now_ms()})
+    user_message: dict[str, Any] = {"role": "user", "content": text, "timestamp": _now_ms()}
+    messages.append(user_message)
     state["v3_chat_messages"] = messages
+
+    def _fail(content: str) -> None:
+        # Tin user của lần gửi lỗi được đánh dấu để không thành lượt user mồ côi ở lần gửi sau.
+        user_message["failed"] = True
+        messages.append(_notice(content))
+
     if not cong_hoan_tat(state):
-        messages.append(_notice(CHAT_LOCK_REASON))
+        _fail(CHAT_LOCK_REASON)
         return
     connection = ket_noi_llm_dang_dung(st)
     if connection is None:
-        messages.append(_notice(NO_AI_MESSAGE))
+        _fail(NO_AI_MESSAGE)
         return
     models = list(connection.get("models") or [])
     model = model_requested if model_requested in models else str(connection.get("model") or "")
     if model_requested and model_requested not in models:
         _toast(state, "Model không khả dụng", f"Đang dùng {model} theo danh sách model của nhà cung cấp.", "warning")
     vault = lay_vault(state)
-    history = [
-        {"role": item["role"], "content": item["content"]}
-        for item in messages
-        if not item.get("notice") and item.get("role") in {"user", "assistant"}
-    ]
+    history = lich_su_hop_le(messages)
     system = build_system_instruction(role, _prompt_context(state.get("result"), vault))
     try:
         # Đúng 1 inference request cho mỗi lần Send.
@@ -740,15 +828,18 @@ def _v3_chat_send(st: Any, text: str, role: str, model_requested: str) -> None:
             system_prompt=system,
         )
     except PrivacyLeakError as exc:
-        messages.append(_notice(str(exc)))
+        _fail(str(exc))
         return
-    except (ValueError, RuntimeError):
-        messages.append(_notice("Không thể nhận phản hồi từ model. Vui lòng kiểm tra kết nối hoặc API Key."))
+    except (ValueError, RuntimeError) as exc:
+        # Thông điệp cụ thể + mã lỗi (VD: GEM-429); không chứa khóa hay nội dung hồ sơ.
+        message = str(exc).replace(str(connection.get("api_key") or "") or "\0", "[REDACTED]")
+        _fail(f"**Không nhận được phản hồi từ {nhan_model(model)}.** {message}")
+        if getattr(exc, "ma", None):
+            _danh_dau_goi_model(st, model, message)
         return
+    _danh_dau_goi_model(st, model)
     if any(re.search(pattern, response, re.IGNORECASE) for pattern in _PROHIBITED_DECISION):
-        messages.append(
-            _notice("Câu trả lời của AI chứa khuyến nghị phê duyệt/từ chối nên đã bị chặn. Quyết định cuối cùng thuộc con người.")
-        )
+        _fail("Câu trả lời của AI chứa khuyến nghị phê duyệt/từ chối nên đã bị chặn. Quyết định cuối cùng thuộc con người.")
         return
     messages.append({"role": "assistant", "content": response, "modelUsed": model, "timestamp": _now_ms()})
 
@@ -832,6 +923,8 @@ def handle_v3_event(st: Any, raw_event: Any, settings: dict[str, Any]) -> bool:
             _toast(state, "Đã quét hồ sơ minh họa", f"{name} · kiểm tra bảng xem trước ở Bước 0.", "success")
     elif kind == "clear_case":
         xoa_ho_so_phien(state)
+        state.pop("v3_upload_plan", None)
+        state.pop("v3_upload_plan_files", None)
         state["v3_active_page"] = PAGE_KEYS[0]
         state["v3_upload_nonce"] = int(state.get("v3_upload_nonce") or 0) + 1
         state["v3_upload_signature"] = ""
@@ -881,6 +974,13 @@ def handle_v3_event(st: Any, raw_event: Any, settings: dict[str, Any]) -> bool:
             state["llm_active_selector"] = provider
         else:
             _toast(state, "Chưa kết nối provider này", "Xác thực API Key ở khung Kết nối AI bên dưới.", "warning")
+    elif kind == "upload_assign":
+        gan_loai_tep(state, raw_event.get("id"), raw_event.get("doc_type"))
+    elif kind == "upload_continue":
+        tiep_tuc_ke_hoach_tai_len(st, settings)
+    elif kind == "upload_cancel":
+        huy_ke_hoach_tai_len(state)
+        _toast(state, "Đã hủy bảng phân loại", "Tệp đã tải chưa được trích xuất hay đưa vào cổng bảo mật.", "info")
     elif kind == "privacy_consent":
         state[KEY_CONSENT] = bool(raw_event.get("value"))
     elif kind == "privacy_confirm":
@@ -927,17 +1027,174 @@ def _upload_signature(files: list[Any]) -> str:
     return digest.hexdigest()
 
 
-def xu_ly_tep_tai_len_v3(st: Any, files: list[Any], settings: Mapping[str, Any]) -> None:
-    """PDF thật → pypdf → chuẩn hóa → công thức → Privacy Gateway (chờ xác nhận)."""
+UPLOAD_TYPES = ("application", "income", "statement", "debt")
+UPLOAD_MODE_DIRECTORY = "Tải cả thư mục hồ sơ"
+UPLOAD_MODE_FILES = "Tải từng tệp"
+UPLOAD_SKIP = "skip"
+UPLOAD_MAX_FILES = 12
+_SYSTEM_FILES = frozenset({"thumbs.db", "desktop.ini", ".ds_store", "icon\r"})
 
-    from credit_underwriting_colab import (
-        goi_y_loai_tu_ten_tep,
-        lam_sach_ma_ho_so,
-        nguong_hieu_luc,
-        xu_ly_tai_lieu_tai_len,
-        xu_ly_thu_muc_tai_lieu,
-    )
-    from privacy_gateway import KEY_CONSENT, dua_vao_cong
+
+class _TepHoSo:
+    """Bản sao tối thiểu của UploadedFile: tên gốc (basename) + bytes, dùng cho pipeline hiện có."""
+
+    def __init__(self, name: str, data: bytes) -> None:
+        self.name = name
+        self._data = data
+        self.size = len(data)
+
+    def getvalue(self) -> bytes:
+        return self._data
+
+
+def duong_dan_tuong_doi(name: str) -> str:
+    """Tên do trình duyệt gửi (có thể chứa thư mục con) → đường dẫn tương đối dạng a/b/c.pdf."""
+
+    text = str(name or "").replace("\u2215", "/").replace("\\", "/").strip()
+    parts = [part for part in text.split("/") if part not in {"", ".", ".."}]
+    return "/".join(parts) or "tep-khong-ten"
+
+
+def la_tep_an_hoac_he_thong(path: str) -> bool:
+    parts = duong_dan_tuong_doi(path).split("/")
+    if any(part.startswith(".") or part == "__MACOSX" for part in parts):
+        return True
+    return parts[-1].casefold() in _SYSTEM_FILES
+
+
+def _kich_thuoc(size: int) -> str:
+    return f"{size / (1024 * 1024):.1f} MB" if size >= 1024 * 1024 else f"{max(1, round(size / 1024))} KB"
+
+
+def lap_ke_hoach_tai_len(files: list[Any]) -> tuple[dict[str, Any], dict[str, _TepHoSo]]:
+    """Phân loại từng tệp (gợi ý tên tệp + nội dung PDF qua pypdf, cục bộ) để chuyên viên xác nhận.
+
+    Không gửi tệp cho LLM. Tệp ẩn/hệ thống, không phải PDF, rỗng hoặc vượt 10 MB được liệt kê là bỏ qua.
+    """
+
+    import tempfile
+
+    from credit_underwriting_colab import GIOI_HAN_TEP, doc_pdf, goi_y_loai_tu_ten_tep
+
+    items: list[dict[str, Any]] = []
+    skipped: list[dict[str, str]] = []
+    kept: dict[str, _TepHoSo] = {}
+    with tempfile.TemporaryDirectory(prefix="creditlens_plan_") as temp_dir:
+        for index, uploaded in enumerate(files, start=1):
+            path = duong_dan_tuong_doi(getattr(uploaded, "name", ""))
+            basename = path.rsplit("/", 1)[-1]
+            if la_tep_an_hoac_he_thong(path):
+                skipped.append({"path": path, "reason": "Tệp ẩn hoặc tệp hệ thống — bỏ qua."})
+                continue
+            if not basename.casefold().endswith(".pdf"):
+                skipped.append({"path": path, "reason": "Không phải PDF — bỏ qua."})
+                continue
+            data = uploaded.getvalue()
+            if len(data) > GIOI_HAN_TEP:
+                skipped.append({"path": path, "reason": f"Vượt giới hạn 10 MB ({_kich_thuoc(len(data))})."})
+                continue
+            if len(kept) >= UPLOAD_MAX_FILES:
+                skipped.append({"path": path, "reason": f"Vượt quá {UPLOAD_MAX_FILES} PDF cho một hồ sơ."})
+                continue
+            hint = goi_y_loai_tu_ten_tep(basename)
+            safe = re.sub(r"[^A-Za-z0-9_.-]", "_", basename)
+            temp_path = Path(temp_dir) / f"{index:02d}_{safe}"
+            temp_path.write_bytes(data)
+            try:
+                document = doc_pdf(temp_path, hint or "application")
+            except ValueError as exc:
+                reason = str(exc).replace(temp_path.name, basename)
+                skipped.append({"path": path, "reason": reason[:200]})
+                continue
+            detected = hint or document.loai_nhan_dien
+            file_id = f"f{len(kept) + 1}"
+            kept[file_id] = _TepHoSo(basename, data)
+            items.append(
+                {
+                    "id": file_id,
+                    "path": path,
+                    "size_label": _kich_thuoc(len(data)),
+                    "detected": detected if detected in UPLOAD_TYPES else "unknown",
+                    "type": detected if detected in UPLOAD_TYPES else "unknown",
+                    "confidence": round(float(document.do_tin_cay or 0.0), 2),
+                    "basis": "Tên tệp + nội dung" if hint else "Nội dung PDF",
+                    "readable": not document.loi,
+                    "note": str(document.loi or "")[:160],
+                }
+            )
+    return {"items": items, "skipped": skipped}, kept
+
+
+def kiem_tra_ke_hoach(plan: Mapping[str, Any]) -> dict[str, Any]:
+    """Cảnh báo cho bảng xác nhận: thiếu bắt buộc, trùng loại, chưa xác định, tệp bị bỏ qua."""
+
+    from credit_underwriting_colab import NHAN_LOAI_TAI_LIEU
+
+    items = list(plan.get("items") or [])
+    used = [item for item in items if item.get("type") in UPLOAD_TYPES]
+    by_type: dict[str, list[str]] = {}
+    for item in used:
+        by_type.setdefault(str(item["type"]), []).append(str(item["path"]))
+    duplicates = [
+        f"Có {len(paths)} tệp cùng loại {NHAN_LOAI_TAI_LIEU[kind]}: " + ", ".join(paths) + "."
+        for kind, paths in by_type.items()
+        if len(paths) > 1
+    ]
+    missing = [NHAN_LOAI_TAI_LIEU[kind] for kind in ("application", "income", "statement") if kind not in by_type]
+    unknown = [str(item["path"]) for item in items if item.get("type") == "unknown"]
+    issues: list[dict[str, str]] = []
+    for text in duplicates:
+        issues.append({"level": "error", "text": text + " Chọn lại loại hoặc “Bỏ qua” một tệp."})
+    if missing:
+        issues.append({"level": "warning", "text": "Thiếu tài liệu bắt buộc: " + ", ".join(missing) + "."})
+    if unknown:
+        issues.append({"level": "warning", "text": "Chưa xác định loại: " + ", ".join(unknown) + " — chọn loại hoặc “Bỏ qua”."})
+    for entry in plan.get("skipped") or []:
+        issues.append({"level": "warning", "text": f"{entry['path']}: {entry['reason']}"})
+    can_continue = bool(used) and not duplicates and not unknown
+    return {"issues": issues, "can_continue": can_continue, "missing": missing, "duplicates": len(duplicates)}
+
+
+def upload_plan_view(state: Any) -> dict[str, Any] | None:
+    """View model bảng xác nhận phân loại (không có bytes tệp)."""
+
+    from credit_underwriting_colab import NHAN_LOAI_TAI_LIEU
+
+    plan = state.get("v3_upload_plan")
+    if not isinstance(plan, Mapping):
+        return None
+    check = kiem_tra_ke_hoach(plan)
+    options = [{"value": kind, "label": NHAN_LOAI_TAI_LIEU[kind]} for kind in UPLOAD_TYPES]
+    options.append({"value": UPLOAD_SKIP, "label": "Bỏ qua (không dùng)"})
+    rows = []
+    for item in plan.get("items") or []:
+        rows.append(
+            {
+                "id": item["id"],
+                "path": item["path"],
+                "size_label": item["size_label"],
+                "type": item["type"],
+                "detected_label": NHAN_LOAI_TAI_LIEU.get(item["detected"], "Chưa xác định"),
+                "confidence": item["confidence"],
+                "basis": item["basis"],
+                "changed": item["type"] != item["detected"],
+                "note": item.get("note") or "",
+            }
+        )
+    return {
+        "mode": str(plan.get("mode") or "directory"),
+        "rows": rows,
+        "skipped": list(plan.get("skipped") or []),
+        "options": options,
+        "issues": check["issues"],
+        "can_continue": check["can_continue"],
+    }
+
+
+def xu_ly_tep_tai_len_v3(st: Any, files: list[Any], settings: Mapping[str, Any]) -> None:
+    """Tệp mới → bảng xác nhận phân loại (chưa vào cổng). Chuyên viên bấm tiếp tục mới chạy pipeline."""
+
+    from privacy_gateway import KEY_CONSENT
 
     state = st.session_state
     signature = _upload_signature(files)
@@ -949,29 +1206,76 @@ def xu_ly_tep_tai_len_v3(st: Any, files: list[Any], settings: Mapping[str, Any])
             _toast(state, "Cần xác nhận bảo mật", "Tick ô xác nhận ở Bước 0 trước; tệp sẽ được xử lý ngay sau đó.", "warning")
         return
     state["v3_upload_signature"] = signature
+    plan, kept = lap_ke_hoach_tai_len(files)
+    plan["mode"] = "directory" if state.get("v3_upload_mode") != UPLOAD_MODE_FILES else "files"
+    state["v3_upload_plan"] = plan
+    state["v3_upload_plan_files"] = kept
+    state["v3_active_page"] = PAGE_KEYS[0]
+    if not plan["items"]:
+        _toast(state, "Không có PDF dùng được", "Kiểm tra bảng phân loại ở Bước 0 để xem lý do từng tệp.", "warning")
+        return
+    _toast(
+        state,
+        "Xác nhận phân loại tài liệu",
+        f"Nhận {len(plan['items'])} PDF, bỏ qua {len(plan['skipped'])} tệp. Kiểm tra loại từng tệp ở Bước 0 rồi bấm tiếp tục.",
+        "info",
+    )
+
+
+def gan_loai_tep(state: Any, file_id: Any, doc_type: Any) -> None:
+    plan = state.get("v3_upload_plan")
+    if not isinstance(plan, Mapping) or doc_type not in (*UPLOAD_TYPES, UPLOAD_SKIP):
+        return
+    items = []
+    for item in plan.get("items") or []:
+        if item.get("id") == file_id:
+            item = {**item, "type": doc_type}
+        items.append(item)
+    state["v3_upload_plan"] = {**plan, "items": items}
+
+
+def huy_ke_hoach_tai_len(state: Any) -> None:
+    state.pop("v3_upload_plan", None)
+    state.pop("v3_upload_plan_files", None)
+    state["v3_upload_nonce"] = int(state.get("v3_upload_nonce") or 0) + 1
+    state["v3_upload_signature"] = ""
+
+
+def tiep_tuc_ke_hoach_tai_len(st: Any, settings: Mapping[str, Any]) -> None:
+    """Theo phân loại đã xác nhận: pypdf → chuẩn hóa → công thức → Privacy Gateway (chờ xác nhận)."""
+
+    from credit_underwriting_colab import lam_sach_ma_ho_so, nguong_hieu_luc, xu_ly_tai_lieu_tai_len
+    from privacy_gateway import KEY_CONSENT, dua_vao_cong
+
+    state = st.session_state
+    plan = state.get("v3_upload_plan")
+    kept = state.get("v3_upload_plan_files") or {}
+    if not isinstance(plan, Mapping):
+        return
+    if not state.get(KEY_CONSENT):
+        _toast(state, "Cần xác nhận bảo mật", "Tick ô xác nhận ở Bước 0 trước.", "warning")
+        return
+    check = kiem_tra_ke_hoach(plan)
+    if not check["can_continue"]:
+        _toast(state, "Chưa thể tiếp tục", "Xử lý các tệp trùng loại/chưa xác định trong bảng phân loại.", "warning")
+        return
+    uploads = {
+        str(item["type"]): kept[item["id"]]
+        for item in plan.get("items") or []
+        if item.get("type") in UPLOAD_TYPES and item.get("id") in kept
+    }
     case_id = lam_sach_ma_ho_so(f"UPLOAD-{datetime.now():%Y%m%d-%H%M%S}")
-    thresholds = nguong_hieu_luc(settings.get("nguong"))
     try:
-        if 3 <= len(files) <= 4:
-            result, docs, errors = xu_ly_thu_muc_tai_lieu(case_id, files, thresholds)
-        else:
-            uploads: dict[str, Any] = {}
-            errors = []
-            for item in files:
-                hint = goi_y_loai_tu_ten_tep(item.name)
-                if hint in {"application", "income", "statement", "debt"} and hint not in uploads:
-                    uploads[hint] = item
-                else:
-                    errors.append(f"{item.name}: chưa xác định được loại tài liệu từ tên tệp.")
-            if not uploads:
-                raise ValueError("Không nhận diện được tài liệu; đặt tên rõ nghĩa hoặc tải 3–4 PDF của cùng hồ sơ.")
-            result, docs, more = xu_ly_tai_lieu_tai_len(case_id, uploads, thresholds)
-            errors += more
+        result, docs, errors = xu_ly_tai_lieu_tai_len(case_id, uploads, nguong_hieu_luc(settings.get("nguong")))
     except ValueError as exc:
         _toast(state, "Không xử lý được tệp", str(exc), "warning")
         return
+    state.pop("v3_upload_plan", None)
+    state.pop("v3_upload_plan_files", None)
     findings = dua_vao_cong(st, result, docs, "Tài liệu")
     state["v3_active_page"] = PAGE_KEYS[0]
+    if check["missing"]:
+        errors = [*errors, "Thiếu tài liệu bắt buộc: " + ", ".join(check["missing"]) + "."]
     if errors:
         _toast(state, "Một số tệp chưa dùng được", " · ".join(errors)[:300], "warning")
     _toast(
@@ -1061,12 +1365,26 @@ def hien_thi_ket_noi_ai_v3(st: Any, settings: dict[str, Any]) -> None:
     selected = st.selectbox("Model", models, index=models.index(current), key=f"v3_model_{active}")
     if selected != connection.get("model"):
         connection["model"] = selected
+        connection["generate_verified"] = False
+        connection["generate_error"] = ""
         updated = dict(connections)
         updated[active] = connection
         state["llm_connections"] = updated
         state["v3_chat_model"] = selected
     if connection.get("source") == "secrets":
         st.caption("Khóa Gemini lấy từ Secrets của ứng dụng (không hiển thị).")
+    if st.button("Kiểm tra kết nối", key="v3_ping_model", help="Gửi đúng 1 lệnh generateContent ngắn (“ping”) tới model đang chọn."):
+        with st.spinner(f"Đang gọi thử {selected}…"):
+            ok, detail = kiem_tra_ket_noi_model(st)
+        _toast(state, "Đã kết nối" if ok else PARTIAL_LABEL, detail, "success" if ok else "warning")
+        st.rerun()
+    latest = (state.get("llm_connections") or {}).get(active) or {}
+    if latest.get("generate_verified"):
+        st.success(f"Đã kết nối · đã gọi được model {latest.get('generate_model') or selected}.")
+    elif latest.get("generate_error"):
+        st.warning(f"{PARTIAL_LABEL}. {latest.get('generate_error')}")
+    else:
+        st.info(f"{PARTIAL_LABEL}. Bấm “Kiểm tra kết nối” để gọi thử model (1 request).")
     st.button("Xóa kết nối khỏi phiên", on_click=xoa_ket_noi_llm, args=(st, active), key="v3_remove_connection")
 
 
@@ -1269,14 +1587,23 @@ def chay_ung_dung_streamlit_v3(st_module: Any | None = None, *, renderer: Callab
     )
     with st_module.container(key="v3_native") if needs_native else st_module.empty().container():
         if active == PAGE_KEYS[0]:
+            mode = st_module.radio(
+                "Cách tải hồ sơ",
+                [UPLOAD_MODE_DIRECTORY, UPLOAD_MODE_FILES],
+                index=0,
+                horizontal=True,
+                key="v3_upload_mode",
+                help="Thư mục: chọn/kéo cả thư mục hồ sơ (gộp cả thư mục con, chỉ lấy PDF). Từng tệp: chọn nhiều PDF.",
+            )
+            directory = mode != UPLOAD_MODE_FILES
             with st_module.container(key="v3_upload_area"):
                 st_module.caption("Bước 0 · Tải hồ sơ qua cổng bảo mật — control tải tệp gốc của Streamlit (PDF, tối đa 10 MB/tệp).")
                 upload_files = list(
                     st_module.file_uploader(
-                        "Tải 3–4 PDF của cùng hồ sơ hoặc từng tài liệu",
+                        "Chọn thư mục hồ sơ (3–4 PDF, có thể có thư mục con)" if directory else "Chọn từng PDF của hồ sơ",
                         type=["pdf"],
-                        accept_multiple_files=True,
-                        key=f"v3_upload_{int(state.get('v3_upload_nonce') or 0)}",
+                        accept_multiple_files="directory" if directory else True,
+                        key=f"v3_upload_{'dir' if directory else 'files'}_{int(state.get('v3_upload_nonce') or 0)}",
                     )
                     or []
                 )

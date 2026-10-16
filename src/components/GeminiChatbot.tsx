@@ -208,7 +208,7 @@ export function GeminiChatbot({ embedded = false, onClose }: GeminiChatbotProps)
               }}
               title="Cài đặt → Kết nối AI (khóa chỉ nằm ở máy chủ Python)"
             >
-              🔑 {serverConnected ? "Đã kết nối" : "Kết nối AI"}
+              🔑 {serverConnected ? "Đã kết nối" : aiConnection?.state === "partial" ? "Key hợp lệ" : "Kết nối AI"}
             </button>
           ) : (
             <button

@@ -35,6 +35,7 @@ import type {
   WorkflowStep
 } from "../../src/domain/contracts";
 import type { ToastItem } from "../../src/components/Toast";
+import { collectFromInput, filterCaseFiles, withRelativePath } from "../../src/lib/folderUpload";
 
 export type { ChatRoleKey, ChatModelKey, ChatMessage, CreditLensContextType } from "@original-context";
 
@@ -303,7 +304,16 @@ export function StreamlitCreditLensProvider({ payload, emit, children }: Provide
   const setActiveProvider = useCallback((provider: string) => send("provider", { provider }), [send]);
 
   const handleFileUpload = useCallback(async (fileList: FileList | File[]) => {
-    const files = Array.from(fileList);
+    // Chỉ PDF; bỏ tệp ẩn/hệ thống; giữ đường dẫn tương đối của thư mục con.
+    const { accepted, skipped } = filterCaseFiles(collectFromInput(fileList));
+    if (skipped.length) {
+      addToast(
+        "Đã bỏ qua tệp không dùng được",
+        skipped.slice(0, 6).map((item) => `${item.path} (${item.reason})`).join(" · "),
+        "warning"
+      );
+    }
+    const files = accepted.map(withRelativePath);
     if (!files.length) return;
     // Tệp được chuyển cho st.file_uploader gốc → Python đọc PDF thật (pypdf) qua Privacy Gateway.
     const input = findNative('.st-key-v3_upload_area input[type="file"]') as HTMLInputElement | null;
@@ -339,7 +349,10 @@ export function StreamlitCreditLensProvider({ payload, emit, children }: Provide
       confirm: () => send("privacy_confirm"),
       cancel: () => send("privacy_cancel"),
       addMask: (value: string) => send("privacy_mask_add", { value }),
-      removeMask: (code: string) => send("privacy_mask_remove", { code })
+      removeMask: (code: string) => send("privacy_mask_remove", { code }),
+      assignUpload: (id: string, docType: string) => send("upload_assign", { id, doc_type: docType }),
+      continueUpload: () => send("upload_continue"),
+      cancelUpload: () => send("upload_cancel")
     }),
     [send]
   );

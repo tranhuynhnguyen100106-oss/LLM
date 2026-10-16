@@ -1,5 +1,6 @@
 import { useState, useId, useRef } from "react";
 import { useCreditLens } from "../context/CreditLensContext";
+import { collectFromDataTransfer, withRelativePath } from "../lib/folderUpload";
 import type { WorkflowState } from "../domain/contracts";
 
 const STEP_ICONS: Record<WorkflowState, string> = {
@@ -21,12 +22,14 @@ export function OverviewPage() {
     processCards,
     handleFileUpload,
     result,
-    setActivePage
+    setActivePage,
+    serverMode
   } = useCreditLens();
 
   const [uploading, setUploading] = useState(false);
   const [dragActive, setDragActive] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const folderInputRef = useRef<HTMLInputElement>(null);
   const selectId = useId();
 
   const selectedCaseObj = demoCases.find((c) => c.case_name === selectedDemoCase) ?? demoCases[0];
@@ -41,6 +44,15 @@ export function OverviewPage() {
   const handleDrop = async (e: React.DragEvent) => {
     e.preventDefault();
     setDragActive(false);
+    if (serverMode) {
+      // Bản Streamlit: hỗ trợ kéo-thả CẢ THƯ MỤC (đọc đệ quy thư mục con); lọc PDF ở StreamlitContext.
+      const pending = collectFromDataTransfer(e.dataTransfer);
+      setUploading(true);
+      const collected = await pending;
+      if (collected.length) await handleFileUpload(collected.map(withRelativePath));
+      setUploading(false);
+      return;
+    }
     if (e.dataTransfer.files && e.dataTransfer.files.length > 0) {
       setUploading(true);
       await handleFileUpload(e.dataTransfer.files);
@@ -140,13 +152,29 @@ export function OverviewPage() {
                 ref={fileInputRef}
                 type="file"
                 multiple
-                accept=".pdf,.json,.txt"
+                accept={serverMode ? ".pdf" : ".pdf,.json,.txt"}
                 onChange={onFileChange}
                 style={{ display: "none" }}
               />
+              {serverMode ? (
+                <input
+                  ref={folderInputRef}
+                  type="file"
+                  multiple
+                  data-testid="cl-folder-input"
+                  {...({ webkitdirectory: "", directory: "" } as Record<string, string>)}
+                  onChange={onFileChange}
+                  onClick={(e) => e.stopPropagation()}
+                  style={{ display: "none" }}
+                />
+              ) : null}
               <div style={{ fontSize: "28px", marginBottom: "8px" }}>📄</div>
               <strong style={{ display: "block", color: "var(--cl-text)", marginBottom: "4px" }}>
-                {uploading ? "Đang xử lý tệp..." : "Kéo thả PDF vào đây hoặc bấm để chọn tệp"}
+                {uploading
+                  ? "Đang xử lý tệp..."
+                  : serverMode
+                  ? "Kéo thả cả thư mục hồ sơ hoặc PDF vào đây"
+                  : "Kéo thả PDF vào đây hoặc bấm để chọn tệp"}
               </strong>
               <span style={{ fontSize: "12px", color: "var(--cl-muted)" }}>
                 Hỗ trợ tải nhiều tệp hoặc tải thư mục (Đơn vay, Thu nhập, Sao kê)
@@ -164,6 +192,17 @@ export function OverviewPage() {
             >
               {uploading ? "Đang xử lý..." : "Chọn tệp từ máy tính"}
             </button>
+            {serverMode ? (
+              <button
+                type="button"
+                className="cl-demo-panel__action"
+                style={{ flex: 1, minHeight: "44px" }}
+                onClick={() => folderInputRef.current?.click()}
+                disabled={uploading}
+              >
+                📁 Chọn thư mục
+              </button>
+            ) : null}
             {result && (
               <button
                 type="button"

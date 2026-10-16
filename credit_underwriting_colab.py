@@ -2435,6 +2435,99 @@ def _loi_api_theo_status(provider: str, status_code: int) -> RuntimeError:
     return RuntimeError(f"{label}: {message}")
 
 
+class LoiNhaCungCapAI(RuntimeError):
+    """Lỗi nhà cung cấp AI đã phân loại. Thông điệp an toàn: không chứa API Key hay nội dung hồ sơ."""
+
+    def __init__(self, ma: str, thong_diep: str) -> None:
+        super().__init__(f"{thong_diep} (mã {ma})")
+        self.ma = ma
+        self.thong_diep = thong_diep
+
+
+# maxOutputTokens của Gemini tính cả token "thinking"; 1800 có thể bị phần suy nghĩ dùng hết.
+GEMINI_MAX_OUTPUT_TOKENS = 8192
+GEMINI_TIMEOUT_SECONDS = 60.0
+_GEMINI_BLOCK_REASONS = {"SAFETY", "RECITATION", "PROHIBITED_CONTENT", "BLOCKLIST", "SPII", "IMAGE_SAFETY", "OTHER"}
+
+
+def cau_hinh_sinh_gemini(model: str) -> dict[str, Any]:
+    """generationConfig cho Gemini: đủ token cho câu trả lời và hạ mức thinking nếu model hỗ trợ."""
+
+    config: dict[str, Any] = {"maxOutputTokens": GEMINI_MAX_OUTPUT_TOKENS}
+    name = (model or "").lower()
+    if name.startswith("gemini-3"):
+        config["thinkingConfig"] = {"thinkingLevel": "low"}
+    elif name.startswith("gemini-2.5"):
+        config["thinkingConfig"] = {"thinkingBudget": 512}
+    return config
+
+
+def _loi_gemini_theo_status(status_code: int, model: str) -> LoiNhaCungCapAI:
+    if status_code == 400:
+        return LoiNhaCungCapAI("GEM-400", f"Yêu cầu không hợp lệ với model {model}.")
+    if status_code in {401, 403}:
+        return LoiNhaCungCapAI(f"GEM-{status_code}", f"API Key không có quyền dùng model {model}.")
+    if status_code == 404:
+        return LoiNhaCungCapAI("GEM-404", f"Model {model} không tồn tại hoặc không khả dụng với key này.")
+    if status_code == 429:
+        return LoiNhaCungCapAI("GEM-429", "Đã vượt hạn mức/quota của Gemini. Thử lại sau hoặc chọn model khác.")
+    if status_code >= 500:
+        return LoiNhaCungCapAI(f"GEM-{status_code}", "Dịch vụ Gemini đang tạm thời không sẵn sàng.")
+    return LoiNhaCungCapAI(f"GEM-{status_code}", f"Gemini trả về mã lỗi HTTP {status_code}.")
+
+
+def phan_tich_phan_hoi_gemini(payload: Any) -> str:
+    """Lấy text (bỏ part thought); không có text thì raise lỗi đúng loại theo finishReason/promptFeedback."""
+
+    if not isinstance(payload, dict):
+        raise LoiNhaCungCapAI("GEM-EMPTY", "Gemini không trả về nội dung.")
+    feedback = payload.get("promptFeedback") or {}
+    if isinstance(feedback, dict) and feedback.get("blockReason"):
+        reason = str(feedback.get("blockReason"))[:40]
+        raise LoiNhaCungCapAI("GEM-SAFETY", f"Gemini từ chối trả lời vì lý do an toàn ({reason}).")
+    candidates = payload.get("candidates") or []
+    if not candidates or not isinstance(candidates[0], dict):
+        raise LoiNhaCungCapAI("GEM-EMPTY", "Gemini không trả về nội dung.")
+    candidate = candidates[0]
+    finish = str(candidate.get("finishReason") or "")
+    parts = (candidate.get("content") or {}).get("parts") or []
+    text = "\n".join(
+        str(part.get("text", ""))
+        for part in parts
+        if isinstance(part, dict) and not part.get("thought") and part.get("text")
+    ).strip()
+    if text:
+        return text
+    if finish in _GEMINI_BLOCK_REASONS:
+        raise LoiNhaCungCapAI("GEM-SAFETY", f"Gemini từ chối trả lời vì lý do an toàn ({finish}).")
+    if finish == "MAX_TOKENS":
+        raise LoiNhaCungCapAI("GEM-MAXTOK", "Model dùng hết giới hạn token trước khi trả lời.")
+    raise LoiNhaCungCapAI("GEM-EMPTY", f"Gemini không trả về nội dung (finishReason {finish or 'không có'}).")
+
+
+def _goi_gemini(model: str, key: str, body: dict[str, Any]) -> str:
+    """Đúng 1 request generateContent; lỗi HTTP/timeout/mạng/nội dung rỗng được phân loại cụ thể."""
+
+    import httpx
+
+    url = f"https://generativelanguage.googleapis.com/v1beta/models/{model}:generateContent"
+    headers = {"Accept": "application/json", "Content-Type": "application/json", "x-goog-api-key": key}
+    try:
+        with httpx.Client(timeout=GEMINI_TIMEOUT_SECONDS, follow_redirects=True) as http_client:
+            http_response = http_client.post(url, headers=headers, json=body)
+    except httpx.TimeoutException as exc:
+        raise LoiNhaCungCapAI("GEM-TIMEOUT", "Gemini phản hồi quá lâu (timeout).") from exc
+    except httpx.TransportError as exc:
+        raise LoiNhaCungCapAI("GEM-NET", "Không kết nối được tới Gemini (lỗi mạng).") from exc
+    if http_response.status_code >= 400:
+        raise _loi_gemini_theo_status(http_response.status_code, model)
+    try:
+        payload = http_response.json()
+    except ValueError as exc:
+        raise LoiNhaCungCapAI("GEM-JSON", "Phản hồi của Gemini không phải JSON hợp lệ.") from exc
+    return phan_tich_phan_hoi_gemini(payload)
+
+
 def lay_danh_sach_model(provider: str, api_key: str) -> list[str]:
     """Xác thực khóa và tải các model text-generation mà chính khóa nhìn thấy."""
     if provider not in NHA_CUNG_CAP_LLM:
@@ -2501,7 +2594,9 @@ def trich_noi_dung_phan_hoi(provider: str, payload: dict[str, Any]) -> str:
     if provider == "gemini":
         candidates = payload.get("candidates") or []
         parts = ((candidates[0].get("content") or {}).get("parts") or []) if candidates else []
-        return "\n".join(str(part.get("text", "")) for part in parts if isinstance(part, dict)).strip()
+        return "\n".join(
+            str(part.get("text", "")) for part in parts if isinstance(part, dict) and not part.get("thought")
+        ).strip()
     if provider == "anthropic":
         blocks = payload.get("content") or []
         return "\n".join(
@@ -2550,19 +2645,21 @@ def tao_dien_giai_bang_ai(
                 store=False,
             )
             output = (response.output_text or "").strip()
+        elif provider == "gemini":
+            output = _goi_gemini(
+                model,
+                key,
+                {
+                    "system_instruction": {"parts": [{"text": prompt}]},
+                    "contents": [{"role": "user", "parts": [{"text": user_input}]}],
+                    "generationConfig": cau_hinh_sinh_gemini(model),
+                },
+            )
         else:
             import httpx
 
             headers: dict[str, str] = {"Accept": "application/json", "Content-Type": "application/json"}
-            if provider == "gemini":
-                url = f"https://generativelanguage.googleapis.com/v1beta/models/{model}:generateContent"
-                headers["x-goog-api-key"] = key
-                body = {
-                    "system_instruction": {"parts": [{"text": prompt}]},
-                    "contents": [{"role": "user", "parts": [{"text": user_input}]}],
-                    "generationConfig": {"maxOutputTokens": 1800},
-                }
-            elif provider == "anthropic":
+            if provider == "anthropic":
                 url = "https://api.anthropic.com/v1/messages"
                 headers.update({"x-api-key": key, "anthropic-version": "2023-06-01"})
                 body = {
@@ -2641,7 +2738,7 @@ def _ghi_log_loi_chat_an_toan(exc: Exception, provider: str, model: str, api_key
     if api_key:
         message = message.replace(api_key, "[REDACTED]")
     message = re.sub(r"(?i)bearer\s+[A-Za-z0-9._-]+", "Bearer [REDACTED]", message)
-    status_code = getattr(exc, "status_code", None)
+    status_code = getattr(exc, "status_code", None) or getattr(exc, "ma", None)
     CHAT_LOGGER.error(
         "CHAT_API_ERROR provider=%s model=%s exception=%s status=%s message=%s",
         provider,
@@ -2702,26 +2799,25 @@ def tao_phan_hoi_chat_ai(
                 **openai_options,
             )
             output = (response.output_text or "").strip()
+        elif provider == "gemini":
+            gemini_body: dict[str, Any] = {
+                "contents": [
+                    {
+                        "role": "model" if message["role"] == "assistant" else "user",
+                        "parts": [{"text": message["content"]}],
+                    }
+                    for message in history
+                ],
+                "generationConfig": cau_hinh_sinh_gemini(model),
+            }
+            if system_text:
+                gemini_body["system_instruction"] = {"parts": [{"text": system_text}]}
+            output = _goi_gemini(model, key, gemini_body)
         else:
             import httpx
 
             headers: dict[str, str] = {"Accept": "application/json", "Content-Type": "application/json"}
-            if provider == "gemini":
-                url = f"https://generativelanguage.googleapis.com/v1beta/models/{model}:generateContent"
-                headers["x-goog-api-key"] = key
-                body = {
-                    "contents": [
-                        {
-                            "role": "model" if message["role"] == "assistant" else "user",
-                            "parts": [{"text": message["content"]}],
-                        }
-                        for message in history
-                    ],
-                    "generationConfig": {"maxOutputTokens": 1800},
-                }
-                if system_text:
-                    body["system_instruction"] = {"parts": [{"text": system_text}]}
-            elif provider == "anthropic":
+            if provider == "anthropic":
                 url = "https://api.anthropic.com/v1/messages"
                 headers.update({"x-api-key": key, "anthropic-version": "2023-06-01"})
                 body = {"model": model, "max_tokens": 1800, "messages": history}

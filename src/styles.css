@@ -4026,3 +4026,15 @@
   .cl-privacy-page { padding: 16px; }
   .cl-privacy-badge { white-space: normal; }
 }
+
+/* Bảng xác nhận phân loại tài liệu (Bước 0) */
+.cl-upload-plan { display: grid; gap: 12px; padding: 16px; border: 1px solid var(--cl-border); border-radius: 10px; background: var(--cl-surface-subtle); }
+.cl-upload-plan h3 { margin: 0; font-size: 16px; }
+.cl-upload-plan__table code { word-break: break-all; font-weight: 600; }
+.cl-upload-plan__table small { color: var(--cl-muted); font-weight: 400; }
+.cl-upload-plan__note { display: block; }
+.cl-upload-plan__table select { min-height: 36px; max-width: 100%; border: 1px solid var(--cl-border-strong); border-radius: 6px; padding: 4px 8px; background: var(--cl-surface); color: var(--cl-text); font: inherit; }
+.cl-upload-plan__issues { margin: 0; padding: 0; list-style: none; display: grid; gap: 6px; font-size: 14px; }
+.cl-upload-plan__issue { padding: 8px 12px; border-radius: 8px; border: 1px solid var(--cl-border); }
+.cl-upload-plan__issue--error { border-color: var(--cl-danger, #b91c1c); color: var(--cl-danger, #b91c1c); }
+.cl-upload-plan__issue--warning { border-color: var(--cl-warning, #b45309); }

@@ -105,7 +105,7 @@ export interface CreditLensContextType {
 export type ExportKind = "markdown" | "json" | "evaluation_csv" | "evaluation_json";
 
 export interface AiConnectionStatus {
-  state: "connected" | "disconnected" | "error";
+  state: "connected" | "partial" | "disconnected" | "error";
   label: string;
   message: string;
   provider_label: string | null;
@@ -141,6 +141,29 @@ export interface PrivacyGatewayState {
   counts: { label: string; count: number }[];
   audit: { time: string; event: string; provider: string; fields: number; result: string }[];
   lock_reason: string;
+  /** Bảng xác nhận phân loại tài liệu sau khi tải (chỉ bản Streamlit). */
+  upload_plan?: UploadPlan | null;
+}
+
+export interface UploadPlanRow {
+  id: string;
+  path: string;
+  size_label: string;
+  type: string;
+  detected_label: string;
+  confidence: number;
+  basis: string;
+  changed: boolean;
+  note: string;
+}
+
+export interface UploadPlan {
+  mode: string;
+  rows: UploadPlanRow[];
+  skipped: { path: string; reason: string }[];
+  options: { value: string; label: string }[];
+  issues: { level: "error" | "warning"; text: string }[];
+  can_continue: boolean;
 }
 
 export interface PrivacyGatewayActions {
@@ -149,6 +172,9 @@ export interface PrivacyGatewayActions {
   cancel: () => void;
   addMask: (value: string) => void;
   removeMask: (code: string) => void;
+  assignUpload?: (id: string, docType: string) => void;
+  continueUpload?: () => void;
+  cancelUpload?: () => void;
 }
 
 const CreditLensContext = createContext<CreditLensContextType | null>(null);

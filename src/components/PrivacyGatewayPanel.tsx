@@ -67,6 +67,8 @@ export function PrivacyGatewayPanel() {
         <span>{privacy.consent_text}</span>
       </label>
 
+      {privacy.upload_plan ? <UploadPlanPanel /> : null}
+
       <div className={`cl-privacy-state cl-privacy-state--${privacy.state}`}>
         <strong>{copy.title}</strong>
         <span>{copy.detail}</span>
@@ -202,6 +204,87 @@ export function LockedPageNotice({ reason, onGoToGateway }: { reason: string; on
       <div className="cl-privacy-actions">
         <button type="button" className="cl-demo-panel__action" onClick={onGoToGateway}>
           Đi tới Bước 0 · Bảo mật hồ sơ
+        </button>
+      </div>
+    </section>
+  );
+}
+
+/** Bảng xác nhận phân loại tài liệu (sau khi tải thư mục/tệp, trước khi trích xuất và giả danh hóa). */
+export function UploadPlanPanel() {
+  const { privacy, privacyActions } = useCreditLens();
+  const plan = privacy?.upload_plan;
+  if (!plan || !privacyActions) return null;
+  return (
+    <section className="cl-upload-plan" aria-labelledby="cl-upload-plan-title">
+      <h3 id="cl-upload-plan-title">Xác nhận phân loại tài liệu</h3>
+      <p className="cl-privacy-hint">
+        Nhận diện bằng tên tệp và nội dung PDF (pypdf, trên máy chủ; không gửi tệp cho AI). Sửa loại nếu chưa đúng rồi bấm
+        “Tiếp tục trích xuất”.
+      </p>
+      {plan.rows.length > 0 ? (
+        <div className="cl-table-scroll" tabIndex={0} aria-label="Bảng phân loại tài liệu">
+          <table className="cl-data-table cl-upload-plan__table">
+            <thead>
+              <tr>
+                <th scope="col">Tên tệp</th>
+                <th scope="col">Loại nhận diện</th>
+                <th scope="col">Độ tin cậy</th>
+              </tr>
+            </thead>
+            <tbody>
+              {plan.rows.map((row) => (
+                <tr key={row.id}>
+                  <th scope="row">
+                    <code>{row.path}</code>
+                    <small> · {row.size_label}</small>
+                    {row.note ? <small className="cl-upload-plan__note">{row.note}</small> : null}
+                  </th>
+                  <td>
+                    <select
+                      aria-label={`Loại tài liệu của ${row.path}`}
+                      value={row.type}
+                      onChange={(e) => privacyActions.assignUpload?.(row.id, e.target.value)}
+                    >
+                      {row.type === "unknown" ? <option value="unknown">Chưa xác định — chọn loại</option> : null}
+                      {plan.options.map((opt) => (
+                        <option key={opt.value} value={opt.value}>
+                          {opt.label}
+                        </option>
+                      ))}
+                    </select>
+                    {row.changed ? <small> · đã sửa (gợi ý: {row.detected_label})</small> : null}
+                  </td>
+                  <td>
+                    {Math.round(row.confidence * 100)}%<small> · {row.basis}</small>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      ) : null}
+      {plan.issues.length > 0 ? (
+        <ul className="cl-upload-plan__issues" aria-label="Cảnh báo tải hồ sơ">
+          {plan.issues.map((issue, index) => (
+            <li key={index} className={`cl-upload-plan__issue cl-upload-plan__issue--${issue.level}`} role={issue.level === "error" ? "alert" : undefined}>
+              {issue.level === "error" ? "⛔ " : "⚠️ "}
+              {issue.text}
+            </li>
+          ))}
+        </ul>
+      ) : null}
+      <div className="cl-privacy-actions">
+        <button
+          type="button"
+          className="cl-demo-panel__action"
+          disabled={!plan.can_continue}
+          onClick={() => privacyActions.continueUpload?.()}
+        >
+          Tiếp tục trích xuất
+        </button>
+        <button type="button" className="cl-close-case-btn" onClick={() => privacyActions.cancelUpload?.()}>
+          Hủy và tải lại
         </button>
       </div>
     </section>
