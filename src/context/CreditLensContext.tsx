@@ -102,6 +102,9 @@ export interface CreditLensContextType {
   /** Bước 0 · Bảo mật hồ sơ (Privacy Gateway). */
   privacy?: PrivacyGatewayState;
   privacyActions?: PrivacyGatewayActions;
+  /** Bản Streamlit: trích xuất bổ sung bằng AI (tác vụ LLM #1) — chỉ trường số/ngày, cần chuyên viên xác nhận. */
+  aiExtraction?: AiExtractionState | null;
+  aiExtractionActions?: AiExtractionActions;
   /** Logo nhúng (data URI) khi chạy trong component Streamlit. */
   assetUrl?: (name: string) => string;
 }
@@ -168,6 +171,34 @@ export interface UploadPlan {
   options: { value: string; label: string }[];
   issues: { level: "error" | "warning"; text: string }[];
   can_continue: boolean;
+}
+
+export interface AiExtractionItem {
+  field: string;
+  label: string;
+  status: "pending" | "confirmed" | "rejected" | "dismissed";
+  value_display: string;
+  document: string;
+  page: number | null;
+  quote: string;
+  reason: string;
+}
+
+export interface AiExtractionState {
+  missing: { field: string; label: string }[];
+  connected: boolean;
+  ran: boolean;
+  items: AiExtractionItem[];
+  error: string | null;
+  pending_label: string;
+  /** Đang chờ phản hồi của lần bấm hiện tại (chỉ phía trình duyệt). */
+  running?: boolean;
+}
+
+export interface AiExtractionActions {
+  run: () => void;
+  confirm: (field: string) => void;
+  reject: (field: string) => void;
 }
 
 export interface PrivacyGatewayActions {

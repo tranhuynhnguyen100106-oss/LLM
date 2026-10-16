@@ -2840,6 +2840,7 @@ def tao_phan_hoi_chat_ai(
     vault: Any | None = None,
     *,
     system_prompt: str | None = None,
+    response_schema: dict[str, Any] | None = None,
 ) -> str:
     """Gửi đúng một request chat đến provider/model đang hoạt động (đã giả danh hóa).
 
@@ -2891,7 +2892,11 @@ def tao_phan_hoi_chat_ai(
                     }
                     for message in history
                 ],
-                "generationConfig": cau_hinh_sinh_gemini(model),
+                "generationConfig": (
+                    {**cau_hinh_sinh_gemini(model), "responseMimeType": "application/json", "responseSchema": response_schema}
+                    if response_schema
+                    else cau_hinh_sinh_gemini(model)
+                ),
             }
             if system_text:
                 gemini_body["system_instruction"] = {"parts": [{"text": system_text}]}

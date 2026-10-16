@@ -4,6 +4,7 @@ import { resolve } from "node:path";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
 import { StreamlitApp } from "../src/StreamlitApp";
+import { AiExtractionPanel } from "../../src/components/AiExtractionPanel";
 import { parseV3Payload, StreamlitCreditLensProvider, type V3AppPayload, type V3Event } from "../src/StreamlitContext";
 
 // View model thật do Python (creditlens_ui_v3.build_v3_payload) sinh ra cho CASE-03.
@@ -157,6 +158,41 @@ describe("UI v3 trên Streamlit", () => {
     const sent = second.emit.mock.calls.filter(([e]) => e.type === "chat_retry");
     expect(sent).toHaveLength(1);
     expect(sent[0]![0]).toMatchObject({ retry_id: "r123", alt: false });
+  });
+
+  it("trích xuất AI: 1 lần bấm = 1 event; nhãn cần xác minh; Xác nhận phát đúng trường", () => {
+    const base = parseV3Payload(fixtures.summary);
+    const payload = {
+      ...base,
+      ai_extraction: {
+        missing: [{ field: "luong_thuc_nhan", label: "Lương thực nhận" }],
+        connected: true,
+        ran: true,
+        error: null,
+        pending_label: "AI trích xuất — cần xác minh",
+        items: [
+          { field: "luong_thuc_nhan", label: "Lương thực nhận", status: "pending" as const, value_display: "25.000.000 VND",
+            document: "02_chung_tu_thu_nhap.pdf", page: 1, quote: "Lương net tháng: 25.000.000 VND", reason: "" },
+          { field: "so_du_binh_quan", label: "Số dư bình quân", status: "rejected" as const, value_display: "—",
+            document: "03_sao_ke_ngan_hang.pdf", page: 1, quote: "x", reason: "Không tìm thấy căn cứ: trích dẫn không có trong trang 1." }
+        ]
+      }
+    };
+    const emit = vi.fn<(event: V3Event) => void>();
+    render(
+      <StreamlitCreditLensProvider payload={payload} emit={emit}>
+        <AiExtractionPanel />
+      </StreamlitCreditLensProvider>
+    );
+    expect(screen.getByText("AI trích xuất — cần xác minh")).toBeTruthy();
+    expect(screen.getByText(/02_chung_tu_thu_nhap.pdf · trang 1/)).toBeTruthy();
+    expect(screen.getAllByText(/Không tìm thấy căn cứ/).length).toBeGreaterThan(0);
+    const run = screen.getByRole("button", { name: /Chạy lại trích xuất AI/ });
+    fireEvent.click(run);
+    fireEvent.click(run);
+    expect(emit.mock.calls.filter(([e]) => e.type === "ai_extract")).toHaveLength(1);
+    fireEvent.click(screen.getByRole("button", { name: "Xác nhận" }));
+    expect(emit.mock.calls.at(-1)![0]).toMatchObject({ type: "ai_extract_confirm", field: "luong_thuc_nhan" });
   });
 
   it("từ chối payload chứa khóa bị cấm", () => {

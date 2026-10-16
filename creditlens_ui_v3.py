@@ -723,6 +723,7 @@ def build_v3_payload(st: Any, settings: Mapping[str, Any]) -> dict[str, Any]:
         "active_provider": active_provider,
         "ai_connection": _ai_connection_status(st),
         "privacy": privacy_state,
+        "ai_extraction": _pseudonymize_payload(_ai_extraction_view(st), vault) if not locked else None,
         "toasts": list(state.get("v3_toasts") or []),
         "assets": {"hub-logo-transparent.png": _logo_data_uri()},
     }
@@ -904,6 +905,128 @@ def _v3_chat_retry(st: Any, retry_id: Any, use_alt: bool) -> None:
     _v3_chat_send(st, str(user_message.get("content") or ""), str(role), model, retry_of=user_message)
 
 
+def _ai_extraction_state(state: Any) -> dict[str, Any]:
+    """Trạng thái trích xuất AI gắn với hồ sơ đang mở (đổi hồ sơ → làm mới)."""
+
+    result = state.get("result")
+    case_id = getattr(result, "ma_ho_so", None)
+    current = state.get("v3_ai_extraction")
+    if not isinstance(current, dict) or current.get("ma_ho_so") != case_id:
+        current = {"ma_ho_so": case_id, "requested": [], "items": [], "error": "", "ran": False}
+        state["v3_ai_extraction"] = current
+    return current
+
+
+def _v3_ai_extract(st: Any) -> None:
+    """Nút "Bổ sung trích xuất bằng AI": đúng 1 inference request cho cả hồ sơ, do chuyên viên bấm."""
+
+    from credit_underwriting_colab import ket_noi_llm_dang_dung
+    from llm_extraction import trich_xuat_bo_sung_bang_ai
+    from privacy_gateway import PrivacyLeakError, cong_hoan_tat, lay_vault
+
+    state = st.session_state
+    if state.get("result") is None or not cong_hoan_tat(state):
+        _toast(state, "Chưa thể trích xuất bằng AI", "Hoàn tất Bước 0 · Bảo mật hồ sơ trước.", "warning")
+        return
+    connection = ket_noi_llm_dang_dung(st)
+    if connection is None:
+        _toast(state, "Chưa kết nối AI", "Mở Cài đặt → Kết nối AI. Hệ thống không mô phỏng kết quả trích xuất.", "warning")
+        return
+    current = _ai_extraction_state(state)
+    try:
+        outcome = trich_xuat_bo_sung_bang_ai(state["result"], dict(state.get("docs") or {}), lay_vault(state), connection)
+    except PrivacyLeakError as exc:
+        current["error"] = str(exc)
+        return
+    except (ValueError, RuntimeError) as exc:
+        current["error"] = str(exc).replace(str(connection.get("api_key") or "") or "\0", "[REDACTED]")[:300]
+        _toast(state, "Không trích xuất được bằng AI", current["error"], "warning")
+        return
+    current.update({"requested": outcome["requested"], "items": outcome["items"], "error": "", "ran": True})
+    passed = sum(1 for item in outcome["items"] if item["status"] == "pending")
+    _toast(
+        state,
+        "Đã trích xuất bổ sung bằng AI",
+        f"{passed} trường có căn cứ trong PDF (cần chuyên viên xác nhận); "
+        f"{len(outcome['items']) - passed} giá trị bị loại vì không tìm thấy căn cứ.",
+        "info",
+    )
+
+
+def _v3_ai_extract_decide(st: Any, settings: Mapping[str, Any], field: Any, confirm: bool) -> None:
+    """Chuyên viên xác nhận / bỏ qua từng trường AI. Chỉ trường đã xác nhận mới được dùng để tính."""
+
+    from credit_underwriting_colab import nguong_hieu_luc
+    from llm_extraction import ap_dung_truong_da_xac_nhan
+
+    state = st.session_state
+    current = _ai_extraction_state(state)
+    item = next((i for i in current["items"] if i.get("field") == field and i.get("status") == "pending"), None)
+    if item is None or state.get("result") is None:
+        return
+    if not confirm:
+        item["status"] = "dismissed"
+        return
+    state["result"] = ap_dung_truong_da_xac_nhan(
+        state["result"], dict(state.get("docs") or {}), item, nguong_hieu_luc(settings.get("nguong"))
+    )
+    current["ma_ho_so"] = state["result"].ma_ho_so
+    item["status"] = "confirmed"
+    state["ai_summary"] = ""
+    state["ai_summary_context"] = {}
+    _toast(state, "Đã xác nhận trường AI", f"{item.get('label')} được dùng để tính lại bằng Python.", "success")
+
+
+def _ai_extraction_view(st: Any) -> dict[str, Any] | None:
+    from credit_underwriting_colab import ket_noi_llm_dang_dung
+    from llm_extraction import NHAN_CAN_XAC_MINH, TRUONG_AI, truong_can_bo_sung
+    from privacy_gateway import cong_hoan_tat
+
+    state = st.session_state
+    result = state.get("result")
+    if result is None or not cong_hoan_tat(state):
+        return None
+    docs = dict(state.get("docs") or {})
+    current = _ai_extraction_state(state)
+    missing = truong_can_bo_sung(result, docs)
+    items = []
+    for item in current["items"]:
+        value = item.get("value")
+        kind = TRUONG_AI.get(str(item.get("field")), ("", (), "money"))[2]
+        if value is None:
+            display = "—"
+        elif kind == "date":
+            from credit_underwriting_colab import chuan_hoa_ngay
+
+            parsed = chuan_hoa_ngay(str(value))
+            display = f"{parsed.month:02d}/{parsed.year}" if parsed else "—"  # chỉ hiển thị tháng/năm
+        elif kind == "months":
+            display = f"{int(value)} tháng"
+        else:
+            display = _vnd(value)
+        doc = docs.get(str(item.get("source_doc")))
+        items.append(
+            {
+                "field": str(item.get("field")),
+                "label": str(item.get("label") or TRUONG_AI.get(str(item.get("field")), ("",))[0]),
+                "status": str(item.get("status")),
+                "value_display": display,
+                "document": getattr(doc, "ten_tep", str(item.get("source_doc"))),
+                "page": int(item.get("page") or 0) or None,
+                "quote": str(item.get("quote") or "")[:300],
+                "reason": str(item.get("reason") or ""),
+            }
+        )
+    return {
+        "missing": [{"field": field, "label": TRUONG_AI[field][0]} for field in missing],
+        "connected": ket_noi_llm_dang_dung(st) is not None,
+        "ran": bool(current.get("ran")),
+        "items": items,
+        "error": str(current.get("error") or "") or None,
+        "pending_label": NHAN_CAN_XAC_MINH,
+    }
+
+
 def _v3_ai_generate(st: Any, settings: Mapping[str, Any]) -> None:
     from credit_underwriting_colab import ket_noi_llm_dang_dung, ngu_canh_tom_tat_ai, tao_dien_giai_bang_ai
     from privacy_gateway import cong_hoan_tat, lay_vault
@@ -1025,6 +1148,10 @@ def handle_v3_event(st: Any, raw_event: Any, settings: dict[str, Any]) -> bool:
             state["v3_chat_role"] = role
             model = str(raw_event.get("model") or "")[:160]
             _v3_chat_send(st, text.strip()[:4000], role, model)
+    elif kind == "ai_extract":
+        _v3_ai_extract(st)
+    elif kind in {"ai_extract_confirm", "ai_extract_reject"}:
+        _v3_ai_extract_decide(st, settings, raw_event.get("field"), kind == "ai_extract_confirm")
     elif kind == "chat_retry":
         _v3_chat_retry(st, raw_event.get("retry_id"), bool(raw_event.get("alt")))
     elif kind == "chat_clear":

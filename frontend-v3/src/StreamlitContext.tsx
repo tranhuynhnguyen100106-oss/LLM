@@ -18,7 +18,8 @@ import type {
   ChatRoleKey,
   CreditLensContextType,
   ExportKind,
-  PrivacyGatewayState
+  PrivacyGatewayState,
+  AiExtractionState
 } from "@original-context";
 import type {
   CaseContext,
@@ -93,6 +94,7 @@ export interface V3AppPayload {
   active_provider: string;
   ai_connection: AiConnectionStatus;
   privacy: PrivacyGatewayState;
+  ai_extraction?: AiExtractionState | null;
   toasts: { id: string; title: string; description?: string; type?: "info" | "success" | "warning" }[];
   assets: Record<string, string>;
 }
@@ -367,6 +369,21 @@ export function StreamlitCreditLensProvider({ payload, emit, children }: Provide
     [send]
   );
 
+  const [extractPending, setExtractPending] = useState(false);
+  useEffect(() => setExtractPending(false), [payload]);
+  const aiExtractionActions = useMemo(
+    () => ({
+      run: () => {
+        if (extractPending) return; // 1 lần bấm = tối đa 1 request; đang chờ thì không phát thêm
+        setExtractPending(true);
+        send("ai_extract");
+      },
+      confirm: (field: string) => send("ai_extract_confirm", { field }),
+      reject: (field: string) => send("ai_extract_reject", { field })
+    }),
+    [extractPending, send]
+  );
+
   const assetUrl = useCallback((name: string) => payload.assets[name] ?? "", [payload.assets]);
 
   const value: CreditLensContextType = {
@@ -418,6 +435,8 @@ export function StreamlitCreditLensProvider({ payload, emit, children }: Provide
     openAiSettings,
     privacy: payload.privacy,
     privacyActions,
+    aiExtraction: payload.ai_extraction ? { ...payload.ai_extraction, running: extractPending } : null,
+    aiExtractionActions,
     assetUrl
   };
 

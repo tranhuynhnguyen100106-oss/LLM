@@ -8,6 +8,7 @@ import { CoreBusinessPage } from "../../src/components/CoreBusinessPage";
 import { SummaryPage, MethodologyPage, EvaluationPage } from "../../src/components/Cluster5Pages";
 import { SettingsPage } from "../../src/components/Cluster6SettingsPage";
 import { LockedPageNotice, PrivacyGatewayPanel } from "../../src/components/PrivacyGatewayPanel";
+import { AiExtractionPanel } from "../../src/components/AiExtractionPanel";
 import { useCreditLens } from "./StreamlitContext";
 import type { V3AppPayload } from "./StreamlitContext";
 
@@ -44,6 +45,14 @@ export function StreamlitApp({ payload }: { payload: V3AppPayload }) {
           </>
         );
       case "2_extraction":
+        return core ? (
+          <>
+            <AiExtractionPanel />
+            <CoreBusinessPage viewModel={core} />
+          </>
+        ) : (
+          <PagePending label="Trang phân tích" />
+        );
       case "3_analysis":
       case "4_risk":
         return core ? <CoreBusinessPage viewModel={core} /> : <PagePending label="Trang phân tích" />;

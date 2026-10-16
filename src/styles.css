@@ -4044,3 +4044,22 @@
 .cl-gemini-msg__retry-btn { min-height: 34px; padding: 0 12px; border: 1px solid var(--cl-primary); border-radius: 8px; background: var(--cl-surface); color: var(--cl-primary); font: inherit; font-size: 13px; font-weight: 600; cursor: pointer; }
 .cl-gemini-msg__retry-btn:hover:not(:disabled) { background: var(--cl-surface-muted); }
 .cl-gemini-msg__retry-btn:disabled { opacity: 0.55; cursor: not-allowed; }
+
+/* Trích xuất bổ sung bằng AI (tác vụ LLM #1) */
+.cl-ai-extract { display: grid; gap: 12px; margin-bottom: 20px; padding: 18px; border: 1px solid var(--cl-border); border-left: 4px solid var(--cl-warning, #b45309); border-radius: 10px; background: var(--cl-surface); }
+.cl-ai-extract__header { display: flex; flex-wrap: wrap; gap: 16px; justify-content: space-between; align-items: flex-start; }
+.cl-ai-extract__header h2 { margin: 2px 0 6px; font-size: 18px; }
+.cl-ai-extract__header p { margin: 0; color: var(--cl-muted); font-size: 14px; max-width: 760px; }
+.cl-ai-extract__run { width: auto; min-width: 240px; margin: 0; }
+.cl-ai-extract__run:disabled { opacity: 0.55; cursor: not-allowed; }
+.cl-ai-extract__missing, .cl-ai-extract__error { margin: 0; font-size: 14px; }
+.cl-ai-extract__error { color: var(--cl-danger, #b91c1c); }
+.cl-ai-extract__list { list-style: none; margin: 0; padding: 0; display: grid; gap: 10px; }
+.cl-ai-extract__item { padding: 12px 14px; border: 1px solid var(--cl-border); border-radius: 8px; background: var(--cl-surface-subtle); display: grid; gap: 6px; }
+.cl-ai-extract__item--rejected { opacity: 0.8; }
+.cl-ai-extract__row { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; justify-content: space-between; }
+.cl-ai-extract__value { font-size: 18px; font-weight: 700; color: var(--cl-text); }
+.cl-ai-extract__evidence { font-size: 13px; color: var(--cl-muted); word-break: break-word; }
+.cl-ai-extract__reason { color: var(--cl-danger, #b91c1c); }
+.cl-ai-extract__actions { display: flex; gap: 8px; flex-wrap: wrap; }
+.cl-ai-extract__actions .cl-demo-panel__action { width: auto; min-width: 120px; margin: 0; }
