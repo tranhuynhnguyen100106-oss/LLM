@@ -145,6 +145,52 @@ class LlmEvalScriptTests(unittest.TestCase):
         self.assertIn("GEM-503", record["tasks"]["summary"]["error"])
         self.assertEqual(scored["models"]["gemini-3.8-flash"]["summary"]["errors"], 1)
 
+    def test_resume_only_reruns_failed_tasks_and_keeps_successful_output(self) -> None:
+        """--resume: tác vụ đã thành công giữ nguyên (0 request), chỉ gọi lại tác vụ lỗi; hồ sơ đủ thì bỏ qua."""
+
+        class Quota(SmartGemini):
+            """Lần chạy đầu: request thứ 2 (baseline hồ sơ 1) và mọi request của hồ sơ 3 bị 429."""
+
+            count = 0
+
+            def post(self, url: str, headers: dict[str, str] | None = None, json: Any = None) -> FakeResponse:
+                Quota.count += 1
+                if Quota.count == 2 or Quota.count >= 7:
+                    SmartGemini.requests.append({"url": url})
+                    return FakeResponse(429, {"error": {"code": 429, "status": "RESOURCE_EXHAUSTED"}})
+                return super().post(url, headers, json)
+
+        SmartGemini.requests = []
+        with tempfile.TemporaryDirectory() as tmp, patch.dict("os.environ", {"GEMINI_API_KEY": MOCK_KEY}):
+            out = Path(tmp) / "gemini-3.8-flash"
+            with patch.object(httpx, "Client", Quota):
+                self.assertEqual(run_llm_eval.main(["--out", tmp, "--cases", "3"], sleeper=lambda _s: None), 0)
+            first = {p.stem: json.loads(p.read_text(encoding="utf-8")) for p in out.glob("*.json")}
+            self.assertIn("GEM-429", first["EVAL-001"]["tasks"]["summary_baseline"]["error"])
+            self.assertTrue(all(t["error"] for t in first["EVAL-007"]["tasks"].values()))
+
+            SmartGemini.requests = []
+            sleeps: list[float] = []
+            with patch.object(httpx, "Client", SmartGemini):
+                code = run_llm_eval.main(["--out", tmp, "--cases", "3", "--sleep", "2", "--resume"], sleeper=sleeps.append)
+            self.assertEqual(code, 0)
+            self.assertEqual(len(SmartGemini.requests), 4)  # 1 baseline (hồ sơ 1) + 3 tác vụ (hồ sơ 3)
+            self.assertEqual(len(sleeps), 3)  # chỉ nghỉ giữa các request thật
+            after = {p.stem: json.loads(p.read_text(encoding="utf-8")) for p in out.glob("*.json")}
+            self.assertEqual(after["EVAL-004"], first["EVAL-004"])  # đã đủ → không ghi lại
+            self.assertEqual(after["EVAL-001"]["tasks"]["summary"], first["EVAL-001"]["tasks"]["summary"])
+            self.assertEqual(after["EVAL-001"]["tasks"]["extraction"], first["EVAL-001"]["tasks"]["extraction"])
+            self.assertIsNone(after["EVAL-001"]["tasks"]["summary_baseline"]["error"])
+            self.assertEqual(after["EVAL-001"]["resumed_tasks"], ["summary_baseline"])
+            self.assertEqual(after["EVAL-001"]["run_at"], first["EVAL-001"]["run_at"])
+            self.assertTrue(all(t["error"] is None for t in after["EVAL-007"]["tasks"].values()))
+            for record in after.values():
+                self.assertNotIn(MOCK_KEY, json.dumps(record, ensure_ascii=False))
+            scored = score_llm_outputs(Path(tmp))["models"]["gemini-3.8-flash"]
+        self.assertEqual(scored["summary"]["answered"], 3)
+        self.assertEqual(scored["summary_baseline_generic"]["answered"], 3)
+        self.assertEqual(scored["extraction"]["answered"], 3)
+
     def test_evaluation_report_separates_live_from_simulated(self) -> None:
         from evaluation.evaluator import run_evaluation
 

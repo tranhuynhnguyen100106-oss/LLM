@@ -9,3 +9,9 @@ hiển thị kết quả ở mục "Đánh giá output LLM thật", tách khỏi
 export GEMINI_API_KEY=...        # khóa của người chạy, không ghi vào repo
 python scripts/run_llm_eval.py --model gemini-3.8-flash --cases 12 --sleep 6
 ```
+
+Chạy bù khi lần trước bị lỗi 429/503 (giữ nguyên tác vụ đã thành công, chỉ gọi lại tác vụ lỗi/thiếu):
+
+```bash
+python scripts/run_llm_eval.py --model gemini-3.6-flash --cases 12 --sleep 15 --resume
+```

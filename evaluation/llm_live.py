@@ -44,7 +44,8 @@ def score_llm_outputs(root: Path | None = None) -> dict[str, Any]:
         }
     models: dict[str, Any] = {}
     for model, records in loaded.items():
-        dates = sorted(str(r.get("run_at", ""))[:10] for r in records if r.get("run_at"))
+        # Ngày chạy gồm cả lần chạy bù (resumed_at) để nguồn số liệu minh bạch.
+        dates = sorted(str(r[k])[:10] for r in records for k in ("run_at", "resumed_at") if r.get(k))
         models[model] = {
             "case_count": len(records),
             "provider": str(records[0].get("provider") or ""),
