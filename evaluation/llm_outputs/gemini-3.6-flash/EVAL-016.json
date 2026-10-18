@@ -1,0 +1,435 @@
+{
+  "schema": "creditlens-llm-eval-v1",
+  "case_id": "EVAL-016",
+  "scenario": "Sao kê đọc được nhưng thiếu thu nhập và số dư",
+  "provider": "gemini",
+  "model": "gemini-3.6-flash",
+  "run_at": "2026-10-18T11:11:01+00:00",
+  "python": {
+    "payload": {
+      "ma_ho_so": "EVAL-016",
+      "ten_ho_so": "KH_01",
+      "du_lieu": {
+        "ho_ten_khach_hang": "KH_01",
+        "don_vi_cong_tac_ke_khai": "DN_A",
+        "don_vi_cong_tac_chung_tu": "DN_A",
+        "chuc_danh_ke_khai": "Chuyên viên phân tích",
+        "chuc_danh_chung_tu": "Chuyên viên phân tích",
+        "ngay_bat_dau_ke_khai": "06/2022",
+        "ngay_bat_dau_chung_tu": "06/2022",
+        "tham_nien_lam_viec_thang": 48.0,
+        "thu_nhap_ke_khai": 25000000.0,
+        "luong_thuc_nhan": 25000000.0,
+        "thu_nhap_qua_sao_ke": null,
+        "so_tien_de_nghi_vay": 600000000.0,
+        "thoi_han_vay_thang": 120.0,
+        "khoan_tra_du_kien": 7500000.0,
+        "nghia_vu_no_ke_khai": 2000000.0,
+        "nghia_vu_no_quan_sat": 2000000.0,
+        "chi_phi_sinh_hoat": 9000000.0,
+        "so_du_binh_quan": null,
+        "bien_dong_thu_nhap": null,
+        "muc_dich_vay": "Sửa chữa nhà ở"
+      },
+      "truong_trich_xuat": [
+        {
+          "ma_truong": "ho_ten_khach_hang",
+          "nhan": "Họ và tên khách hàng",
+          "gia_tri": "KH_01",
+          "tai_lieu_nguon": "01_don_de_nghi_vay.pdf",
+          "trang": 1,
+          "do_tin_cay": 0.9,
+          "bang_chung": {
+            "tai_lieu": "01_don_de_nghi_vay.pdf",
+            "trang": 1,
+            "truong_du_lieu": "Họ và tên khách hàng",
+            "gia_tri": "KH_01",
+            "trich_doan": "Họ và tên: KH_01"
+          }
+        },
+        {
+          "ma_truong": "thu_nhap_ke_khai",
+          "nhan": "Thu nhập hàng tháng kê khai",
+          "gia_tri": 25000000.0,
+          "tai_lieu_nguon": "01_don_de_nghi_vay.pdf",
+          "trang": 1,
+          "do_tin_cay": 0.93,
+          "bang_chung": {
+            "tai_lieu": "01_don_de_nghi_vay.pdf",
+            "trang": 1,
+            "truong_du_lieu": "Thu nhập hàng tháng kê khai",
+            "gia_tri": "25.000.000 VND",
+            "trich_doan": "Thu nhập kê khai: 25.000.000 "
+          }
+        },
+        {
+          "ma_truong": "luong_thuc_nhan",
+          "nhan": "Lương thực nhận",
+          "gia_tri": 25000000.0,
+          "tai_lieu_nguon": "02_chung_tu_thu_nhap.pdf",
+          "trang": 1,
+          "do_tin_cay": 0.93,
+          "bang_chung": {
+            "tai_lieu": "02_chung_tu_thu_nhap.pdf",
+            "trang": 1,
+            "truong_du_lieu": "Lương thực nhận",
+            "gia_tri": "25.000.000 VND",
+            "trich_doan": "Lương thực nhận: 25.000.000 "
+          }
+        },
+        {
+          "ma_truong": "thu_nhap_qua_sao_ke",
+          "nhan": "Ghi có bình quân hàng tháng",
+          "gia_tri": null,
+          "tai_lieu_nguon": "03_sao_ke_ngan_hang.pdf",
+          "trang": null,
+          "do_tin_cay": 0.0,
+          "bang_chung": null
+        },
+        {
+          "ma_truong": "don_vi_cong_tac_ke_khai",
+          "nhan": "Đơn vị công tác trên đơn vay",
+          "gia_tri": "DN_A",
+          "tai_lieu_nguon": "01_don_de_nghi_vay.pdf",
+          "trang": 1,
+          "do_tin_cay": 0.9,
+          "bang_chung": {
+            "tai_lieu": "01_don_de_nghi_vay.pdf",
+            "trang": 1,
+            "truong_du_lieu": "Đơn vị công tác trên đơn vay",
+            "gia_tri": "DN_A",
+            "trich_doan": "Đơn vị công tác: DN_A"
+          }
+        },
+        {
+          "ma_truong": "don_vi_cong_tac_chung_tu",
+          "nhan": "Đơn vị công tác trên chứng từ thu nhập",
+          "gia_tri": "DN_A",
+          "tai_lieu_nguon": "02_chung_tu_thu_nhap.pdf",
+          "trang": 1,
+          "do_tin_cay": 0.9,
+          "bang_chung": {
+            "tai_lieu": "02_chung_tu_thu_nhap.pdf",
+            "trang": 1,
+            "truong_du_lieu": "Đơn vị công tác trên chứng từ thu nhập",
+            "gia_tri": "DN_A",
+            "trich_doan": "Đơn vị công tác: DN_A"
+          }
+        },
+        {
+          "ma_truong": "chuc_danh_ke_khai",
+          "nhan": "Chức danh trên đơn vay",
+          "gia_tri": "Chuyên viên phân tích",
+          "tai_lieu_nguon": "01_don_de_nghi_vay.pdf",
+          "trang": 1,
+          "do_tin_cay": 0.9,
+          "bang_chung": {
+            "tai_lieu": "01_don_de_nghi_vay.pdf",
+            "trang": 1,
+            "truong_du_lieu": "Chức danh trên đơn vay",
+            "gia_tri": "Chuyên viên phân tích",
+            "trich_doan": "Chức danh: Chuyên viên phân tích"
+          }
+        },
+        {
+          "ma_truong": "chuc_danh_chung_tu",
+          "nhan": "Chức danh trên chứng từ thu nhập",
+          "gia_tri": "Chuyên viên phân tích",
+          "tai_lieu_nguon": "02_chung_tu_thu_nhap.pdf",
+          "trang": 1,
+          "do_tin_cay": 0.9,
+          "bang_chung": {
+            "tai_lieu": "02_chung_tu_thu_nhap.pdf",
+            "trang": 1,
+            "truong_du_lieu": "Chức danh trên chứng từ thu nhập",
+            "gia_tri": "Chuyên viên phân tích",
+            "trich_doan": "Chức danh: Chuyên viên phân tích"
+          }
+        },
+        {
+          "ma_truong": "ngay_bat_dau_ke_khai",
+          "nhan": "Ngày bắt đầu làm việc trên đơn vay",
+          "gia_tri": "06/2022",
+          "tai_lieu_nguon": "01_don_de_nghi_vay.pdf",
+          "trang": 1,
+          "do_tin_cay": 0.9,
+          "bang_chung": {
+            "tai_lieu": "01_don_de_nghi_vay.pdf",
+            "trang": 1,
+            "truong_du_lieu": "Ngày bắt đầu làm việc trên đơn vay",
+            "gia_tri": "06/2022",
+            "trich_doan": "Ngày bắt đầu làm việc: 06/2022"
+          }
+        },
+        {
+          "ma_truong": "ngay_bat_dau_chung_tu",
+          "nhan": "Ngày bắt đầu làm việc trên chứng từ thu nhập",
+          "gia_tri": "06/2022",
+          "tai_lieu_nguon": "02_chung_tu_thu_nhap.pdf",
+          "trang": 1,
+          "do_tin_cay": 0.9,
+          "bang_chung": {
+            "tai_lieu": "02_chung_tu_thu_nhap.pdf",
+            "trang": 1,
+            "truong_du_lieu": "Ngày bắt đầu làm việc trên chứng từ thu nhập",
+            "gia_tri": "06/2022",
+            "trich_doan": "Ngày bắt đầu làm việc: 06/2022"
+          }
+        },
+        {
+          "ma_truong": "tham_nien_lam_viec_thang",
+          "nhan": "Thâm niên làm việc",
+          "gia_tri": 48.0,
+          "tai_lieu_nguon": "01_don_de_nghi_vay.pdf",
+          "trang": 1,
+          "do_tin_cay": 0.93,
+          "bang_chung": {
+            "tai_lieu": "01_don_de_nghi_vay.pdf",
+            "trang": 1,
+            "truong_du_lieu": "Thâm niên làm việc",
+            "gia_tri": "48 VND",
+            "trich_doan": "Thâm niên tháng: 48"
+          }
+        },
+        {
+          "ma_truong": "so_tien_de_nghi_vay",
+          "nhan": "Số tiền đề nghị vay",
+          "gia_tri": 600000000.0,
+          "tai_lieu_nguon": "01_don_de_nghi_vay.pdf",
+          "trang": 1,
+          "do_tin_cay": 0.93,
+          "bang_chung": {
+            "tai_lieu": "01_don_de_nghi_vay.pdf",
+            "trang": 1,
+            "truong_du_lieu": "Số tiền đề nghị vay",
+            "gia_tri": "600.000.000 VND",
+            "trich_doan": "Số tiền đề nghị vay: 600.000.000 "
+          }
+        },
+        {
+          "ma_truong": "thoi_han_vay_thang",
+          "nhan": "Thời hạn vay",
+          "gia_tri": 120.0,
+          "tai_lieu_nguon": "01_don_de_nghi_vay.pdf",
+          "trang": 1,
+          "do_tin_cay": 0.93,
+          "bang_chung": {
+            "tai_lieu": "01_don_de_nghi_vay.pdf",
+            "trang": 1,
+            "truong_du_lieu": "Thời hạn vay",
+            "gia_tri": "120 VND",
+            "trich_doan": "Thời hạn vay tháng: 120"
+          }
+        },
+        {
+          "ma_truong": "khoan_tra_du_kien",
+          "nhan": "Khoản trả nợ dự kiến hàng tháng",
+          "gia_tri": 7500000.0,
+          "tai_lieu_nguon": "01_don_de_nghi_vay.pdf",
+          "trang": 1,
+          "do_tin_cay": 0.93,
+          "bang_chung": {
+            "tai_lieu": "01_don_de_nghi_vay.pdf",
+            "trang": 1,
+            "truong_du_lieu": "Khoản trả nợ dự kiến hàng tháng",
+            "gia_tri": "7.500.000 VND",
+            "trich_doan": "Trả nợ khoản vay mới hàng tháng: 7.500.000 "
+          }
+        },
+        {
+          "ma_truong": "nghia_vu_no_ke_khai",
+          "nhan": "Khoản trả nợ kê khai hàng tháng",
+          "gia_tri": 2000000.0,
+          "tai_lieu_nguon": "01_don_de_nghi_vay.pdf",
+          "trang": 1,
+          "do_tin_cay": 0.93,
+          "bang_chung": {
+            "tai_lieu": "01_don_de_nghi_vay.pdf",
+            "trang": 1,
+            "truong_du_lieu": "Khoản trả nợ kê khai hàng tháng",
+            "gia_tri": "2.000.000 VND",
+            "trich_doan": "Nghĩa vụ nợ kê khai: 2.000.000 "
+          }
+        },
+        {
+          "ma_truong": "nghia_vu_no_quan_sat",
+          "nhan": "Khoản trả nợ quan sát hàng tháng",
+          "gia_tri": 2000000.0,
+          "tai_lieu_nguon": "04_nghia_vu_no.pdf",
+          "trang": 1,
+          "do_tin_cay": 0.93,
+          "bang_chung": {
+            "tai_lieu": "04_nghia_vu_no.pdf",
+            "trang": 1,
+            "truong_du_lieu": "Khoản trả nợ quan sát hàng tháng",
+            "gia_tri": "2.000.000 VND",
+            "trich_doan": "Nghĩa vụ nợ hàng tháng: 2.000.000 "
+          }
+        },
+        {
+          "ma_truong": "chi_phi_sinh_hoat",
+          "nhan": "Chi phí sinh hoạt",
+          "gia_tri": 9000000.0,
+          "tai_lieu_nguon": "01_don_de_nghi_vay.pdf",
+          "trang": 1,
+          "do_tin_cay": 0.93,
+          "bang_chung": {
+            "tai_lieu": "01_don_de_nghi_vay.pdf",
+            "trang": 1,
+            "truong_du_lieu": "Chi phí sinh hoạt",
+            "gia_tri": "9.000.000 VND",
+            "trich_doan": "Chi phí sinh hoạt: 9.000.000 "
+          }
+        },
+        {
+          "ma_truong": "so_du_binh_quan",
+          "nhan": "Số dư tài khoản bình quân",
+          "gia_tri": null,
+          "tai_lieu_nguon": "03_sao_ke_ngan_hang.pdf",
+          "trang": null,
+          "do_tin_cay": 0.0,
+          "bang_chung": null
+        },
+        {
+          "ma_truong": "bien_dong_thu_nhap",
+          "nhan": "Mức biến động thu nhập",
+          "gia_tri": null,
+          "tai_lieu_nguon": "03_sao_ke_ngan_hang.pdf",
+          "trang": null,
+          "do_tin_cay": 0.0,
+          "bang_chung": null
+        },
+        {
+          "ma_truong": "muc_dich_vay",
+          "nhan": "Mục đích vay",
+          "gia_tri": "Sửa chữa nhà ở",
+          "tai_lieu_nguon": "01_don_de_nghi_vay.pdf",
+          "trang": 1,
+          "do_tin_cay": 0.9,
+          "bang_chung": {
+            "tai_lieu": "01_don_de_nghi_vay.pdf",
+            "trang": 1,
+            "truong_du_lieu": "Mục đích vay",
+            "gia_tri": "Sửa chữa nhà ở",
+            "trich_doan": "Mục đích vay: Sửa chữa nhà ở"
+          }
+        }
+      ],
+      "chi_so": [
+        {
+          "ma_chi_so": "dti",
+          "ten": "DTI hiện hữu",
+          "gia_tri": 0.08,
+          "hien_thi": "8,0%",
+          "cong_thuc": "Nghĩa vụ nợ hiện hữu ÷ Thu nhập dùng để tính",
+          "trang_thai": "Trong ngưỡng minh họa",
+          "ghi_chu": "Nguồn thu nhập: Lương thực nhận (nguồn đối chiếu hiện có)."
+        },
+        {
+          "ma_chi_so": "dsr",
+          "ten": "DSR dự kiến",
+          "gia_tri": 0.38,
+          "hien_thi": "38,0%",
+          "cong_thuc": "(Nợ hiện hữu + Khoản trả dự kiến) ÷ Thu nhập dùng để tính",
+          "trang_thai": "Trong ngưỡng minh họa",
+          "ghi_chu": "Khoản trả dự kiến là đầu vào thủ công; hệ thống không tự đặt lãi suất."
+        },
+        {
+          "ma_chi_so": "thu_nhap_kha_dung",
+          "ten": "Thu nhập còn lại trước khoản vay mới",
+          "gia_tri": 14000000.0,
+          "hien_thi": "14.000.000 VND",
+          "cong_thuc": "Thu nhập dùng để tính − Nợ hiện hữu − Chi phí sinh hoạt",
+          "trang_thai": "Trong ngưỡng minh họa",
+          "ghi_chu": "Chưa trừ khoản trả dự kiến của khoản vay mới."
+        },
+        {
+          "ma_chi_so": "he_so_dem_so_du",
+          "ten": "Hệ số đệm số dư",
+          "gia_tri": null,
+          "hien_thi": "—",
+          "cong_thuc": "Số dư bình quân ÷ Khoản trả dự kiến",
+          "trang_thai": "Chưa đủ dữ liệu",
+          "ghi_chu": "Chỉ báo thanh khoản dựa trên số dư bình quân."
+        },
+        {
+          "ma_chi_so": "chenh_lech_thu_nhap",
+          "ten": "Chênh lệch thu nhập",
+          "gia_tri": 0.0,
+          "hien_thi": "0,0%",
+          "cong_thuc": "(Nguồn cao nhất − Nguồn thấp nhất) ÷ Nguồn cao nhất",
+          "trang_thai": "Trong ngưỡng minh họa",
+          "ghi_chu": "So sánh đơn vay, chứng từ thu nhập và sao kê."
+        },
+        {
+          "ma_chi_so": "bien_dong_thu_nhap",
+          "ten": "Biến động thu nhập",
+          "gia_tri": null,
+          "hien_thi": "—",
+          "cong_thuc": "Độ lệch chuẩn dòng tiền vào tháng ÷ Dòng tiền vào bình quân",
+          "trang_thai": "Chưa đủ dữ liệu",
+          "ghi_chu": "Hệ số biến thiên khi sao kê có đủ dữ liệu theo tháng."
+        }
+      ],
+      "canh_bao": [],
+      "thong_tin_thieu": [
+        "Thu nhập qua sao kê (ghi có bình quân)",
+        "Số dư bình quân trên sao kê"
+      ],
+      "cau_hoi_xac_minh": [
+        "Vui lòng bổ sung hoặc xác nhận: Thu nhập qua sao kê (ghi có bình quân), Số dư bình quân trên sao kê."
+      ],
+      "trang_thai": "INSUFFICIENT INFORMATION",
+      "thu_nhap_dung_de_tinh": 25000000.0,
+      "nguon_thu_nhap_dung_de_tinh": "Lương thực nhận (nguồn đối chiếu hiện có)",
+      "thu_nhap_duoc_xac_minh_doc_lap": true,
+      "thoi_diem_xu_ly": "2026-10-18T11:10:13.660390+00:00",
+      "thoi_gian_xu_ly_ms": 1
+    },
+    "status": "INSUFFICIENT INFORMATION"
+  },
+  "tasks": {
+    "summary": {
+      "raw": "{\n  \"tong_quan\": \"DỮ KIỆN: Khách hàng KH_01 (mã hồ sơ EVAL-016) đề nghị vay số tiền 600.000.000 VND với mục đích Sửa chữa nhà ở. Thời gian xử lý hệ thống là 2026-10-18T11:10:13.660390+00:00.\\nDIỄN GIẢI: Hồ sơ đăng ký khoản vay cá nhân phục vụ mục đích sửa chữa nhà ở, cần đối chiếu nguồn thu nhập và tài liệu liên quan.\",\n  \"de_nghi_vay\": \"DỮ KIỆN:\\n- Khách hàng: KH_01\\n- Số tiền đề nghị vay: 600.000.000 VND\\n- Thời hạn vay: 120.0 tháng\\n- Mục đích vay: Sửa chữa nhà ở\\n- Khoản trả dự kiến hàng tháng: 7.500.000 VND\\nDIỄN GIẢI: Khách hàng đề nghị khoản vay 600.000.000 VND trong 120 tháng với khoản trả gốc lãi dự kiến hàng tháng là 7.500.000 VND.\",\n  \"tai_chinh_da_xac_minh\": \"DỮ KIỆN:\\n- Thu nhập kê khai: 25.000.000 VND\\n- Lương thực nhận: 25.000.000 VND\\n- Thu nhập qua sao kê (ghi có bình quân): null\\n- Đơn vị công tác: DN_A\\n- Chức danh: Chuyên viên phân tích\\n- Thâm niên làm việc: 48.0 tháng\\n- Nghĩa vụ nợ kê khai: 2.000.000 VND\\n- Nghĩa vụ nợ quan sát: 2.000.000 VND\\n- Chi phí sinh hoạt: 9.000.000 VND\\n- Số dư bình quân: null\\n- Mức biến động thu nhập: null\\nDIỄN GIẢI: Thu nhập thực nhận của khách hàng đạt 25.000.000 VND/tháng từ DN_A với thâm niên 48 tháng. Nợ hiện hữu quan sát được là 2.000.000 VND/tháng và chi phí sinh hoạt là 9.000.000 VND/tháng. Các dữ liệu liên quan đến sao kê ngân hàng chưa được cung cấp.\",\n  \"chi_so\": [\n    \"DTI hiện hữu: 8,0% (Công thức: Nghĩa vụ nợ hiện hữu ÷ Thu nhập dùng để tính)\",\n    \"DSR dự kiến: 38,0% (Công thức: (Nợ hiện hữu + Khoản trả dự kiến) ÷ Thu nhập dùng để tính)\",\n    \"Thu nhập còn lại trước khoản vay mới: 14.000.000 VND (Công thức: Thu nhập dùng để tính − Nợ hiện hữu − Chi phí sinh hoạt)\",\n    \"Hệ số đệm số dư: — (Công thức: Số dư bình quân ÷ Khoản trả dự kiến)\",\n    \"Chênh lệch thu nhập: 0,0% (Công thức: (Nguồn cao nhất − Nguồn thấp nhất) ÷ Nguồn cao nhất)\",\n    \"Biến động thu nhập: — (Công thức: Độ lệch chuẩn dòng tiền vào tháng ÷ Dòng tiền vào bình quân)\"\n  ],\n  \"kiem_tra_nhat_quan\": \"DỮ KIỆN:\\n- Đơn vị công tác trên đơn vay (DN_A) trùng khớp với trên chứng từ thu nhập (DN_A).\\n- Chức danh trên đơn vay (Chuyên viên phân tích) trùng khớp với trên chứng từ thu nhập (Chuyên viên phân tích).\\n- Ngày bắt đầu làm việc trên đơn vay (06/2022) trùng khớp với trên chứng từ thu nhập (06/2022).\\n- Thu nhập kê khai (25.000.000 VND) bằng với lương thực nhận (25.000.000 VND), chênh lệch thu nhập là 0,0%.\\n- Nghĩa vụ nợ kê khai (2.000.000 VND) bằng nghĩa vụ nợ quan sát (2.000.000 VND).\\nDIỄN GIẢI: Các thông tin về công tác, chức danh, thâm niên và thu nhập kê khai đồng nhất giữa đơn đề nghị vay và chứng từ thu nhập.\",\n  \"canh_bao\": [],\n  \"thong_tin_thieu\": [\n    \"Thu nhập qua sao kê (ghi có bình quân)\",\n    \"Số dư bình quân trên sao kê\"\n  ],\n  \"cau_hoi_xac_minh\": [\n    \"Vui lòng bổ sung hoặc xác nhận: Thu nhập qua sao kê (ghi có bình quân), Số dư bình quân trên sao kê.\"\n  ],\n  \"bang_chung\": [\n    \"Họ và tên khách hàng: 'KH_01' (nguồn: 01_don_de_nghi_vay.pdf, trang 1, trích đoạn: 'Họ và tên: KH_01')\",\n    \"Thu nhập hàng tháng kê khai: '25.000.000 VND' (nguồn: 01_don_de_nghi_vay.pdf, trang 1, trích đoạn: 'Thu nhập kê khai: 25.000.000')\",\n    \"Lương thực nhận: '25.000.000 VND' (nguồn: 02_chung_tu_thu_nhap.pdf, trang 1, trích đoạn: 'Lương thực nhận: 25.000.000')\",\n    \"Đơn vị công tác trên đơn vay: 'DN_A' (nguồn: 01_don_de_nghi_vay.pdf, trang 1, trích đoạn: 'Đơn vị công tác: DN_A')\",\n    \"Đơn vị công tác trên chứng từ thu nhập: 'DN_A' (nguồn: 02_chung_tu_thu_nhap.pdf, trang 1, trích đoạn: 'Đơn vị công tác: DN_A')\",\n    \"Chức danh trên đơn vay: 'Chuyên viên phân tích' (nguồn: 01_don_de_nghi_vay.pdf, trang 1, trích đoạn: 'Chức danh: Chuyên viên phân tích')\",\n    \"Chức danh trên chứng từ thu nhập: 'Chuyên viên phân tích' (nguồn: 02_chung_tu_thu_nhap.pdf, trang 1, trích đoạn: 'Chức danh: Chuyên viên phân tích')\",\n    \"Ngày bắt đầu làm việc trên đơn vay: '06/2022' (nguồn: 01_don_de_nghi_vay.pdf, trang 1, trích đoạn: 'Ngày bắt đầu làm việc: 06/2022')\",\n    \"Ngày bắt đầu làm việc trên chứng từ thu nhập: '06/2022' (nguồn: 02_chung_tu_thu_nhap.pdf, trang 1, trích đoạn: 'Ngày bắt đầu làm việc: 06/2022')\",\n    \"Thâm niên làm việc: '48 VND' (nguồn: 01_don_de_nghi_vay.pdf, trang 1, trích đoạn: 'Thâm niên tháng: 48')\",\n    \"Số tiền đề nghị vay: '600.000.000 VND' (nguồn: 01_don_de_nghi_vay.pdf, trang 1, trích đoạn: 'Số tiền đề nghị vay: 600.000.000')\",\n    \"Thời hạn vay: '120 VND' (nguồn: 01_don_de_nghi_vay.pdf, trang 1, trích đoạn: 'Thời hạn vay tháng: 120')\",\n    \"Khoản trả nợ dự kiến hàng tháng: '7.500.000 VND' (nguồn: 01_don_de_nghi_vay.pdf, trang 1, trích đoạn: 'Trả nợ khoản vay mới hàng tháng: 7.500.000')\",\n    \"Khoản trả nợ kê khai hàng tháng: '2.000.000 VND' (nguồn: 01_don_de_nghi_vay.pdf, trang 1, trích đoạn: 'Nghĩa vụ nợ kê khai: 2.000.000')\",\n    \"Khoản trả nợ quan sát hàng tháng: '2.000.000 VND' (nguồn: 04_nghia_vu_no.pdf, trang 1, trích đoạn: 'Nghĩa vụ nợ hàng tháng: 2.000.000')\",\n    \"Chi phí sinh hoạt: '9.000.000 VND' (nguồn: 01_don_de_nghi_vay.pdf, trang 1, trích đoạn: 'Chi phí sinh hoạt: 9.000.000')\",\n    \"Mục đích vay: 'Sửa chữa nhà ở' (nguồn: 01_don_de_nghi_vay.pdf, trang 1, trích đoạn: 'Mục đích vay: Sửa chữa nhà ở')\"\n  ],\n  \"trang_thai_xem_xet\": \"INSUFFICIENT INFORMATION\"\n}",
+      "latency_ms": 10658.1,
+      "error": null
+    },
+    "summary_baseline": {
+      "raw": "{\n  \"tong_quan\": \"DỮ KIỆN: Khách hàng KH_01 đăng ký khoản vay. DIỄN GIẢI: Đang trong quá trình thu thập thông tin để thẩm định hồ sơ tín dụng.\",\n  \"de_nghi_vay\": \"DỮ KIỆN: Khách hàng KH_01 gửi đề nghị vay. DIỄN GIẢI: Số tiền vay, thời hạn, mục đích vay chi tiết chưa có dữ liệu đầy đủ.\",\n  \"tai_chinh_da_xac_minh\": \"DỮ KIỆN: Chưa có báo cáo tài chính hoặc sao kê thu nhập chính thức được xác minh cho KH_01. DIỄN GIẢI: Thông tin chưa đủ để kết luận về tình hình tài chính.\",\n  \"chi_so\": [\n    \"DỮ KIỆN: Chưa có số liệu đầu vào. DIỄN GIẢI: DTI: Thông tin chưa đủ\",\n    \"DỮ KIỆN: Chưa có số liệu đầu vào. DIỄN GIẢI: LTV: Thông tin chưa đủ\"\n  ],\n  \"kiem_tra_nhat_quan\": \"DỮ KIỆN: Chưa có đủ tài liệu để so sánh đối chiếu giữa các nguồn. DIỄN GIẢI: Thông tin chưa đủ để kiểm tra tính nhất quán.\",\n  \"canh_bao\": [\n    {\n      \"risk_code\": \"WARN_NO_DATA\",\n      \"noi_dung\": \"DỮ KIỆN: Hồ sơ chưa cung cấp báo cáo thu nhập hoặc tài sản bảo đảm. DIỄN GIẢI: Thiếu cơ sở đánh giá rủi ro tín dụng.\",\n      \"evidence_ref\": \"BC_KH01_01\"\n    }\n  ],\n  \"thong_tin_thieu\": [\n    \"Sao kê tài khoản ngân hàng / Báo cáo tài chính xác thực của KH_01\",\n    \"Hồ sơ tài sản bảo đảm và giá trị định giá\",\n    \"Phương án chi tiết sử dụng vốn và nguồn trả nợ\"\n  ],\n  \"cau_hoi_xac_minh\": [\n    \"Khách hàng KH_01 cung cấp bổ sung sao kê thu nhập 6 tháng gần nhất ở đâu?\",\n    \"Mục đích sử dụng vốn vay chi tiết và kế hoạch trả nợ cụ thể là gì?\"\n  ],\n  \"bang_chung\": [\n    \"BC_KH01_01: Yêu cầu thông tin khách hàng KH_01 chưa có dữ liệu tài chính chi tiết trong hệ thống.\"\n  ],\n  \"trang_thai_xem_xet\": \"INSUFFICIENT INFORMATION\"\n}",
+      "latency_ms": 4243.0,
+      "error": null
+    },
+    "extraction": {
+      "raw": null,
+      "latency_ms": 2401.4,
+      "error": "Model gemini-3.6-flash đang quá tải phía Google (không phải lỗi API Key). Thử lại sau ít phút hoặc chọn model khác. (mã GEM-503)",
+      "requested": [
+        "thu_nhap_ke_khai",
+        "luong_thuc_nhan",
+        "thu_nhap_qua_sao_ke",
+        "so_tien_de_nghi_vay",
+        "thoi_han_vay_thang",
+        "khoan_tra_du_kien",
+        "nghia_vu_no_ke_khai",
+        "nghia_vu_no_quan_sat",
+        "so_du_binh_quan",
+        "ngay_bat_dau_ke_khai",
+        "ngay_bat_dau_chung_tu"
+      ],
+      "items": [],
+      "gold": {
+        "thu_nhap_ke_khai": 25000000,
+        "luong_thuc_nhan": 25000000,
+        "thu_nhap_qua_sao_ke": null,
+        "so_tien_de_nghi_vay": 600000000,
+        "thoi_han_vay_thang": 120,
+        "khoan_tra_du_kien": 7500000,
+        "nghia_vu_no_ke_khai": 2000000,
+        "nghia_vu_no_quan_sat": 2000000,
+        "so_du_binh_quan": null,
+        "ngay_bat_dau_ke_khai": "06/2022",
+        "ngay_bat_dau_chung_tu": "06/2022"
+      }
+    }
+  }
+}
