@@ -105,6 +105,9 @@ export interface CreditLensContextType {
   /** Bản Streamlit: trích xuất bổ sung bằng AI (tác vụ LLM #1) — chỉ trường số/ngày, cần chuyên viên xác nhận. */
   aiExtraction?: AiExtractionState | null;
   aiExtractionActions?: AiExtractionActions;
+  /** Bản Streamlit: hộp thoại "Hồ sơ còn thiếu thông tin" (chỉ nhãn trường, không có giá trị). */
+  missingGate?: MissingGateState | null;
+  missingGateActions?: MissingGateActions;
   /** Logo nhúng (data URI) khi chạy trong component Streamlit. */
   assetUrl?: (name: string) => string;
 }
@@ -193,6 +196,29 @@ export interface AiExtractionState {
   pending_label: string;
   /** Đang chờ phản hồi của lần bấm hiện tại (chỉ phía trình duyệt). */
   running?: boolean;
+}
+
+export interface MissingGateItem {
+  field: string;
+  label: string;
+  level: "Bắt buộc" | "Nên có";
+}
+
+export interface MissingGateState {
+  open: boolean;
+  title: string;
+  explanation: string;
+  groups: { doc: string; doc_label: string; items: MissingGateItem[] }[];
+  required_count: number;
+  can_ai: boolean;
+  can_restore_files: boolean;
+}
+
+export interface MissingGateActions {
+  continueReview: () => void;
+  supplementDocuments: () => void;
+  supplementWithAi: () => void;
+  cancelCase: () => void;
 }
 
 export interface AiExtractionActions {

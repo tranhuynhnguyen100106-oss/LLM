@@ -39,6 +39,8 @@ def ready_state() -> FakeSt:
     v3.xu_ly_tep_tai_len_v3(st, uploads_with_uncommon_salary_label(), st.settings)
     v3.handle_v3_event(st, event("upload_continue"), st.settings)
     pg.xac_nhan_cong(st)
+    # Hồ sơ thiếu "Lương thực nhận" → hộp thoại thiếu thông tin chặn mọi lệnh gọi LLM cho đến khi chuyên viên chọn.
+    v3.handle_v3_event(st, event("missing_gate_continue"), st.settings)
     return st
 
 

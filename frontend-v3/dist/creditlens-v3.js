@@ -9325,7 +9325,19 @@ function ae({ payload: e, emit: t, children: n }) {
 		},
 		confirm: (e) => O("ai_extract_confirm", { field: e }),
 		reject: (e) => O("ai_extract_reject", { field: e })
-	}), [Ne, O]), Ie = (0, l.useCallback)((t) => e.assets[t] ?? "", [e.assets]), Le = {
+	}), [Ne, O]), [Ie, Le] = (0, l.useState)(!1);
+	(0, l.useEffect)(() => Le(!1), [e]);
+	let Re = (0, l.useMemo)(() => {
+		let e = (e) => () => {
+			Ie || (Le(!0), O(e));
+		};
+		return {
+			continueReview: e("missing_gate_continue"),
+			supplementDocuments: e("missing_gate_supplement"),
+			supplementWithAi: e("missing_gate_ai"),
+			cancelCase: e("missing_gate_cancel")
+		};
+	}, [Ie, O]), ze = (0, l.useCallback)((t) => e.assets[t] ?? "", [e.assets]), Be = {
 		theme: r,
 		setTheme: ge,
 		motionLevel: a,
@@ -9379,10 +9391,12 @@ function ae({ payload: e, emit: t, children: n }) {
 			running: Ne
 		} : null,
 		aiExtractionActions: Fe,
-		assetUrl: Ie
+		missingGate: e.missing_gate?.open ? e.missing_gate : null,
+		missingGateActions: Re,
+		assetUrl: ze
 	};
 	return /* @__PURE__ */ (0, x.jsx)(re.Provider, {
-		value: Le,
+		value: Be,
 		children: n
 	});
 }
@@ -13688,17 +13702,125 @@ function Qe() {
 	});
 }
 //#endregion
+//#region ../src/components/MissingFieldGateDialog.tsx
+function $e() {
+	let { missingGate: e, missingGateActions: t } = E(), n = (0, l.useRef)(null), r = (0, l.useRef)(null), i = !!(e?.open && t), a = t?.supplementDocuments;
+	return (0, l.useEffect)(() => {
+		if (!i || !n.current) return;
+		let e = n.current, t = e.getRootNode(), o = window.setTimeout(() => r.current?.focus(), 0), s = (t) => t.composedPath().includes(e), c = (e) => {
+			s(e) || r.current?.focus();
+		}, l = (e) => {
+			e.key === "Escape" && !s(e) && (e.preventDefault(), a?.());
+		};
+		return t.addEventListener("focusin", c), document.addEventListener("keydown", l), () => {
+			window.clearTimeout(o), t.removeEventListener("focusin", c), document.removeEventListener("keydown", l);
+		};
+	}, [i, a]), !i || !e || !t ? null : /* @__PURE__ */ (0, x.jsx)("div", {
+		className: "cl-gate-backdrop",
+		role: "presentation",
+		children: /* @__PURE__ */ (0, x.jsxs)("div", {
+			ref: n,
+			className: "cl-gate-dialog",
+			role: "alertdialog",
+			"aria-modal": "true",
+			"aria-labelledby": "cl-gate-title",
+			"aria-describedby": "cl-gate-explanation",
+			"aria-label": e.title,
+			onKeyDown: (e) => {
+				if (e.key === "Escape") {
+					e.preventDefault(), t.supplementDocuments();
+					return;
+				}
+				if (e.key !== "Tab" || !n.current) return;
+				let r = Array.from(n.current.querySelectorAll("button:not([disabled])"));
+				if (!r.length) return;
+				let i = r[0], a = r[r.length - 1];
+				e.shiftKey && document.activeElement === i ? (e.preventDefault(), a.focus()) : !e.shiftKey && document.activeElement === a && (e.preventDefault(), i.focus());
+			},
+			children: [
+				/* @__PURE__ */ (0, x.jsxs)("header", {
+					className: "cl-gate-dialog__header",
+					children: [
+						/* @__PURE__ */ (0, x.jsx)("p", {
+							className: "cl-core-eyebrow",
+							children: "KIỂM SOÁT ĐỘ TIN CẬY · TRƯỚC KHI ĐÁNH GIÁ"
+						}),
+						/* @__PURE__ */ (0, x.jsx)("h2", {
+							id: "cl-gate-title",
+							children: e.title
+						}),
+						/* @__PURE__ */ (0, x.jsxs)("p", {
+							className: "cl-gate-dialog__count",
+							children: [e.required_count, " mục bắt buộc còn thiếu. Chưa gọi AI cho hồ sơ này."]
+						})
+					]
+				}),
+				/* @__PURE__ */ (0, x.jsx)("div", {
+					className: "cl-gate-dialog__groups",
+					children: e.groups.map((e) => /* @__PURE__ */ (0, x.jsxs)("section", {
+						className: "cl-gate-group",
+						"aria-label": `Thiếu ở ${e.doc_label}`,
+						children: [/* @__PURE__ */ (0, x.jsx)("h3", { children: e.doc_label }), /* @__PURE__ */ (0, x.jsx)("ul", { children: e.items.map((e) => /* @__PURE__ */ (0, x.jsxs)("li", { children: [/* @__PURE__ */ (0, x.jsx)("span", { children: e.label }), /* @__PURE__ */ (0, x.jsx)("span", {
+							className: `cl-gate-level cl-gate-level--${e.level === "Bắt buộc" ? "required" : "recommended"}`,
+							children: e.level
+						})] }, e.field)) })]
+					}, e.doc))
+				}),
+				/* @__PURE__ */ (0, x.jsx)("p", {
+					id: "cl-gate-explanation",
+					className: "cl-gate-dialog__explanation",
+					children: e.explanation
+				}),
+				/* @__PURE__ */ (0, x.jsxs)("footer", {
+					className: "cl-gate-dialog__actions",
+					children: [
+						/* @__PURE__ */ (0, x.jsx)("button", {
+							ref: r,
+							type: "button",
+							className: "cl-demo-panel__action",
+							"aria-label": "Bổ sung tài liệu: quay về Bước 0, giữ các tệp đã tải",
+							onClick: t.supplementDocuments,
+							children: "Bổ sung tài liệu"
+						}),
+						e.can_ai ? /* @__PURE__ */ (0, x.jsx)("button", {
+							type: "button",
+							className: "cl-close-case-btn",
+							"aria-label": "Bổ sung bằng AI: gửi 1 yêu cầu trích xuất các trường số hoặc ngày, chuyên viên xác nhận từng trường",
+							onClick: t.supplementWithAi,
+							children: "Bổ sung bằng AI"
+						}) : null,
+						/* @__PURE__ */ (0, x.jsx)("button", {
+							type: "button",
+							className: "cl-close-case-btn",
+							"aria-label": "Tiếp tục đánh giá khi còn thiếu thông tin, trạng thái do Python tính giữ nguyên",
+							onClick: t.continueReview,
+							children: "Tiếp tục đánh giá"
+						}),
+						/* @__PURE__ */ (0, x.jsx)("button", {
+							type: "button",
+							className: "cl-close-case-btn cl-gate-dialog__danger",
+							"aria-label": "Hủy hồ sơ: xóa hồ sơ và vault khỏi phiên",
+							onClick: t.cancelCase,
+							children: "Hủy hồ sơ"
+						})
+					]
+				})
+			]
+		})
+	});
+}
+//#endregion
 //#region src/StreamlitApp.tsx
-function $e({ label: e }) {
+function et({ label: e }) {
 	return /* @__PURE__ */ (0, x.jsxs)("section", {
 		className: "cl-core-state cl-core-state--empty",
 		role: "status",
 		children: [/* @__PURE__ */ (0, x.jsx)("strong", { children: e }), /* @__PURE__ */ (0, x.jsx)("span", { children: "Đang chờ dữ liệu từ máy chủ Python…" })]
 	});
 }
-function et({ payload: e }) {
+function tt({ payload: e }) {
 	let { activePage: t, navigationItems: n, privacy: r, setActivePage: i } = E(), a = n.find((e) => e.page === t), o = () => i(n[0]?.page ?? "1_overview");
-	return /* @__PURE__ */ (0, x.jsx)(ye, { children: /* @__PURE__ */ (0, x.jsx)("div", {
+	return /* @__PURE__ */ (0, x.jsxs)(ye, { children: [/* @__PURE__ */ (0, x.jsx)("div", {
 		className: "cl-page-transition-wrapper",
 		children: (() => {
 			if (a?.locked) return /* @__PURE__ */ (0, x.jsx)(Ye, {
@@ -13708,31 +13830,31 @@ function et({ payload: e }) {
 			let { core: n, summary: i, methodology: s, evaluation: c } = e.pages;
 			switch (t) {
 				case "1_overview": return /* @__PURE__ */ (0, x.jsxs)(x.Fragment, { children: [/* @__PURE__ */ (0, x.jsx)(Je, {}), /* @__PURE__ */ (0, x.jsx)(xe, {})] });
-				case "2_extraction": return n ? /* @__PURE__ */ (0, x.jsxs)(x.Fragment, { children: [/* @__PURE__ */ (0, x.jsx)(Qe, {}), /* @__PURE__ */ (0, x.jsx)(je, { viewModel: n })] }) : /* @__PURE__ */ (0, x.jsx)($e, { label: "Trang phân tích" });
+				case "2_extraction": return n ? /* @__PURE__ */ (0, x.jsxs)(x.Fragment, { children: [/* @__PURE__ */ (0, x.jsx)(Qe, {}), /* @__PURE__ */ (0, x.jsx)(je, { viewModel: n })] }) : /* @__PURE__ */ (0, x.jsx)(et, { label: "Trang phân tích" });
 				case "3_analysis":
-				case "4_risk": return n ? /* @__PURE__ */ (0, x.jsx)(je, { viewModel: n }) : /* @__PURE__ */ (0, x.jsx)($e, { label: "Trang phân tích" });
-				case "5_summary": return i ? /* @__PURE__ */ (0, x.jsx)(Ve, { viewModel: i }) : /* @__PURE__ */ (0, x.jsx)($e, { label: "Tóm tắt thẩm định" });
-				case "6_methodology": return s ? /* @__PURE__ */ (0, x.jsx)(He, { viewModel: s }) : /* @__PURE__ */ (0, x.jsx)($e, { label: "Phương pháp" });
-				case "7_evaluation": return c ? /* @__PURE__ */ (0, x.jsx)(We, { viewModel: c }) : /* @__PURE__ */ (0, x.jsx)($e, { label: "Evaluation" });
+				case "4_risk": return n ? /* @__PURE__ */ (0, x.jsx)(je, { viewModel: n }) : /* @__PURE__ */ (0, x.jsx)(et, { label: "Trang phân tích" });
+				case "5_summary": return i ? /* @__PURE__ */ (0, x.jsx)(Ve, { viewModel: i }) : /* @__PURE__ */ (0, x.jsx)(et, { label: "Tóm tắt thẩm định" });
+				case "6_methodology": return s ? /* @__PURE__ */ (0, x.jsx)(He, { viewModel: s }) : /* @__PURE__ */ (0, x.jsx)(et, { label: "Phương pháp" });
+				case "7_evaluation": return c ? /* @__PURE__ */ (0, x.jsx)(We, { viewModel: c }) : /* @__PURE__ */ (0, x.jsx)(et, { label: "Evaluation" });
 				case "8_settings": return /* @__PURE__ */ (0, x.jsx)(Ke, {});
 				default: return /* @__PURE__ */ (0, x.jsx)(xe, {});
 			}
 		})()
-	}, t) });
+	}, t), /* @__PURE__ */ (0, x.jsx)($e, {})] });
 }
 //#endregion
 //#region src/streamlit_entry.tsx
-var tt = /* @__PURE__ */ new WeakMap(), nt = ({ data: e, parentElement: t, setTriggerValue: n }) => {
+var nt = /* @__PURE__ */ new WeakMap(), rt = ({ data: e, parentElement: t, setTriggerValue: n }) => {
 	let r = t.querySelector("[data-creditlens-v3-root]");
 	if (!r) return;
-	let i = tt.get(r);
-	i || (i = (0, c.createRoot)(r), tt.set(r, i));
+	let i = nt.get(r);
+	i || (i = (0, c.createRoot)(r), nt.set(r, i));
 	try {
 		let t = ee(e);
 		i.render(/* @__PURE__ */ (0, x.jsx)(ae, {
 			payload: t,
 			emit: (e) => n("event", e),
-			children: /* @__PURE__ */ (0, x.jsx)(et, { payload: t })
+			children: /* @__PURE__ */ (0, x.jsx)(tt, { payload: t })
 		}));
 	} catch {
 		i.render(/* @__PURE__ */ (0, x.jsxs)("section", {
@@ -13744,4 +13866,4 @@ var tt = /* @__PURE__ */ new WeakMap(), nt = ({ data: e, parentElement: t, setTr
 	return () => void 0;
 };
 //#endregion
-export { nt as default };
+export { rt as default };

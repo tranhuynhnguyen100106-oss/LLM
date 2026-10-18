@@ -4065,3 +4065,23 @@
 .cl-ai-extract__actions .cl-demo-panel__action { width: auto; min-width: 120px; margin: 0; }
 
 .cl-llm-live-note { margin: 0 0 12px; color: var(--cl-muted); font-size: 14px; }
+
+/* Hộp thoại "Hồ sơ còn thiếu thông tin" (cổng xác nhận trước khi đánh giá) */
+.cl-gate-backdrop { position: fixed; inset: 0; z-index: 995; display: flex; align-items: center; justify-content: center; padding: 16px; background: rgba(8, 18, 38, 0.5); backdrop-filter: blur(4px); -webkit-backdrop-filter: blur(4px); animation: cl-backdrop-fade 220ms cubic-bezier(0.2, 0, 0, 1) both; }
+.cl-gate-dialog { width: 100%; max-width: 620px; max-height: calc(100vh - 32px); overflow: auto; display: grid; gap: 16px; padding: 24px; border: 1px solid var(--cl-border); border-top: 4px solid var(--cl-warning-fg, #b45309); border-radius: 12px; background: var(--cl-surface); color: var(--cl-text); box-shadow: 0 24px 64px rgba(8, 18, 38, 0.35); }
+.cl-gate-dialog__header h2 { margin: 2px 0 6px; font-size: 20px; }
+.cl-gate-dialog__count { margin: 0; color: var(--cl-muted); font-size: 14px; }
+.cl-gate-dialog__groups { display: grid; gap: 12px; }
+.cl-gate-group { padding: 12px 14px; border: 1px solid var(--cl-border); border-radius: 8px; background: var(--cl-surface-subtle); }
+.cl-gate-group h3 { margin: 0 0 8px; font-size: 14px; }
+.cl-gate-group ul { list-style: none; margin: 0; padding: 0; display: grid; gap: 6px; }
+.cl-gate-group li { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; justify-content: space-between; font-size: 14px; }
+.cl-gate-level { padding: 2px 10px; border: 1px solid; border-radius: 999px; font-size: 12px; font-weight: 600; white-space: nowrap; }
+.cl-gate-level--required { border-color: var(--cl-danger-border); background: var(--cl-danger-bg); color: var(--cl-danger-fg); }
+.cl-gate-level--recommended { border-color: var(--cl-warning-border); background: var(--cl-warning-bg); color: var(--cl-warning-fg); }
+.cl-gate-dialog__explanation { margin: 0; padding: 12px 14px; border-radius: 8px; border: 1px solid var(--cl-warning-border); background: var(--cl-warning-bg); color: var(--cl-warning-fg); font-size: 14px; line-height: 1.5; }
+.cl-gate-dialog__actions { display: flex; flex-wrap: wrap; gap: 8px; }
+.cl-gate-dialog__actions .cl-demo-panel__action, .cl-gate-dialog__actions .cl-close-case-btn { width: auto; min-width: 140px; min-height: 44px; margin: 0; flex: 1 1 140px; }
+.cl-gate-dialog__actions button:focus-visible { outline: 3px solid var(--cl-info-fg, #2563eb); outline-offset: 2px; }
+.cl-gate-dialog__danger { color: var(--cl-danger-fg) !important; border-color: var(--cl-danger-border) !important; }
+@media (prefers-reduced-motion: reduce) { .cl-gate-backdrop { animation: none; } }

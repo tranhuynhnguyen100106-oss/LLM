@@ -19,7 +19,8 @@ import type {
   CreditLensContextType,
   ExportKind,
   PrivacyGatewayState,
-  AiExtractionState
+  AiExtractionState,
+  MissingGateState
 } from "@original-context";
 import type {
   CaseContext,
@@ -95,6 +96,7 @@ export interface V3AppPayload {
   ai_connection: AiConnectionStatus;
   privacy: PrivacyGatewayState;
   ai_extraction?: AiExtractionState | null;
+  missing_gate?: MissingGateState | null;
   toasts: { id: string; title: string; description?: string; type?: "info" | "success" | "warning" }[];
   assets: Record<string, string>;
 }
@@ -384,6 +386,23 @@ export function StreamlitCreditLensProvider({ payload, emit, children }: Provide
     [extractPending, send]
   );
 
+  // Hộp thoại thiếu thông tin: mỗi lần bấm phát đúng 1 event; chờ Python trả payload mới thì mới bấm tiếp.
+  const [gatePending, setGatePending] = useState(false);
+  useEffect(() => setGatePending(false), [payload]);
+  const missingGateActions = useMemo(() => {
+    const once = (type: string) => () => {
+      if (gatePending) return;
+      setGatePending(true);
+      send(type);
+    };
+    return {
+      continueReview: once("missing_gate_continue"),
+      supplementDocuments: once("missing_gate_supplement"),
+      supplementWithAi: once("missing_gate_ai"),
+      cancelCase: once("missing_gate_cancel")
+    };
+  }, [gatePending, send]);
+
   const assetUrl = useCallback((name: string) => payload.assets[name] ?? "", [payload.assets]);
 
   const value: CreditLensContextType = {
@@ -437,6 +456,8 @@ export function StreamlitCreditLensProvider({ payload, emit, children }: Provide
     privacyActions,
     aiExtraction: payload.ai_extraction ? { ...payload.ai_extraction, running: extractPending } : null,
     aiExtractionActions,
+    missingGate: payload.missing_gate?.open ? payload.missing_gate : null,
+    missingGateActions,
     assetUrl
   };
 

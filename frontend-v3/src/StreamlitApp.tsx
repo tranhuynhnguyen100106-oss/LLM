@@ -9,6 +9,7 @@ import { SummaryPage, MethodologyPage, EvaluationPage } from "../../src/componen
 import { SettingsPage } from "../../src/components/Cluster6SettingsPage";
 import { LockedPageNotice, PrivacyGatewayPanel } from "../../src/components/PrivacyGatewayPanel";
 import { AiExtractionPanel } from "../../src/components/AiExtractionPanel";
+import { MissingFieldGateDialog } from "../../src/components/MissingFieldGateDialog";
 import { useCreditLens } from "./StreamlitContext";
 import type { V3AppPayload } from "./StreamlitContext";
 
@@ -74,6 +75,7 @@ export function StreamlitApp({ payload }: { payload: V3AppPayload }) {
       <div key={activePage} className="cl-page-transition-wrapper">
         {render()}
       </div>
+      <MissingFieldGateDialog />
     </AppShell>
   );
 }

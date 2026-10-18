@@ -545,13 +545,22 @@ def _workflow(result: Any) -> tuple[list[dict[str, Any]], list[dict[str, Any]]]:
     return steps, cards
 
 
-def _navigation(state: Any) -> list[dict[str, Any]]:
+def _trang_bi_khoa_v3(page: str, state: Any, gate_open: bool) -> bool:
+    """Khóa của Privacy Gateway + khóa tạm khi hộp thoại "Hồ sơ còn thiếu thông tin" đang mở."""
+
+    from privacy_gateway import LOCKED_PAGES, trang_bi_khoa
+
+    return trang_bi_khoa(page, state) or (gate_open and page in LOCKED_PAGES)
+
+
+def _navigation(state: Any, gate_open: bool = False) -> list[dict[str, Any]]:
     from credit_underwriting_colab import PAGES
+    from missing_field_gate import LY_DO_CHAN
     from privacy_gateway import LOCK_REASON, trang_bi_khoa
 
     items = []
     for index, key in enumerate(PAGE_KEYS):
-        locked = trang_bi_khoa(PAGES[index], state)
+        locked = _trang_bi_khoa_v3(PAGES[index], state, gate_open)
         items.append(
             {
                 "page": key,
@@ -559,7 +568,7 @@ def _navigation(state: Any) -> list[dict[str, Any]]:
                 "group": "Hồ sơ" if index < 5 else ("Kiểm chứng" if index < 7 else "Hệ thống"),
                 "ordinal": index + 1,
                 "locked": locked,
-                "lock_reason": LOCK_REASON if locked else "",
+                "lock_reason": (LOCK_REASON if trang_bi_khoa(PAGES[index], state) else LY_DO_CHAN) if locked else "",
             }
         )
     return items
@@ -606,17 +615,24 @@ def build_v3_payload(st: Any, settings: Mapping[str, Any]) -> dict[str, Any]:
         serialize_summary_page_view_model,
         V2CaseContext,
     )
-    from privacy_gateway import LOCK_REASON, lay_vault, trang_bi_khoa
+    from missing_field_gate import KEY_FILES, danh_sach_thieu, ghi_chu_tiep_tuc, view_model as missing_gate_view
+    from privacy_gateway import LOCK_REASON, lay_vault
     from credit_underwriting_colab import PAGES
 
     state = st.session_state
     theme = state["v3_theme"] if state.get("v3_theme") in _THEMES else "system"
+    missing_gate = missing_gate_view(state)
+    gate_open = missing_gate is not None
+    if gate_open and state.get("v3_active_page") in {"2_extraction", "3_analysis", "4_risk", "5_summary"}:
+        state["v3_active_page"] = PAGE_KEYS[0]
+    if not gate_open and state.get(KEY_FILES) and not danh_sach_thieu(state):
+        state[KEY_FILES] = None  # đã đủ thông tin → không giữ tệp tạm trong phiên
     active = state.get("v3_active_page") if state.get("v3_active_page") in PAGE_KEYS else PAGE_KEYS[0]
     thresholds = nguong_hieu_luc(settings.get("nguong"))
     vault = lay_vault(state)
     result = state.get("result")
     docs = state.get("docs") or {}
-    locked = trang_bi_khoa(PAGES[PAGE_KEYS.index(active)], state)
+    locked = _trang_bi_khoa_v3(PAGES[PAGE_KEYS.index(active)], state, gate_open)
 
     case_names = tuple(DEMO_CASES)
     selected = state.get("v3_selected_demo") if state.get("v3_selected_demo") in case_names else case_names[2]
@@ -662,6 +678,12 @@ def build_v3_payload(st: Any, settings: Mapping[str, Any]) -> dict[str, Any]:
                 ),
                 vault,
             )
+            gate_note = ghi_chu_tiep_tuc(state)
+            if gate_note:
+                pages["summary"]["findings"] = [
+                    {"category": "verification", "title": "Quyết định của chuyên viên", "detail": gate_note, "tone": "warning"},
+                    *pages["summary"]["findings"],
+                ]
         elif active == "6_methodology":
             pages["methodology"] = serialize_methodology_page_view_model(build_methodology_page_view_model(theme=theme))
         elif active == "7_evaluation":
@@ -702,7 +724,7 @@ def build_v3_payload(st: Any, settings: Mapping[str, Any]) -> dict[str, Any]:
         "theme": theme,
         "motion_level": state.get("v3_motion") if state.get("v3_motion") in _MOTION else "full",
         "active_page": active,
-        "navigation": _navigation(state),
+        "navigation": _navigation(state, gate_open),
         "case_context": case_context,
         "workflow": steps,
         "process_cards": cards,
@@ -724,6 +746,7 @@ def build_v3_payload(st: Any, settings: Mapping[str, Any]) -> dict[str, Any]:
         "ai_connection": _ai_connection_status(st),
         "privacy": privacy_state,
         "ai_extraction": _pseudonymize_payload(_ai_extraction_view(st), vault) if not locked else None,
+        "missing_gate": missing_gate,
         "toasts": list(state.get("v3_toasts") or []),
         "assets": {"hub-logo-transparent.png": _logo_data_uri()},
     }
@@ -1064,6 +1087,64 @@ def _v3_ai_generate(st: Any, settings: Mapping[str, Any]) -> None:
     _toast(state, "Đã tạo diễn giải AI", "Nội dung hỗ trợ; không thay đổi kết quả xác định.", "success")
 
 
+_LLM_EVENTS = frozenset({"ai_generate", "chat_send", "chat_retry", "ai_extract"})
+_MISSING_GATE_EVENTS = {
+    "missing_gate_continue": "continue",
+    "missing_gate_supplement": "supplement",
+    "missing_gate_ai": "ai",
+    "missing_gate_cancel": "cancel",
+}
+
+
+def _v3_missing_gate(st: Any, settings: Mapping[str, Any], choice: str) -> None:
+    """Bốn nút của hộp thoại "Hồ sơ còn thiếu thông tin". Không lựa chọn nào đổi số liệu do Python tính."""
+
+    from credit_underwriting_colab import ket_noi_llm_dang_dung
+    from missing_field_gate import NHAN_LUA_CHON, co_the_bo_sung_ai, cong_dang_mo, ghi_quyet_dinh, khoi_phuc_tep_bo_sung
+    from missing_field_gate import xoa_trang_thai_cong
+    from privacy_gateway import xoa_ho_so_phien
+
+    state = st.session_state
+    if not cong_dang_mo(state):
+        return
+    if choice == "ai":
+        if not co_the_bo_sung_ai(state):
+            return
+        if ket_noi_llm_dang_dung(st) is None:
+            _toast(state, "Chưa kết nối AI", "Mở Cài đặt → Kết nối AI, hoặc chọn cách khác trong hộp thoại.", "warning")
+            return
+        ghi_quyet_dinh(state, "ai")
+        _v3_ai_extract(st)  # đúng 1 inference request; kết quả vẫn qua grounding check + chuyên viên xác nhận
+        state["v3_active_page"] = "2_extraction"
+        return
+    ghi_quyet_dinh(state, choice)
+    if choice == "continue":
+        _toast(state, NHAN_LUA_CHON[choice], "Trạng thái và số liệu giữ nguyên theo rule Python; đã ghi vào nhật ký kiểm soát.", "info")
+    elif choice == "supplement":
+        xoa_ho_so_phien(state)
+        restored = khoi_phuc_tep_bo_sung(state)
+        state["v3_active_page"] = PAGE_KEYS[0]
+        state["v3_upload_nonce"] = int(state.get("v3_upload_nonce") or 0) + 1
+        state["v3_upload_signature"] = ""
+        _toast(
+            state,
+            NHAN_LUA_CHON[choice],
+            "Đã giữ các tệp đã tải ở bảng phân loại; tải thêm PDF rồi bấm tiếp tục."
+            if restored
+            else "Hồ sơ minh họa không có tệp để giữ lại — tải PDF bổ sung ở Bước 0.",
+            "info",
+        )
+    elif choice == "cancel":
+        xoa_ho_so_phien(state)
+        xoa_trang_thai_cong(state)
+        state.pop("v3_upload_plan", None)
+        state.pop("v3_upload_plan_files", None)
+        state["v3_active_page"] = PAGE_KEYS[0]
+        state["v3_upload_nonce"] = int(state.get("v3_upload_nonce") or 0) + 1
+        state["v3_upload_signature"] = ""
+        _toast(state, NHAN_LUA_CHON[choice], "Đã xóa hồ sơ, tài liệu và vault giả danh hóa khỏi phiên.", "info")
+
+
 def handle_v3_event(st: Any, raw_event: Any, settings: dict[str, Any]) -> bool:
     """Validate + idempotency + action. Trả True khi cần rerun."""
 
@@ -1089,6 +1170,16 @@ def handle_v3_event(st: Any, raw_event: Any, settings: dict[str, Any]) -> bool:
     if not _claim(state, event_id):
         return False
 
+    from missing_field_gate import LY_DO_CHAN, cong_dang_mo, xoa_trang_thai_cong
+
+    if kind in _LLM_EVENTS and cong_dang_mo(state):
+        # Không gọi LLM khi hộp thoại thiếu thông tin đang mở (0 inference request).
+        _toast(state, "Hồ sơ còn thiếu thông tin", LY_DO_CHAN, "warning")
+        return True
+    if kind in _MISSING_GATE_EVENTS:
+        _v3_missing_gate(st, settings, _MISSING_GATE_EVENTS[kind])
+        return True
+
     if kind == "navigate":
         page = raw_event.get("page")
         if page in PAGE_KEYS and not trang_bi_khoa(PAGES[PAGE_KEYS.index(page)], state):
@@ -1108,11 +1199,13 @@ def handle_v3_event(st: Any, raw_event: Any, settings: dict[str, Any]) -> bool:
         name = raw_event.get("case_name")
         if name in DEMO_CASES:
             state["v3_selected_demo"] = name
+            xoa_trang_thai_cong(state)
             mo_ho_so_minh_hoa(st, name, nguong_hieu_luc(settings.get("nguong")))
             state["v3_active_page"] = PAGE_KEYS[0]
             _toast(state, "Đã quét hồ sơ minh họa", f"{name} · kiểm tra bảng xem trước ở Bước 0.", "success")
     elif kind == "clear_case":
         xoa_ho_so_phien(state)
+        xoa_trang_thai_cong(state)
         state.pop("v3_upload_plan", None)
         state.pop("v3_upload_plan_files", None)
         state["v3_active_page"] = PAGE_KEYS[0]
@@ -1188,6 +1281,7 @@ def handle_v3_event(st: Any, raw_event: Any, settings: dict[str, Any]) -> bool:
             _toast(state, "Chưa thể giả danh hóa", str(exc), "warning")
     elif kind == "privacy_cancel":
         xoa_ho_so_phien(state)
+        xoa_trang_thai_cong(state)
         state["v3_upload_nonce"] = int(state.get("v3_upload_nonce") or 0) + 1
         state["v3_upload_signature"] = ""
     elif kind == "privacy_mask_add":
@@ -1401,8 +1495,14 @@ def xu_ly_tep_tai_len_v3(st: Any, files: list[Any], settings: Mapping[str, Any])
             state["v3_upload_warned"] = signature
             _toast(state, "Cần xác nhận bảo mật", "Tick ô xác nhận ở Bước 0 trước; tệp sẽ được xử lý ngay sau đó.", "warning")
         return
+    from missing_field_gate import KEY_MERGE, gop_ke_hoach
+
     state["v3_upload_signature"] = signature
     plan, kept = lap_ke_hoach_tai_len(files)
+    base = state.get("v3_upload_plan")
+    if state.get(KEY_MERGE) and isinstance(base, Mapping):
+        # Sau "Bổ sung tài liệu": gộp tệp mới vào các tệp đã tải trước đó.
+        plan, kept = gop_ke_hoach(base, state.get("v3_upload_plan_files") or {}, plan, kept)
     plan["mode"] = "directory" if state.get("v3_upload_mode") != UPLOAD_MODE_FILES else "files"
     state["v3_upload_plan"] = plan
     state["v3_upload_plan_files"] = kept
@@ -1431,6 +1531,9 @@ def gan_loai_tep(state: Any, file_id: Any, doc_type: Any) -> None:
 
 
 def huy_ke_hoach_tai_len(state: Any) -> None:
+    from missing_field_gate import KEY_MERGE
+
+    state[KEY_MERGE] = False
     state.pop("v3_upload_plan", None)
     state.pop("v3_upload_plan_files", None)
     state["v3_upload_nonce"] = int(state.get("v3_upload_nonce") or 0) + 1
@@ -1466,6 +1569,10 @@ def tiep_tuc_ke_hoach_tai_len(st: Any, settings: Mapping[str, Any]) -> None:
     except ValueError as exc:
         _toast(state, "Không xử lý được tệp", str(exc), "warning")
         return
+    from missing_field_gate import KEY_MERGE, luu_tep_cho_bo_sung
+
+    luu_tep_cho_bo_sung(state, plan, kept)  # cho nút "Bổ sung tài liệu" của hộp thoại thiếu thông tin
+    state[KEY_MERGE] = False
     state.pop("v3_upload_plan", None)
     state.pop("v3_upload_plan_files", None)
     findings = dua_vao_cong(st, result, docs, "Tài liệu")
@@ -1607,11 +1714,14 @@ def hien_thi_xuat_bao_cao_v3(st: Any, settings: Mapping[str, Any]) -> None:
     report_result, report_ai = ket_qua_cho_bao_cao(result, ai_text, vault, version)
     low = float(nguong_hieu_luc(settings.get("nguong"))["do_tin_cay_thap"])
     base = lam_sach_ma_ho_so(result.ma_ho_so)
+    from missing_field_gate import ghi_chu_tiep_tuc
+
+    gate_note = ghi_chu_tiep_tuc(state)
     columns = st.columns(len(DINH_DANG_BAO_CAO))
     for column, (label, (extension, mime, generator)) in zip(columns, DINH_DANG_BAO_CAO.items()):
         with column:
             try:
-                data = generator(report_result, report_ai, low)
+                data = generator(report_result, report_ai, low, ghi_chu_kiem_soat=gate_note)
                 st.download_button(
                     f"Tải {label}",
                     data=data,
@@ -1627,7 +1737,7 @@ def hien_thi_xuat_bao_cao_v3(st: Any, settings: Mapping[str, Any]) -> None:
     with md_column:
         st.download_button(
             "Tải Markdown (.md)",
-            bao_cao_markdown(report_result) + (f"\n\n## Diễn giải AI\n{report_ai}" if report_ai else ""),
+            bao_cao_markdown(report_result, ghi_chu_kiem_soat=gate_note) +(f"\n\n## Diễn giải AI\n{report_ai}" if report_ai else ""),
             file_name=f"{result.ma_ho_so}_tom_tat_tham_dinh.md",
             mime="text/markdown",
             on_click="ignore",

@@ -659,6 +659,51 @@ def bang_chung_cua(fields: list[TruongTrichXuat], key: str) -> list[BangChung]:
     return []
 
 
+MUC_DO_BAT_BUOC = "Bắt buộc"
+MUC_DO_NEN_CO = "Nên có"
+
+
+def kiem_tra_truong_thieu(data: DuLieuHoSo, docs: Mapping[str, TaiLieu]) -> list[dict[str, str]]:
+    """Hàm thuần: danh sách trường/tài liệu còn thiếu ``{field, label, doc, muc_do}``.
+
+    Mục "Bắt buộc" chính là ``thong_tin_thieu`` của ``phan_tich_tu_du_kien`` (cùng nhãn, cùng thứ tự).
+    Mục "Nên có" là đầu vào làm chỉ số hiển thị "Chưa đủ dữ liệu" (không vào ``thong_tin_thieu``).
+    Chỉ trả mã và nhãn trường, không bao giờ trả giá trị.
+    """
+
+    def readable(key: str) -> bool:
+        return key in docs and docs[key].trang_thai != "Không đọc được"
+
+    items: list[dict[str, str]] = []
+
+    def add(field: str, label: str, doc: str, muc_do: str = MUC_DO_BAT_BUOC) -> None:
+        items.append({"field": field, "label": label, "doc": doc, "muc_do": muc_do})
+
+    for key in ("application", "income", "statement"):
+        if not readable(key):
+            add(f"tai_lieu_{key}", NHAN_LOAI_TAI_LIEU[key], key)
+    for key, core_fields in TRUONG_COT_LOI_THEO_TAI_LIEU.items():
+        if readable(key):
+            for field_name, label in core_fields:
+                if getattr(data, field_name) is None:
+                    add(field_name, label, key)
+    if not data.ho_ten_khach_hang:
+        add("ho_ten_khach_hang", "Họ và tên khách hàng", "application")
+    if data.so_tien_de_nghi_vay is None:
+        add("so_tien_de_nghi_vay", "Số tiền đề nghị vay", "application")
+    if chon_thu_nhap_dung_de_tinh(data)[0] is None:
+        add("thu_nhap_dung_de_tinh", "Thu nhập dùng để tính", "income")
+    if data.thoi_han_vay_thang is None:
+        add("thoi_han_vay_thang", "Thời hạn vay", "application")
+    if data.khoan_tra_du_kien is None:
+        add("khoan_tra_du_kien", FIELD_LABELS["khoan_tra_du_kien"], "application", MUC_DO_NEN_CO)
+    if data.nghia_vu_no_ke_khai is None and data.nghia_vu_no_quan_sat is None:
+        add("nghia_vu_no", "Nghĩa vụ nợ hàng tháng (kê khai hoặc quan sát)", "debt", MUC_DO_NEN_CO)
+    if data.chi_phi_sinh_hoat is None:
+        add("chi_phi_sinh_hoat", FIELD_LABELS["chi_phi_sinh_hoat"], "application", MUC_DO_NEN_CO)
+    return items
+
+
 def phan_tich_tu_du_kien(
     ma_ho_so: str,
     ten_ho_so: str,
@@ -758,23 +803,8 @@ def phan_tich_tu_du_kien(
     if data.bien_dong_thu_nhap is not None and data.bien_dong_thu_nhap > nguong["bien_dong_thu_nhap_cao"]:
         add_risk("HIGH_INCOME_VOLATILITY", "MEDIUM", f"Biến động dòng tiền vào {phan_tram(data.bien_dong_thu_nhap)} vượt ngưỡng minh họa {phan_tram(nguong['bien_dong_thu_nhap_cao'])}.", bang_chung_cua(fields, "bien_dong_thu_nhap"))
 
-    missing: list[str] = []
-    for key, label in [("application", "Đơn đề nghị vay vốn"), ("income", "Chứng từ thu nhập"), ("statement", "Sao kê ngân hàng")]:
-        if key not in docs or docs[key].trang_thai == "Không đọc được":
-            missing.append(label)
-    for key, core_fields in TRUONG_COT_LOI_THEO_TAI_LIEU.items():
-        if key in docs and docs[key].trang_thai != "Không đọc được":
-            for field_name, label in core_fields:
-                if getattr(data, field_name) is None:
-                    missing.append(label)
-    if not data.ho_ten_khach_hang:
-        missing.append("Họ và tên khách hàng")
-    if data.so_tien_de_nghi_vay is None:
-        missing.append("Số tiền đề nghị vay")
-    if income_for_calculation is None:
-        missing.append("Thu nhập dùng để tính")
-    if data.thoi_han_vay_thang is None:
-        missing.append("Thời hạn vay")
+    missing_items = kiem_tra_truong_thieu(data, docs)
+    missing = [item["label"] for item in missing_items if item["muc_do"] == MUC_DO_BAT_BUOC]
 
     low_confidence = [f for f in fields if f.gia_tri is not None and f.do_tin_cay < nguong["do_tin_cay_thap"]]
     if low_confidence:
@@ -805,7 +835,15 @@ def phan_tich_tu_du_kien(
     critical_missing |= {label for fields_ in TRUONG_COT_LOI_THEO_TAI_LIEU.values() for _, label in fields_}
     if any(item in critical_missing for item in missing):
         final_status = "INSUFFICIENT INFORMATION"
-    elif risks or not income_independently_verified or employment_date_unparseable or debt_input_invalid:
+    elif (
+        risks
+        or missing  # thiếu họ tên / thời hạn vay: không bao giờ REVIEW READY
+        or dti is None
+        or dsr is None  # không tính được DTI/DSR: chuyên viên phải xem xét
+        or not income_independently_verified
+        or employment_date_unparseable
+        or debt_input_invalid
+    ):
         final_status = "HUMAN REVIEW REQUIRED"
     else:
         final_status = "REVIEW READY"
@@ -967,11 +1005,13 @@ def du_lieu_demo(
 # 8. TẠO BÁO CÁO VÀ BẢNG HIỂN THỊ
 # ==========================================================
 
-def bao_cao_markdown(result: KetQuaThamDinh) -> str:
+def bao_cao_markdown(result: KetQuaThamDinh, *, ghi_chu_kiem_soat: str | None = None) -> str:
     d = result.du_lieu
     metric_lines = "\n".join(f"- **{m.ten}:** {m.hien_thi} — {m.cong_thuc}" for m in result.chi_so)
     risk_lines = "\n".join(f"- **{r.ma_rui_ro} · {NHAN_RUI_RO.get(r.loai, r.loai)} [{NHAN_MUC_DO[r.muc_do]}]:** {r.giai_thich}" for r in result.canh_bao) or "- Không phát hiện mâu thuẫn trọng yếu theo các quy tắc minh họa đã cấu hình."
     missing_lines = "\n".join(f"- {item}" for item in result.thong_tin_thieu) or "- Không phát hiện hạng mục bắt buộc còn thiếu."
+    if ghi_chu_kiem_soat:
+        missing_lines += f"\n- **{ghi_chu_kiem_soat}**"
     question_lines = "\n".join(f"- {item}" for item in result.cau_hoi_xac_minh)
     evidence_lines = "\n".join(f"- **{r.ma_rui_ro}:** {e.tai_lieu}, trang {e.trang or 'không xác định'}, {e.truong_du_lieu} = {e.gia_tri}" for r in result.canh_bao for e in r.bang_chung) or "- Không có bằng chứng rủi ro được tạo."
     return f"""# TÓM TẮT THẨM ĐỊNH TÍN DỤNG
@@ -1064,6 +1104,8 @@ def tao_bao_cao_word(
     result: KetQuaThamDinh,
     ai_summary: str = "",
     low_confidence_threshold: float | None = None,
+    *,
+    ghi_chu_kiem_soat: str | None = None,
 ) -> bytes:
     """Tạo báo cáo DOCX trong bộ nhớ, không ghi dữ liệu khách hàng xuống máy chủ."""
     from docx import Document
@@ -1187,6 +1229,8 @@ def tao_bao_cao_word(
     doc.add_heading("4 Thông tin còn thiếu", level=1)
     for item in result.thong_tin_thieu or ["Không phát hiện hạng mục bắt buộc còn thiếu."]:
         doc.add_paragraph(item, style="List Bullet")
+    if ghi_chu_kiem_soat:
+        doc.add_paragraph(ghi_chu_kiem_soat, style="List Bullet")
 
     doc.add_heading("5 Câu hỏi cần xác minh", level=1)
     for item in result.cau_hoi_xac_minh:
@@ -1246,6 +1290,8 @@ def tao_bao_cao_excel(
     result: KetQuaThamDinh,
     ai_summary: str = "",
     low_confidence_threshold: float | None = None,
+    *,
+    ghi_chu_kiem_soat: str | None = None,
 ) -> bytes:
     """Tạo workbook XLSX nhiều sheet với giá trị số giữ nguyên kiểu dữ liệu."""
     from openpyxl import Workbook
@@ -1401,6 +1447,8 @@ def tao_bao_cao_excel(
     review_rows += [["Câu hỏi xác minh", index, item] for index, item in enumerate(result.cau_hoi_xac_minh, 1)]
     if not result.thong_tin_thieu:
         review_rows.insert(0, ["Thông tin còn thiếu", 1, "Không phát hiện hạng mục bắt buộc còn thiếu."])
+    if ghi_chu_kiem_soat:
+        review_rows.insert(0, ["Quyết định của chuyên viên", 1, ghi_chu_kiem_soat])
     for row_index, row in enumerate(review_rows, start=4):
         for col_index, value in enumerate(row, start=1):
             ws.cell(row_index, col_index, value)
@@ -1462,6 +1510,8 @@ def tao_bao_cao_pdf(
     result: KetQuaThamDinh,
     ai_summary: str = "",
     low_confidence_threshold: float | None = None,
+    *,
+    ghi_chu_kiem_soat: str | None = None,
 ) -> bytes:
     """Tạo PDF Unicode trong bộ nhớ bằng ReportLab."""
     from reportlab.lib import colors
@@ -1578,6 +1628,8 @@ def tao_bao_cao_pdf(
     story += [Paragraph("4 Thông tin còn thiếu", heading_style)]
     for item in result.thong_tin_thieu or ["Không phát hiện hạng mục bắt buộc còn thiếu."]:
         story.append(para(f"- {item}"))
+    if ghi_chu_kiem_soat:
+        story.append(para(f"- {ghi_chu_kiem_soat}"))
     story.append(Paragraph("5 Câu hỏi cần xác minh", heading_style))
     for index, item in enumerate(result.cau_hoi_xac_minh, 1):
         story.append(para(f"{index}. {item}"))
@@ -3402,8 +3454,11 @@ def trang_tom_tat(st, result: KetQuaThamDinh | None, settings: dict[str, Any]) -
         return
     from privacy_gateway import chon_phien_ban_bao_cao, hien_thi_noi_dung_ai, ket_qua_cho_bao_cao, lay_vault
 
+    from missing_field_gate import ghi_chu_tiep_tuc
+
     vault = lay_vault(st.session_state)
-    deterministic = bao_cao_markdown(result)
+    gate_note = ghi_chu_tiep_tuc(st.session_state)
+    deterministic = bao_cao_markdown(result, ghi_chu_kiem_soat=gate_note)
     st.markdown(deterministic)
     connection = ket_noi_llm_dang_dung(st)
     ai_text = tom_tat_ai_hieu_luc(st, connection, result.ma_ho_so, settings["system_prompt"])
@@ -3429,6 +3484,7 @@ def trang_tom_tat(st, result: KetQuaThamDinh | None, settings: dict[str, Any]) -
             report_result,
             report_ai_text,
             float(nguong_hieu_luc(settings.get("nguong"))["do_tin_cay_thap"]),
+            ghi_chu_kiem_soat=gate_note,
         )
         file_name = f"{lam_sach_ma_ho_so(result.ma_ho_so)}_bao_cao_tham_dinh.{extension}"
         st.download_button(
@@ -4189,6 +4245,12 @@ def hien_thi_noi_dung_trang(
     docs = st.session_state.docs
     if trang_bi_khoa(page, st.session_state):
         hien_thi_trang_bi_khoa(st)
+        return
+    from missing_field_gate import LY_DO_CHAN, hien_thi_hop_thoai_legacy
+    from privacy_gateway import LOCKED_PAGES
+
+    if hien_thi_hop_thoai_legacy(st) and page in LOCKED_PAGES:
+        st.info(LY_DO_CHAN)
         return
     if page == "Trang chủ & hồ sơ":
         trang_ho_so(st, thresholds)
