@@ -569,26 +569,26 @@
       "thu_nhap_dung_de_tinh": 15000000.0,
       "nguon_thu_nhap_dung_de_tinh": "Ghi có bình quân sao kê (giá trị thận trọng hơn)",
       "thu_nhap_duoc_xac_minh_doc_lap": true,
-      "thoi_diem_xu_ly": "2026-10-18T11:15:26.842157+00:00",
-      "thoi_gian_xu_ly_ms": 1
+      "thoi_diem_xu_ly": "2026-10-19T11:16:36.866252+00:00",
+      "thoi_gian_xu_ly_ms": 2
     },
     "status": "HUMAN REVIEW REQUIRED"
   },
   "tasks": {
     "summary": {
       "raw": null,
-      "latency_ms": 928.0,
-      "error": "Đã vượt hạn mức/quota của Gemini. Thử lại sau hoặc chọn model khác. (mã GEM-429)"
+      "latency_ms": 6942.2,
+      "error": "Model gemini-3.6-flash đang quá tải phía Google (không phải lỗi API Key). Thử lại sau ít phút hoặc chọn model khác. (mã GEM-503)"
     },
     "summary_baseline": {
-      "raw": null,
-      "latency_ms": 725.0,
-      "error": "Đã vượt hạn mức/quota của Gemini. Thử lại sau hoặc chọn model khác. (mã GEM-429)"
+      "raw": "{\n  \"tong_quan\": \"DỮ KIỆN: Hồ sơ vay vốn của khách hàng KH_01. DIỄN GIẢI: Đang trong quá trình thu thập thông tin và thẩm định tín dụng.\",\n  \"de_nghi_vay\": \"DỮ KIỆN: Số tiền, mục đích, thời hạn vay của KH_01 chưa được cung cấp cụ thể trong dữ liệu đầu vào.\",\n  \"tai_chinh_da_xac_minh\": \"DỮ KIỆN: Chưa có dữ liệu tài chính (thu nhập, tài sản, nghĩa vụ nợ) được xác minh cho KH_01.\",\n  \"chi_so\": [\n    \"DỮ KIỆN: Chưa có thông tin để tính toán các chỉ số tài chính (DTI, DSR, DSCR, LTV).\"\n  ],\n  \"kiem_tra_nhat_quan\": \"DỮ KIỆN: Không thể thực hiện đối soát tính nhất quan do thiếu dữ liệu tài chính và hồ sơ liên quan.\",\n  \"canh_bao\": [\n    {\n      \"risk_code\": \"WARN_NO_DATA\",\n      \"noi_dung\": \"DỮ KIỆN: Thiếu toàn bộ hồ sơ vay và dữ liệu tài chính của KH_01. DIỄN GIẢI: Không đủ cơ sở để đánh giá rủi ro tín dụng.\",\n      \"evidence_ref\": \"BC_KH01_01\"\n    }\n  ],\n  \"thong_tin_thieu\": [\n    \"Đề nghị vay vốn (Số tiền, thời hạn, phương thức trả nợ, mục đích vay)\",\n    \"Hồ sơ tài chính (Thu nhập xác minh, chi phí sinh hoạt, báo cáo tài chính/sao kê tài khoản)\",\n    \"Hồ sơ tín dụng (Lịch sử CIC, dư nợ hiện tại)\",\n    \"Hồ sơ tài sản bảo đảm (nếu có)\"\n  ],\n  \"cau_hoi_xac_minh\": [\n    \"Khách hàng KH_01 đề nghị vay bao nhiêu tiền và mục đích sử dụng vốn cụ thể là gì?\",\n    \"Nguồn thu nhập chính và các nghĩa vụ tài chính hàng tháng của KH_01 hiện tại là bao nhiêu?\"\n  ],\n  \"bang_chung\": [\n    \"BC_KH01_01: Hồ sơ đầu vào của KH_01 chưa chứa thông tin chi tiết về tài chính hoặc đề nghị vay.\"\n  ],\n  \"trang_thai_xem_xet\": \"INSUFFICIENT INFORMATION\"\n}",
+      "latency_ms": 4467.4,
+      "error": null
     },
     "extraction": {
       "raw": null,
-      "latency_ms": 810.6,
-      "error": "Đã vượt hạn mức/quota của Gemini. Thử lại sau hoặc chọn model khác. (mã GEM-429)",
+      "latency_ms": 2803.9,
+      "error": "Model gemini-3.6-flash đang quá tải phía Google (không phải lỗi API Key). Thử lại sau ít phút hoặc chọn model khác. (mã GEM-503)",
       "requested": [
         "thu_nhap_ke_khai",
         "luong_thuc_nhan",
@@ -617,5 +617,11 @@
         "ngay_bat_dau_chung_tu": "06/2022"
       }
     }
-  }
+  },
+  "resumed_at": "2026-10-19T11:17:36+00:00",
+  "resumed_tasks": [
+    "summary",
+    "summary_baseline",
+    "extraction"
+  ]
 }

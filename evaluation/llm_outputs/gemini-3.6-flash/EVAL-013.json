@@ -376,16 +376,16 @@
       "thu_nhap_dung_de_tinh": 25000000.0,
       "nguon_thu_nhap_dung_de_tinh": "Ghi có bình quân sao kê (nguồn đối chiếu hiện có)",
       "thu_nhap_duoc_xac_minh_doc_lap": true,
-      "thoi_diem_xu_ly": "2026-10-18T11:09:18.052637+00:00",
+      "thoi_diem_xu_ly": "2026-10-19T11:11:47.579031+00:00",
       "thoi_gian_xu_ly_ms": 1
     },
     "status": "INSUFFICIENT INFORMATION"
   },
   "tasks": {
     "summary": {
-      "raw": null,
-      "latency_ms": 3335.6,
-      "error": "Model gemini-3.6-flash đang quá tải phía Google (không phải lỗi API Key). Thử lại sau ít phút hoặc chọn model khác. (mã GEM-503)"
+      "raw": "{\n  \"tong_quan\": \"Hồ sơ EVAL-013 của khách hàng KH_01 đăng ký vay vốn với mục đích Sửa chữa nhà ở. Quá trình xử lý ghi nhận thời điểm 2026-10-19T11:11:47.579031+00:00 trong 1 ms. Thu nhập dùng để tính là 25.000.000 VND từ nguồn Ghi có bình quân sao kê (nguồn đối chiếu hiện có), được xác minh độc lập.\",\n  \"de_nghi_vay\": \"Khách hàng KH_01 đề nghị vay số tiền 600.000.000 VND trong thời hạn 120,0 tháng. Khoản trả dự kiến hàng tháng là 7.500.000 VND. Mục đích vay: Sửa chữa nhà ở.\",\n  \"tai_chinh_da_xac_minh\": \"Thu nhập kê khai: 25.000.000 VND. Thu nhập qua sao kê: 25.000.000 VND. Lương thực nhận: Không có dữ liệu (null). Nghĩa vụ nợ kê khai: 2.000.000 VND; Nghĩa vụ nợ quan sát: 2.000.000 VND. Chi phí sinh hoạt: 9.000.000 VND. Số dư bình quân: 18.000.000 VND.\",\n  \"chi_so\": [\n    \"DTI hiện hữu: 8,0% (Công thức: Nghĩa vụ nợ hiện hữu ÷ Thu nhập dùng để tính; Trạng thái: Trong ngưỡng minh họa)\",\n    \"DSR dự kiến: 38,0% (Công thức: (Nợ hiện hữu + Khoản trả dự kiến) ÷ Thu nhập dùng để tính; Trạng thái: Trong ngưỡng minh họa)\",\n    \"Thu nhập còn lại trước khoản vay mới: 14.000.000 VND (Công thức: Thu nhập dùng để tính − Nợ hiện hữu − Chi phí sinh hoạt; Trạng thái: Trong ngưỡng minh họa)\",\n    \"Hệ số đệm số dư: 2,40× (Công thức: Số dư bình quân ÷ Khoản trả dự kiến; Trạng thái: Trong ngưỡng minh họa)\",\n    \"Chênh lệch thu nhập: 0,0% (Công thức: (Nguồn cao nhất − Nguồn thấp nhất) ÷ Nguồn cao nhất; Trạng thái: Trong ngưỡng minh họa)\",\n    \"Biến động thu nhập: 6,0% (Công thức: Độ lệch chuẩn dòng tiền vào tháng ÷ Dòng tiền vào bình quân; Trạng thái: Trong ngưỡng minh họa)\"\n  ],\n  \"kiem_tra_nhat_quan\": \"Thu nhập kê khai và thu nhập qua sao kê nhất quán ở mức 25.000.000 VND (Chênh lệch thu nhập 0,0%). Nghĩa vụ nợ kê khai và nghĩa vụ nợ quan sát đều ở mức 2.000.000 VND. Tuy nhiên, đơn vị công tác, chức danh, ngày bắt đầu làm việc trên chứng từ thu nhập và lương thực nhận bị thiếu (null).\",\n  \"canh_bao\": [],\n  \"thong_tin_thieu\": [\n    \"Lương thực nhận trên chứng từ thu nhập\"\n  ],\n  \"cau_hoi_xac_minh\": [\n    \"Vui lòng bổ sung hoặc xác nhận: Lương thực nhận trên chứng từ thu nhập.\"\n  ],\n  \"bang_chung\": [\n    \"01_don_de_nghi_vay.pdf (Trang 1): Họ và tên: KH_01\",\n    \"01_don_de_nghi_vay.pdf (Trang 1): Thu nhập kê khai: 25.000.000 \",\n    \"03_sao_ke_ngan_hang.pdf (Trang 1): Bình quân ghi có: 25.000.000 \",\n    \"01_don_de_nghi_vay.pdf (Trang 1): Đơn vị công tác: DN_A\",\n    \"01_don_de_nghi_vay.pdf (Trang 1): Chức danh: Chuyên viên phân tích\",\n    \"01_don_de_nghi_vay.pdf (Trang 1): Ngày bắt đầu làm việc: 06/2022\",\n    \"01_don_de_nghi_vay.pdf (Trang 1): Thâm niên tháng: 48\",\n    \"01_don_de_nghi_vay.pdf (Trang 1): Số tiền đề nghị vay: 600.000.000 \",\n    \"01_don_de_nghi_vay.pdf (Trang 1): Thời hạn vay tháng: 120\",\n    \"01_don_de_nghi_vay.pdf (Trang 1): Trả nợ khoản vay mới hàng tháng: 7.500.000 \",\n    \"01_don_de_nghi_vay.pdf (Trang 1): Nghĩa vụ nợ kê khai: 2.000.000 \",\n    \"04_nghia_vu_no.pdf (Trang 1): Nghĩa vụ nợ hàng tháng: 2.000.000 \",\n    \"01_don_de_nghi_vay.pdf (Trang 1): Chi phí sinh hoạt: 9.000.000 \",\n    \"03_sao_ke_ngan_hang.pdf (Trang 1): Số dư bình quân: 18.000.000 \",\n    \"03_sao_ke_ngan_hang.pdf (Trang 1): Biến động thu nhập: 6,00%\",\n    \"01_don_de_nghi_vay.pdf (Trang 1): Mục đích vay: Sửa chữa nhà ở\"\n  ],\n  \"trang_thai_xem_xet\": \"INSUFFICIENT INFORMATION\"\n}",
+      "latency_ms": 7242.7,
+      "error": null
     },
     "summary_baseline": {
       "raw": "{\"tong_quan\":\"DỮ KIỆN: Khách hàng KH_01 đăng ký khoản vay. DIỄN GIẢI: Hồ sơ cần kiểm tra bổ sung do thông tin tài chính chưa đầy đủ.\",\"de_nghi_vay\":\"DỮ KIỆN: Số tiền vay đề nghị chưa được ghi nhận chi tiết trong dữ liệu đầu vào. DIỄN GIẢI: Thông tin chưa đủ để xác định chi tiết đề nghị vay.\",\"tai_chinh_da_xac_minh\":\"DỮ KIỆN: Thu nhập và chi phí chưa có tài liệu xác minh đầy đủ. DIỄN GIẢI: Thông tin chưa đủ để kết luận về năng lực tài chính.\",\"chi_so\":[\"DỮ KIỆN: Chưa có chỉ số tài chính được tính toán trong dữ liệu đầu vào.\"],\"kiem_tra_nhat_quan\":\"DỮ KIỆN: Chưa đủ dữ liệu để so sánh đối chiếu giữa các nguồn. DIỄN GIẢI: Thông tin chưa đủ để kiểm tra tính nhất quán.\",\"canh_bao\":[{\"risk_code\":\"R_MISSING_INFO\",\"noi_dung\":\"Chưa có đầy đủ dữ liệu tài chính và đề nghị vay của KH_01.\",\"evidence_ref\":\"Dữ liệu đầu vào KH_01\"}],\"thong_tin_thieu\":[\"Số tiền đề nghị vay, mục đích vay và thời hạn vay\",\"Báo cáo thu nhập và tài liệu chứng minh tài chính của KH_01\"],\"cau_hoi_xac_minh\":[\"Đề nghị KH_01 cung cấp chi tiết số tiền vay, mục đích vay và thời hạn vay?\",\"Đề nghị KH_01 bổ sung sao kê thu nhập và các chứng từ tài chính liên quan?\"],\"bang_chung\":[\"Mã khách hàng: KH_01\"],\"trang_thai_xem_xet\":\"HUMAN REVIEW REQUIRED\"}",
@@ -515,5 +515,9 @@
         "ngay_bat_dau_chung_tu": null
       }
     }
-  }
+  },
+  "resumed_at": "2026-10-19T11:12:09+00:00",
+  "resumed_tasks": [
+    "summary"
+  ]
 }

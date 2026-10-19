@@ -394,26 +394,26 @@
       "thu_nhap_dung_de_tinh": 25000000.0,
       "nguon_thu_nhap_dung_de_tinh": "Lương thực nhận (giá trị thận trọng hơn)",
       "thu_nhap_duoc_xac_minh_doc_lap": true,
-      "thoi_diem_xu_ly": "2026-10-18T11:13:51.247594+00:00",
+      "thoi_diem_xu_ly": "2026-10-19T11:14:42.867221+00:00",
       "thoi_gian_xu_ly_ms": 1
     },
     "status": "INSUFFICIENT INFORMATION"
   },
   "tasks": {
     "summary": {
-      "raw": null,
-      "latency_ms": 1004.9,
-      "error": "Đã vượt hạn mức/quota của Gemini. Thử lại sau hoặc chọn model khác. (mã GEM-429)"
+      "raw": "{\"tong_quan\":\"Hồ sơ EVAL-028 của khách hàng KH_01 đăng ký vay tại DN_A với vị trí Chuyên viên phân tích. Mục đích vay: Sửa chữa nhà ở. Thời hạn vay 120.0 tháng.\",\"de_nghi_vay\":\"Số tiền đề nghị vay: Chưa ghi nhận (null). Thời hạn vay: 120.0 tháng. Khoản trả dự kiến hàng tháng: 7.500.000 VND. Mục đích vay: Sửa chữa nhà ở.\",\"tai_chinh_da_xac_minh\":\"Thu nhập kê khai: 25.000.000 VND. Lương thực nhận: 25.000.000 VND. Thu nhập qua sao kê: 25.000.000 VND. Nghĩa vụ nợ kê khai: 2.000.000 VND. Nghĩa vụ nợ quan sát: 2.000.000 VND. Chi phí sinh hoạt: 9.000.000 VND. Số dư bình quân: 18.000.000 VND. Mức biến động thu nhập: 6,0%.\",\"chi_so\":[\"DTI hiện hữu: 8,0%\",\"DSR dự kiến: 38,0%\",\"Thu nhập còn lại trước khoản vay mới: 14.000.000 VND\",\"Hệ số đệm số dư: 2,40×\",\"Chênh lệch thu nhập: 0,0%\",\"Biến động thu nhập: 6,0%\"],\"kiem_tra_nhat_quan\":\"DỮ KIỆN: Đơn vị công tác, chức danh, ngày bắt đầu làm việc (06/2022) và thu nhập giữa đơn vay, chứng từ thu nhập, sao kê hoàn toàn thống nhất. Nghĩa vụ nợ kê khai trùng khớp với nghĩa vụ nợ quan sát (2.000.000 VND). DIỄN GIẢI: Không phát hiện chênh lệch bất thường giữa các tài liệu.\",\"canh_bao\":[],\"thong_tin_thieu\":[\"Số tiền đề nghị vay\"],\"cau_hoi_xac_minh\":[\"Vui lòng bổ sung hoặc xác nhận: Số tiền đề nghị vay.\"],\"bang_chung\":[\"01_don_de_nghi_vay.pdf (trang 1): Họ và tên: KH_01; Thu nhập kê khai: 25.000.000; Thời hạn vay tháng: 120; Trả nợ khoản vay mới hàng tháng: 7.500.000; Nghĩa vụ nợ kê khai: 2.000.000; Chi phí sinh hoạt: 9.000.000; Mục đích vay: Sửa chữa nhà ở\",\"02_chung_tu_thu_nhap.pdf (trang 1): Lương thực nhận: 25.000.000; Đơn vị công tác: DN_A; Chức danh: Chuyên viên phân tích; Ngày bắt đầu làm việc: 06/2022\",\"03_sao_ke_ngan_hang.pdf (trang 1): Bình quân ghi có: 25.000.000; Số dư bình quân: 18.000.000; Biến động thu nhập: 6,00%\",\"04_nghia_vu_no.pdf (trang 1): Nghĩa vụ nợ hàng tháng: 2.000.000\"],\"trang_thai_xem_xet\":\"INSUFFICIENT INFORMATION\"}",
+      "latency_ms": 4971.3,
+      "error": null
     },
     "summary_baseline": {
       "raw": null,
-      "latency_ms": 720.4,
-      "error": "Đã vượt hạn mức/quota của Gemini. Thử lại sau hoặc chọn model khác. (mã GEM-429)"
+      "latency_ms": 3666.7,
+      "error": "Model gemini-3.6-flash đang quá tải phía Google (không phải lỗi API Key). Thử lại sau ít phút hoặc chọn model khác. (mã GEM-503)"
     },
     "extraction": {
       "raw": null,
-      "latency_ms": 754.0,
-      "error": "Đã vượt hạn mức/quota của Gemini. Thử lại sau hoặc chọn model khác. (mã GEM-429)",
+      "latency_ms": 1590.2,
+      "error": "Model gemini-3.6-flash đang quá tải phía Google (không phải lỗi API Key). Thử lại sau ít phút hoặc chọn model khác. (mã GEM-503)",
       "requested": [
         "thu_nhap_ke_khai",
         "luong_thuc_nhan",
@@ -442,5 +442,11 @@
         "ngay_bat_dau_chung_tu": "06/2022"
       }
     }
-  }
+  },
+  "resumed_at": "2026-10-19T11:15:38+00:00",
+  "resumed_tasks": [
+    "summary",
+    "summary_baseline",
+    "extraction"
+  ]
 }

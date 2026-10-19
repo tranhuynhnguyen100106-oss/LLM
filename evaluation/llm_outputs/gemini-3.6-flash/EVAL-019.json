@@ -452,7 +452,7 @@
       "thu_nhap_dung_de_tinh": 25000000.0,
       "nguon_thu_nhap_dung_de_tinh": "Lương thực nhận (giá trị thận trọng hơn)",
       "thu_nhap_duoc_xac_minh_doc_lap": true,
-      "thoi_diem_xu_ly": "2026-10-18T11:11:16.210233+00:00",
+      "thoi_diem_xu_ly": "2026-10-19T11:12:29.083452+00:00",
       "thoi_gian_xu_ly_ms": 1
     },
     "status": "HUMAN REVIEW REQUIRED"
@@ -464,9 +464,9 @@
       "error": null
     },
     "summary_baseline": {
-      "raw": null,
-      "latency_ms": 692.8,
-      "error": "Đã vượt hạn mức/quota của Gemini. Thử lại sau hoặc chọn model khác. (mã GEM-429)"
+      "raw": "{\"tong_quan\":\"DỮ KIỆN: Khách hàng KH_01 đang trình hồ sơ vay vốn. DIỄN GIẢI: Cần thực hiện đánh giá chi tiết theo các dữ liệu tài chính và hồ sơ pháp lý được cung cấp.\",\"de_nghi_vay\":\"DỮ KIỆN: Khách hàng KH_01 đề nghị vay vốn. DIỄN GIẢI: Chi tiết về số tiền, mục đích vay và thời hạn vay cần được xác minh thêm từ hồ sơ đề nghị.\",\"tai_chinh_da_xac_minh\":\"DỮ KIỆN: Thông tin tài chính của KH_01 đã được ghi nhận qua tài liệu thu thập. DIỄN GIẢI: Cần đối soát thu nhập và tài sản đảm bảo thực tế với báo cáo tài chính.\",\"chi_so\":[\"Tỷ lệ nợ/thu nhập: Thông tin chưa đủ\",\"Khả năng trả nợ: Thông tin chưa đủ\"],\"kiem_tra_nhat_quan\":\"DỮ KIỆN: Kiểm tra đối soát hồ sơ của KH_01. DIỄN GIẢI: Chưa đủ cơ sở dữ liệu để kết luận tính nhất quán giữa báo cáo thuế, sao kê tài khoản và khai báo cá nhân.\",\"canh_bao\":[{\"risk_code\":\"R_INSUFFICIENT_DATA\",\"noi_dung\":\"Hồ sơ chưa cung cấp đầy đủ thông tin tài chính chi tiết của KH_01.\",\"evidence_ref\":\"BC_01\"}],\"thong_tin_thieu\":[\"Sao kê tài khoản ngân hàng 6 tháng gần nhất của KH_01\",\"Báo cáo tài chính/Thu nhập đã xác minh chi tiết\",\"Giấy tờ chứng minh tài sản đảm bảo\"],\"cau_hoi_xac_minh\":[\"KH_01 vui lòng cung cấp thêm sao kê tài khoản ngân hàng và bằng chứng thu nhập hàng tháng?\",\"Mục đích sử dụng vốn vay cụ thể và phương án trả nợ chi tiết của KH_01 là gì?\"],\"bang_chung\":[\"BC_01: Hồ sơ đề nghị vay vốn ban đầu của khách hàng KH_01.\"],\"trang_thai_xem_xet\":\"HUMAN REVIEW REQUIRED\"}",
+      "latency_ms": 4234.3,
+      "error": null
     },
     "extraction": {
       "raw": "{\n  \"items\": [\n    {\n      \"field\": \"ngay_bat_dau_ke_khai\",\n      \"value\": \"06/2022\",\n      \"source_doc\": \"application\",\n      \"page\": 1,\n      \"quote\": \"Ngày bắt đầu làm việc: 06/2022\"\n    },\n    {\n      \"field\": \"thu_nhap_ke_khai\",\n      \"value\": \"25000000\",\n      \"source_doc\": \"application\",\n      \"page\": 1,\n      \"quote\": \"Thu nhập kê khai: 25.000.000 VND\",\n      \"unit\": \"VND\"\n    },\n    {\n      \"field\": \"so_tien_de_nghi_vay\",\n      \"value\": \"600000000\",\n      \"source_doc\": \"application\",\n      \"page\": 1,\n      \"quote\": \"Số tiền đề nghị vay: 600.000.000 VND\",\n      \"unit\": \"VND\"\n    },\n    {\n      \"field\": \"thoi_han_vay_thang\",\n      \"value\": \"120\",\n      \"source_doc\": \"application\",\n      \"page\": 1,\n      \"quote\": \"Thời hạn vay tháng: 120\"\n    },\n    {\n      \"field\": \"khoan_tra_du_kien\",\n      \"value\": \"2000000\",\n      \"source_doc\": \"application\",\n      \"page\": 1,\n      \"quote\": \"Trả nợ khoản vay mới hàng tháng: 2.000.000 VND\",\n      \"unit\": \"VND\"\n    },\n    {\n      \"field\": \"nghia_vu_no_ke_khai\",\n      \"value\": \"11000000\",\n      \"source_doc\": \"application\",\n      \"page\": 1,\n      \"quote\": \"Nghĩa vụ nợ kê khai: 11.000.000 VND\",\n      \"unit\": \"VND\"\n    },\n    {\n      \"field\": \"nghia_vu_no_quan_sat\",\n      \"value\": \"11000000\",\n      \"source_doc\": \"debt\",\n      \"page\": 1,\n      \"quote\": \"Nghĩa vụ nợ hàng tháng: 11.000.000 VND\",\n      \"unit\": \"VND\"\n    },\n    {\n      \"field\": \"ngay_bat_dau_chung_tu\",\n      \"value\": \"06/2022\",\n      \"source_doc\": \"income\",\n      \"page\": 1,\n      \"quote\": \"Ngày bắt đầu làm việc: 06/2022\"\n    },\n    {\n      \"field\": \"luong_thuc_nhan\",\n      \"value\": \"25000000\",\n      \"source_doc\": \"income\",\n      \"page\": 1,\n      \"quote\": \"Lương thực nhận: 25.000.000 VND\",\n      \"unit\": \"VND\"\n    },\n    {\n      \"field\": \"thu_nhap_qua_sao_ke\",\n      \"value\": \"25000000\",\n      \"source_doc\": \"statement\",\n      \"page\": 1,\n      \"quote\": \"Bình quân ghi có: 25.000.000 VND\",\n      \"unit\": \"VND\"\n    },\n    {\n      \"field\": \"so_du_binh_quan\",\n      \"value\": \"18000000\",\n      \"source_doc\": \"statement\",\n      \"page\": 1,\n      \"quote\": \"Số dư bình quân: 18.000.000 VND\",\n      \"unit\": \"VND\"\n    }\n  ]\n}",
@@ -611,5 +611,9 @@
         "ngay_bat_dau_chung_tu": "06/2022"
       }
     }
-  }
+  },
+  "resumed_at": "2026-10-19T11:12:48+00:00",
+  "resumed_tasks": [
+    "summary_baseline"
+  ]
 }

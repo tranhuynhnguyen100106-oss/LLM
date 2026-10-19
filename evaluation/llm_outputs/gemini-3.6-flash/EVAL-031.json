@@ -445,7 +445,7 @@
       "thu_nhap_dung_de_tinh": 25000000.0,
       "nguon_thu_nhap_dung_de_tinh": "Lương thực nhận (giá trị thận trọng hơn)",
       "thu_nhap_duoc_xac_minh_doc_lap": true,
-      "thoi_diem_xu_ly": "2026-10-18T11:14:38.960572+00:00",
+      "thoi_diem_xu_ly": "2026-10-19T11:15:38.316166+00:00",
       "thoi_gian_xu_ly_ms": 1
     },
     "status": "HUMAN REVIEW REQUIRED"
@@ -453,18 +453,18 @@
   "tasks": {
     "summary": {
       "raw": null,
-      "latency_ms": 1035.3,
-      "error": "Đã vượt hạn mức/quota của Gemini. Thử lại sau hoặc chọn model khác. (mã GEM-429)"
+      "latency_ms": 5257.2,
+      "error": "Model gemini-3.6-flash đang quá tải phía Google (không phải lỗi API Key). Thử lại sau ít phút hoặc chọn model khác. (mã GEM-503)"
     },
     "summary_baseline": {
-      "raw": null,
-      "latency_ms": 768.5,
-      "error": "Đã vượt hạn mức/quota của Gemini. Thử lại sau hoặc chọn model khác. (mã GEM-429)"
+      "raw": "{\"tong_quan\":\"DỮ KIỆN: Khách hàng mã KH_01 đăng ký vay vốn tại ngân hàng. DIỄN GIẢI: Báo cáo tổng hợp tình hình hồ sơ vay vốn của KH_01 phục vụ cán bộ thẩm định.\",\"de_nghi_vay\":\"DỮ KIỆN: Khách hàng KH_01 đề nghị vay vốn. Thông tin chi tiết số tiền vay, mục đích vay và thời hạn vay chưa đủ trong dữ liệu đầu vào.\",\"tai_chinh_da_xac_minh\":\"DỮ KIỆN: Thông tin chi tiết về thu nhập, tài sản bảo đảm và dư nợ hiện tại chưa được cung cấp đầy đủ trong dữ liệu đầu vào.\",\"chi_so\":[\"DƯ_NỢ_TRÊN_THU_NHẬP: Thông tin chưa đủ\",\"DSCR: Thông tin chưa đủ\"],\"kiem_tra_nhat_quan\":\"DỮ KIỆN: Chưa đủ thông tin để kiểm tra đối chiếu tính nhất quán giữa các tài liệu.\",\"canh_bao\":[{\"risk_code\":\"R_MISSING_DATA\",\"noi_dung\":\"CẢNH BÁO: Hồ sơ thiếu dữ liệu tài chính chi tiết để thẩm định rủi ro tín dụng.\",\"evidence_ref\":\"Dữ liệu đầu vào KH_01 không chứa số liệu tài chính cụ thể.\"}],\"thong_tin_thieu\":[\"Số tiền đề nghị vay, mục đích vay, thời hạn vay\",\"Thu nhập trung bình hàng tháng/năm đã xác minh\",\"Số liệu dư nợ hiện tại và báo cáo CIC của KH_01\",\"Chi tiết tài sản bảo đảm\"],\"cau_hoi_xac_minh\":[\"Đề nghị KH_01 cung cấp bổ sung sao kê tài khoản thu nhập và hợp đồng lao động/đăng ký kinh doanh.\",\"Đề nghị làm rõ mục đích sử dụng vốn vay và phương án trả nợ chi tiết.\"],\"bang_chung\":[\"Mã khách hàng: KH_01\",\"Dữ liệu đầu vào không chứa báo cáo tài chính hoặc thông tin chi tiết khoản vay.\"],\"trang_thai_xem_xet\":\"HUMAN REVIEW REQUIRED\"}",
+      "latency_ms": 4090.5,
+      "error": null
     },
     "extraction": {
-      "raw": null,
-      "latency_ms": 816.4,
-      "error": "Đã vượt hạn mức/quota của Gemini. Thử lại sau hoặc chọn model khác. (mã GEM-429)",
+      "raw": "{\"items\": [{\"field\": \"ngay_bat_dau_ke_khai\", \"value\": \"06/2022\", \"source_doc\": \"application\", \"page\": 1, \"quote\": \"Ngày bắt đầu làm việc: 06/2022\"}, {\"field\": \"thu_nhap_ke_khai\", \"value\": \"25000000\", \"source_doc\": \"application\", \"page\": 1, \"quote\": \"Thu nhập kê khai: 25.000.000 VND\"}, {\"field\": \"so_tien_de_nghi_vay\", \"value\": \"600000000\", \"source_doc\": \"application\", \"page\": 1, \"quote\": \"Số tiền đề nghị vay: 600.000.000 VND\"}, {\"field\": \"thoi_han_vay_thang\", \"value\": \"120\", \"source_doc\": \"application\", \"page\": 1, \"quote\": \"Thời hạn vay tháng: 120\"}, {\"field\": \"khoan_tra_du_kien\", \"value\": \"7500000\", \"source_doc\": \"application\", \"page\": 1, \"quote\": \"Trả nợ khoản vay mới hàng tháng: 7.500.000 VND\"}, {\"field\": \"nghia_vu_no_ke_khai\", \"value\": \"2000000\", \"source_doc\": \"application\", \"page\": 1, \"quote\": \"Nghĩa vụ nợ kê khai: 2.000.000 VND\"}, {\"field\": \"nghia_vu_no_quan_sat\", \"value\": \"2000000\", \"source_doc\": \"debt\", \"page\": 1, \"quote\": \"Nghĩa vụ nợ hàng tháng: 2.000.000 VND\"}, {\"field\": \"ngay_bat_dau_chung_tu\", \"value\": \"02/2023\", \"source_doc\": \"income\", \"page\": 1, \"quote\": \"Ngày bắt đầu làm việc: 02/2023\"}, {\"field\": \"luong_thuc_nhan\", \"value\": \"25000000\", \"source_doc\": \"income\", \"page\": 1, \"quote\": \"Lương thực nhận: 25.000.000 VND\"}, {\"field\": \"thu_nhap_qua_sao_ke\", \"value\": \"25000000\", \"source_doc\": \"statement\", \"page\": 1, \"quote\": \"Bình quân ghi có: 25.000.000 VND\"}, {\"field\": \"so_du_binh_quan\", \"value\": \"18000000\", \"source_doc\": \"statement\", \"page\": 1, \"quote\": \"Số dư bình quân: 18.000.000 VND\"}]}",
+      "latency_ms": 3929.5,
+      "error": null,
       "requested": [
         "thu_nhap_ke_khai",
         "luong_thuc_nhan",
@@ -478,7 +478,118 @@
         "ngay_bat_dau_ke_khai",
         "ngay_bat_dau_chung_tu"
       ],
-      "items": [],
+      "items": [
+        {
+          "field": "ngay_bat_dau_ke_khai",
+          "source_doc": "application",
+          "page": 1,
+          "quote": "Ngày bắt đầu làm việc: 06/2022",
+          "label": "Ngày bắt đầu làm việc (đơn vay)",
+          "status": "pending",
+          "value": "06/2022",
+          "reason": "AI trích xuất — cần xác minh"
+        },
+        {
+          "field": "thu_nhap_ke_khai",
+          "source_doc": "application",
+          "page": 1,
+          "quote": "Thu nhập kê khai: 25.000.000 VND",
+          "label": "Thu nhập hàng tháng kê khai",
+          "status": "pending",
+          "value": 25000000.0,
+          "reason": "AI trích xuất — cần xác minh"
+        },
+        {
+          "field": "so_tien_de_nghi_vay",
+          "source_doc": "application",
+          "page": 1,
+          "quote": "Số tiền đề nghị vay: 600.000.000 VND",
+          "label": "Số tiền đề nghị vay",
+          "status": "pending",
+          "value": 600000000.0,
+          "reason": "AI trích xuất — cần xác minh"
+        },
+        {
+          "field": "thoi_han_vay_thang",
+          "source_doc": "application",
+          "page": 1,
+          "quote": "Thời hạn vay tháng: 120",
+          "label": "Thời hạn vay (tháng)",
+          "status": "pending",
+          "value": 120,
+          "reason": "AI trích xuất — cần xác minh"
+        },
+        {
+          "field": "khoan_tra_du_kien",
+          "source_doc": "application",
+          "page": 1,
+          "quote": "Trả nợ khoản vay mới hàng tháng: 7.500.000 VND",
+          "label": "Khoản trả nợ dự kiến hàng tháng",
+          "status": "pending",
+          "value": 7500000.0,
+          "reason": "AI trích xuất — cần xác minh"
+        },
+        {
+          "field": "nghia_vu_no_ke_khai",
+          "source_doc": "application",
+          "page": 1,
+          "quote": "Nghĩa vụ nợ kê khai: 2.000.000 VND",
+          "label": "Nghĩa vụ nợ kê khai hàng tháng",
+          "status": "pending",
+          "value": 2000000.0,
+          "reason": "AI trích xuất — cần xác minh"
+        },
+        {
+          "field": "nghia_vu_no_quan_sat",
+          "source_doc": "debt",
+          "page": 1,
+          "quote": "Nghĩa vụ nợ hàng tháng: 2.000.000 VND",
+          "label": "Nghĩa vụ nợ quan sát hàng tháng",
+          "status": "pending",
+          "value": 2000000.0,
+          "reason": "AI trích xuất — cần xác minh"
+        },
+        {
+          "field": "ngay_bat_dau_chung_tu",
+          "source_doc": "income",
+          "page": 1,
+          "quote": "Ngày bắt đầu làm việc: 02/2023",
+          "label": "Ngày bắt đầu làm việc (chứng từ thu nhập)",
+          "status": "pending",
+          "value": "02/2023",
+          "reason": "AI trích xuất — cần xác minh"
+        },
+        {
+          "field": "luong_thuc_nhan",
+          "source_doc": "income",
+          "page": 1,
+          "quote": "Lương thực nhận: 25.000.000 VND",
+          "label": "Lương thực nhận",
+          "status": "pending",
+          "value": 25000000.0,
+          "reason": "AI trích xuất — cần xác minh"
+        },
+        {
+          "field": "thu_nhap_qua_sao_ke",
+          "source_doc": "statement",
+          "page": 1,
+          "quote": "Bình quân ghi có: 25.000.000 VND",
+          "label": "Ghi có bình quân hàng tháng (sao kê)",
+          "status": "pending",
+          "value": 25000000.0,
+          "reason": "AI trích xuất — cần xác minh"
+        },
+        {
+          "field": "so_du_binh_quan",
+          "source_doc": "statement",
+          "page": 1,
+          "quote": "Số dư bình quân: 18.000.000 VND",
+          "label": "Số dư bình quân",
+          "status": "pending",
+          "value": 18000000.0,
+          "reason": "AI trích xuất — cần xác minh"
+        }
+      ],
       "gold": {
         "thu_nhap_ke_khai": 25000000,
         "luong_thuc_nhan": 25000000,
@@ -493,5 +604,11 @@
         "ngay_bat_dau_chung_tu": "02/2023"
       }
     }
-  }
+  },
+  "resumed_at": "2026-10-19T11:16:36+00:00",
+  "resumed_tasks": [
+    "summary",
+    "summary_baseline",
+    "extraction"
+  ]
 }
