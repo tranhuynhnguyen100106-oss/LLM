@@ -212,6 +212,10 @@ def phan_tich_output(text: str) -> CreditReviewSummary:
         raise LoiHauKiemAI([f"(c) sai schema/thiếu mục: {', '.join(fields)[:200]}"]) from exc
 
 
+_ISO_TIMESTAMP = re.compile(
+    r"\b\d{4}-\d{2}-\d{2}(?:[T ]\d{2}:\d{2}(?::\d{2}(?:\.\d+)?)?(?:Z|[+-]\d{2}(?::?\d{2})?)?)?\b|\b\d{1,2}:\d{2}(?::\d{2}(?:\.\d+)?)?\b",
+    re.IGNORECASE,
+)
 _NUMBER = re.compile(r"(?<![\w\-/])(\d[\d.,]*\d|\d)(\s*(%|triệu|tr\b|tỷ|nghìn|ngàn|k\b|×|x\b))?", re.IGNORECASE)
 _MULTIPLIER = {"triệu": 1e6, "tr": 1e6, "tỷ": 1e9, "nghìn": 1e3, "ngàn": 1e3, "k": 1e3}
 
@@ -233,10 +237,13 @@ def _parse_number(token: str) -> float | None:
 
 
 def trich_con_so(text: str) -> list[tuple[float, str]]:
-    """[(giá trị, loại)] với loại ∈ {"percent", "plain"}; tiền 'x triệu/tỷ' được quy đổi."""
+    """[(giá trị, loại)] với loại ∈ {"percent", "plain"}; tiền 'x triệu/tỷ' được quy đổi.
+    Bỏ qua timestamp ISO / mốc giờ để tránh đọc nhầm giây thập phân thành số tài chính.
+    """
 
     output: list[tuple[float, str]] = []
-    for match in _NUMBER.finditer(_nfc(text)):
+    cleaned = _ISO_TIMESTAMP.sub(" ", _nfc(text))
+    for match in _NUMBER.finditer(cleaned):
         value = _parse_number(match.group(1))
         if value is None:
             continue

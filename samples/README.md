@@ -5,7 +5,7 @@ Toàn bộ dữ liệu trong thư mục này là **giả lập**. Tên người,
 | Mục | Nội dung |
 |---|---|
 | `HOSO-MAU-EVAL-004/` | 4 PDF của một hồ sơ (đơn đề nghị vay, chứng từ thu nhập, sao kê ngân hàng, nghĩa vụ nợ), sinh bằng `tests/fixtures/synthetic_pdfs.py` từ kịch bản gold `EVAL-004 — Thu nhập chênh lệch đáng kể`. Dùng để demo “Tải cả thư mục hồ sơ” ở Bước 0. |
-| `credit_review_summary_EVAL-004.md` / `.json` | Credit Review Summary mẫu 10 mục cho đúng hồ sơ trên, **đã giả danh hóa** (KH_01, DN_A). Bản JSON đúng schema `CreditReviewSummary` và đã qua hậu kiểm Python. Phần diễn giải là nội dung minh họa (không gọi LLM thật) — xem ghi chú trong tệp. |
+| `credit_review_summary_EVAL-004.md` / `.json` | Credit Review Summary mẫu 10 mục cho đúng hồ sơ trên, **đã giả danh hóa** (`KH_01`, `DN_A`), lấy từ **output LLM thật** (`gemini-3.6-flash`, lưu tại `evaluation/llm_outputs/gemini-3.6-flash/EVAL-004.json`). Bản JSON đúng schema `CreditReviewSummary` và đã vượt toàn bộ hậu kiểm Python (a)–(e). |
 
 Kết quả xác định kỳ vọng cho hồ sơ mẫu: trạng thái **HUMAN REVIEW REQUIRED**, cảnh báo `INCOME_MISMATCH` và `HIGH_DSR_DEMO`.
 

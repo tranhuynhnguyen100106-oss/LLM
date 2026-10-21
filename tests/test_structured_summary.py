@@ -106,6 +106,10 @@ class SchemaAndPostCheckTests(unittest.TestCase):
         dsr = "67,9%"
         self.assertEqual(self._violations(lambda d: d["chi_so"].append(f"DSR {dsr}")), [])
         self.assertEqual(self._violations(lambda d: d["chi_so"].append("DSR 67,95%")), [])  # ±0,1 điểm %
+        self.assertEqual(
+            self._violations(lambda d: d.update(tong_quan=d["tong_quan"] + " Thời điểm: 2026-10-18T11:10:13.660390+00:00.")),
+            [],
+        )
         self.assertTrue(self._violations(lambda d: d["chi_so"].append("DSR 68,5%"))[0].startswith("(a)"))
         self.assertTrue(self._violations(lambda d: d.update(de_nghi_vay="Vay 999 triệu VND"))[0].startswith("(a)"))
 

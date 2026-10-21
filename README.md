@@ -181,18 +181,3 @@ Trước khi gán mã, giá trị được chuẩn hóa (bỏ dấu, viết thư
 - Mỗi PDF giới hạn 10 MB (`GIOI_HAN_TEP` và `server.maxUploadSize = 10`). `.streamlit/secrets.toml` nằm trong `.gitignore`. API Key chỉ nằm trong phiên.
 
 **Giới hạn:** máy chủ vẫn đọc file gốc trong bộ nhớ để trích xuất. Regex có thể bỏ sót PII viết tự do hoặc nằm trong PDF scan (không có OCR). Số liệu kết hợp với ngữ cảnh vẫn có thể giúp tái nhận dạng. Bản công khai chỉ dùng cho dữ liệu tổng hợp.
-
----
-
-## Hướng dẫn Khởi chạy
-
-```bash
-# Cài đặt dependencies
-npm install
-
-# Khởi chạy máy chủ phát triển (Port 3000)
-npm run dev
-
-# Kiểm tra build sản phẩm
-npm run build
-```
